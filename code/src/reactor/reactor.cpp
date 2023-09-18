@@ -49,7 +49,14 @@ int Reactor::sub( const MsgIdSet& msg_set_, MsgHandler h_ ) {
         }
     }
 
+    //zmq_close(subscriber);
+    //zmq_ctx_destroy(context);
     return 0;
+}
+
+Reactor : ~Reactor() {
+    //zmq_close(subscriber);
+    //zmq_ctx_destroy(context);
 }
 
 int Reactor::init() {

@@ -16,6 +16,8 @@ struct Reactor {
 
     static Reactor& instance();
 
+    ~Reactor();
+
     int pub( const Msg& msg_ );
     int sub( const MsgIdSet& msg_set_, MsgHandler h_ );
 
