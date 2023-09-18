@@ -1,11 +1,14 @@
 #ifndef C20EEFC2_0BE4_4918_AAD4_2F0119D413CB
 #define C20EEFC2_0BE4_4918_AAD4_2F0119D413CB
-#include "ns.h"
+#include <ns.h>
+#include <set>
+
+#include "msg.h"
 
 CUB_NS_BEGIN
 
 struct Reactor {
-    using MsgIdSet = std::set<msgid_t>;
+    using MsgIdSet = std::set<mid_t>;
 
     static Reactor& instance();
 
@@ -18,7 +21,7 @@ private:
 
 CUB_NS_END
 
-#define REACTOR cub::Reactor::instance()
+#define REACTOR CUB_NS::Reactor::instance()
 
 #if 0
 void produce() {
