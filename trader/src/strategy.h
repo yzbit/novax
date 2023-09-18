@@ -2,10 +2,6 @@
 #define B59454EA_227C_4309_838B_81799BB8FF3B
 
 struct AbstractStrategy {
-
-
-
-
 };
 
 #endif /* B59454EA_227C_4309_838B_81799BB8FF3B */

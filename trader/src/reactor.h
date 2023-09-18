@@ -20,6 +20,7 @@ CUB_NS_END
 
 #define REACTOR cub::Reactor::instance()
 
+#if 0
 void produce() {
     Msg m;
     REACTOR.pub( 1, m );
@@ -44,5 +45,5 @@ void consume() {
 void put_order() {
     REACTOR.pub( 1, m );
 }
-
+#endif
 #endif /* C20EEFC2_0BE4_4918_AAD4_2F0119D413CB */
