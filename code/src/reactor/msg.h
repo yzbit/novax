@@ -6,8 +6,22 @@
 CUB_NS_BEGIN
 
 using mid_t = uint32_t;
+
+constexpr mid_t kExceptMsg = -1;
+
+#pragma pack( 1 )
 struct Msg {
+    mid_t id;
+    union {
+        bool     flag;
+        uint8_t  uc;
+        int8_t   c;
+        int      i;
+        uint32_t u;
+        char     data[ 64 ];
+    }
 };
+#pragma pack()
 
 CUB_NS_END
 

@@ -1,52 +1,34 @@
 #ifndef C20EEFC2_0BE4_4918_AAD4_2F0119D413CB
 #define C20EEFC2_0BE4_4918_AAD4_2F0119D413CB
+#include <functional>
+#include <memory>
 #include <ns.h>
 #include <set>
+#include <zmq.hpp>
 
 #include "msg.h"
 
 CUB_NS_BEGIN
 
 struct Reactor {
-    using MsgIdSet = std::set<mid_t>;
+    using MsgIdSet   = std::set<mid_t>;
+    using MsgHandler = std::function<void( const Msg& m_ )>;
 
     static Reactor& instance();
 
-    int pub( int cat_, const Msg& msg_ );
-    int sub( const MsgIdSet& msg_set_ );
+    int pub( const Msg& msg_ );
+    int sub( const MsgIdSet& msg_set_, MsgHandler h_ );
 
 private:
     int init();
+
+private:
+    std::unique_ptr<zmq::socket_t>  _publisher;
+    std::unique_ptr<zmq::context_t> _pub_context;
 };
 
 CUB_NS_END
 
 #define REACTOR CUB_NS::Reactor::instance()
 
-#if 0
-void produce() {
-    Msg m;
-    REACTOR.pub( 1, m );
-}
-
-void consume() {
-    REACTOR.sub( { 1, 2, 3 } );
-
-    spwan();
-    {
-        for ( ;; ) {
-            get_msg() {
-                process_msg();
-            }
-        }
-    }
-}
-
-//那么从理论上来说,这些发布者和订阅者可以在一个机器上也可以在多个机器上,
-//但是定于的时候只能从某个确定的reactor上订阅
-//如果是一个独立的进程,似乎根本没有必要搞 
-void put_order() {
-    REACTOR.pub( 1, m );
-}
-#endif
 #endif /* C20EEFC2_0BE4_4918_AAD4_2F0119D413CB */
