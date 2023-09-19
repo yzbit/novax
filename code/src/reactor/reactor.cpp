@@ -1,5 +1,5 @@
 
-#include <log.hpp>
+#include <comm/log.hpp>
 
 #include "reactor.h"
 
@@ -10,53 +10,69 @@ Reactor& Reactor::instance() {
     return r;
 }
 
-int Reactor::pub( const Msg& msg_ ) {
-    int rc = ( int )_publisher->send( &msg_, sizeof( msg_ ), 0 );
-    return rc;
+Reactor::Reactor() {
+    //  init();
 }
 
-int Reactor::sub( const MsgIdSet& msg_set_, MsgHandler h_ ) {
-    zmq::context_t context( 1 );
-    zmq::socket_t  subsock( context, ZMQ_SUB );
+int Reactor::pub( const Msg& msg_ ) {
+    zmq::const_buffer buff{ &msg_, sizeof( msg_ ) };
 
-    LOG_INFO( "connect pub @local 5555" );
-    subsock.connect( "tcp://localhost:5555" );
-
-    if ( msg_set_.empty() ) {
-        subsock.setsockopt( ZMQ_SUBSCRIBE, "", 0 );
-    }
-    else {
-        for ( const auto& id : msg_set_ ) {
-            char id_str[ 8 ] = { 0 };
-            sprintf( id_str, "%04d", id );
-
-            LOG_INFO( "sub: %s", id_str );
-
-            subsock.setsockopt( ZMQ_SUBSCRIBE, id_str, strlen( id_str ) );
-        }
-    }
-
-    Msg m;
-    while ( 1 ) {
-        auto rc = subsock.recv( &m, sizeof( m ) );
-        if ( rc == -1 ) {
-            LOG_INFO( "recv error" );
-            h_( { kExceptMsg, 0 } );
-        }
-        else {
-            LOG_INFO( "got message" );
-            h_( m );
-        }
-    }
-
-    //zmq_close(subscriber);
-    //zmq_ctx_destroy(context);
+    //zmq::send_result_t rc =
+    _publisher->send( buff, zmq::send_flags::none );
     return 0;
 }
 
-Reactor : ~Reactor() {
-    //zmq_close(subscriber);
-    //zmq_ctx_destroy(context);
+int Reactor::sub( const MsgIdSet& msg_set_, MsgHandler h_ ) {
+    LOG_INFO( "prepare to recv messages." );
+    std::thread( [ = ]() {
+        zmq::context_t context( 1 );
+        zmq::socket_t  subsock( context, ZMQ_SUB );
+
+        subsock.set( zmq::sockopt::immediate, false );
+
+        LOG_INFO( "connect pub @local 5555" );
+        subsock.connect( "tcp://localhost:5555" );
+
+        if ( msg_set_.empty() ) {
+            subsock.set( zmq::sockopt::subscribe, "" );
+        }
+        else {
+            for ( auto& id : msg_set_ ) {
+                char id_str[ 8 ] = { 0 };
+                sprintf( id_str, "%04x", id );
+                fprintf( stderr, id_str );
+
+                LOG_INFO( "sub: %s", id_str );
+                //subsock.set( zmq::sockopt::subscribe, id_str );
+                subsock.set( zmq::sockopt::subscribe, "\00\04" );
+            }
+        }
+
+        Msg m;
+
+        zmq::mutable_buffer rbuff{ &m, sizeof( m ) };
+        while ( 1 ) {
+            auto rc = subsock.recv( rbuff, zmq::recv_flags::none );
+            if ( !rc.has_value() ) {
+                LOG_INFO( "recv error" );
+                // h_( { kExceptMsg, 0 } );
+            }
+            else {
+                LOG_INFO( "got message" );
+                h_( m );
+            }
+        }  //while(1)
+
+        subsock.close();
+        context.close();
+    } ).detach();
+
+    return 0;
+}
+
+Reactor::~Reactor() {
+    _publisher->close();
+    _pub_context->close();
 }
 
 int Reactor::init() {
