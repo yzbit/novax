@@ -5,4 +5,42 @@
 比如订单管理如果继续消息管理而不是回调的方式,依赖关系的解决就可以简单很多
 不需要复杂的代码级别的设计
 
+zmq的安装 
+apt-get install libzmq3-dev
 
+
+
+git clone git://github.com/zeromq/libzmq.git 
+cd libzmq
+./autogen.sh
+./configure -with-libsodium && make 
+sudo make install 
+sudo ldconfig
+cd ../
+
+
+
+git clone https://github.com/zeromq/zmqpp.git
+mkdir build
+cd build 
+cmake ..
+make 
+sudo make install
+
+----
+# 安装必备的包
+$ sudo apt-get install libtool pkg-config build-essential autoconf automake
+$ git clone https://github.com/zeromq/libzmq.git
+$ mkdir build
+$ cd build
+$ cmake ..
+$ sudo make -j4 install
+
+# 安装libzmq的C++绑定
+
+https://github.com/zeromq/zmqpp.git
+#//$ git clone git@github.com:zeromq/cppzmq.git
+$ mkdir build
+$ cd build
+$ cmake ..
+$ sudo make -j4 install
