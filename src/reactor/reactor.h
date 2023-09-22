@@ -20,20 +20,22 @@ struct BindingEnd {
 
 DECL_BINDDING( TOPIC_DATA_BINDING, "tcp://*:5010", "tcp://localhost:5010" );
 
+using MsgHandler = std::function<void( const msg::Header& h_ )>;
+using MsgIdSet   = std::set<msg::mid_t>;
+
 struct Publisher final {
-    Publisher( const std::string& id_ );
+    Publisher( const BindingEnd& binding_ );
     ~Publisher();
 
+    int sub( const MsgIdSet& msg_set_, MsgHandler h_ );
+
 private:
-    std::string                     _id;
+    BindingEnd                      _binding;
     std::unique_ptr<zmq::socket_t>  _sock;
     std::unique_ptr<zmq::context_t> _ctx;
 };
 
 struct Reactor {
-    using MsgIdSet   = std::set<msg::mid_t>;
-    using MsgHandler = std::function<void( const msg::Header& h_ )>;
-
     static Reactor& instance();
 
     ~Reactor();
@@ -50,8 +52,10 @@ struct Reactor {
     int sub( const MsgIdSet& msg_set_, MsgHandler h_ );
 
 private:
-    std::unique_ptr<zmq::socket_t>  _publisher;
-    std::unique_ptr<zmq::context_t> _pub_context;
+    MsgIdSet classfy( const MsgIdSet& ids_ );
+
+private:
+    std::unique_ptr<Publisher> _data_pub, _trader_pub, _ctl_pub;
 };
 
 CUB_NS_END

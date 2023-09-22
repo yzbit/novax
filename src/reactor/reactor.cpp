@@ -27,15 +27,7 @@ Reactor::Reactor() {
     //  init();
 }
 
-int Reactor::pub( void* data_, size_t length_ ) {
-    zmq::const_buffer buff{ data_, length_ };
-
-    // zmq::send_result_t rc =
-    _publisher->send( buff, zmq::send_flags::none );
-    return 0;
-}
-
-int Reactor::sub( const MsgIdSet& msg_set_, MsgHandler h_ ) {
+int Publisher::sub( const MsgIdSet& msg_set_, MsgHandler h_ ) {
     LOG_INFO( "prepare to recv messages." );
     std::thread( [ = ]() {
         zmq::context_t context( 1 );
@@ -77,6 +69,27 @@ int Reactor::sub( const MsgIdSet& msg_set_, MsgHandler h_ ) {
         subsock.close();
         context.close();
     } ).detach();
+    return 0;
+}
+
+int Reactor::pub( void* data_, size_t length_ ) {
+    zmq::const_buffer buff{ data_, length_ };
+
+    // zmq::send_result_t rc =
+    _publisher->send( buff, zmq::send_flags::none );
+    return 0;
+}
+
+MsgIdSet Reactor::classfy( const MsgIdSet& ids_ ) {
+    return ids_;
+}
+
+int Reactor::sub( const MsgIdSet& msg_set_, MsgHandler h_ ) {
+    auto ids = classfy( msg_set_ );
+
+    _data_pub->sub( ids, h_ );
+    _trader_pub->sub( ids, h_ );
+    _ctl_pub->sub( ids, h_ );
 
     return 0;
 }
