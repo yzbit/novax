@@ -5,27 +5,51 @@
 
 CUB_NS_BEGIN
 
+namespace msg {
 using mid_t = uint32_t;
 
-constexpr mid_t kExceptMsg = -1;
+enum class mid_t : int32_t {
+    exception = -1,
+
+    data_tick = 1,
+    book_data,
+    unbook_data,
+
+    put_order,
+    cancel_order,
+    close_order,
+    del_order,
+    order_update,
+
+    qry_rt_position,
+    qry_rt_cap,
+    rt_position_update,
+    rt_cap_update,
+
+    cub_log
+};
 
 #pragma pack( 1 )
-struct Msg {
-    union {
-        char  topic[ 16 ];
-        mid_t id;
-    };
 
-    union {
-        bool     flag;
-        uint8_t  uc;
-        int8_t   c;
-        int      i;
-        uint32_t u;
-        char     data[ 64 ];
-    };
+#define COMPOSE_MSG( MsgDataTick )
+struct Header {
+    mid_t  id;
+    size_t length;
 };
+
+struct DataTick {
+};
+
+template <typename T>
+struct Msg {
+    Header h;
+    T      body;
+};
+
+using DataTickFrame = Msg<DataTick>;
+
 #pragma pack()
+}  // namespace msg
 
 CUB_NS_END
 
