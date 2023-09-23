@@ -1,5 +1,6 @@
 #ifndef C20EEFC2_0BE4_4918_AAD4_2F0119D413CB
 #define C20EEFC2_0BE4_4918_AAD4_2F0119D413CB
+#include <array>
 #include <comm/ns.h>
 #include <functional>
 #include <memory>
@@ -11,9 +12,11 @@
 
 CUB_NS_BEGIN
 
+using MsgIdSet = std::set<msg::mid_t>;
 struct BindingEnd {
     const char* pub;
     const char* sub;
+    MsgIdSet    topics;
 };
 
 #define DECL_BINDDING( _name_, _pub_, _sub_ ) constexpr BindingEnd _name_ = { _pub_, _sub_ }
@@ -21,21 +24,27 @@ struct BindingEnd {
 DECL_BINDDING( TOPIC_DATA_BINDING, "tcp://*:5010", "tcp://localhost:5010" );
 
 using MsgHandler = std::function<void( const msg::Header& h_ )>;
-using MsgIdSet   = std::set<msg::mid_t>;
 
-struct Publisher final {
+#define D( id_, pub, sub )
+
+struct Publisher {
     Publisher( const BindingEnd& binding_ );
     ~Publisher();
 
-    int sub( const MsgIdSet& msg_set_, MsgHandler h_ );
+    bool serve( const MsgIdSet& ids_ );
+    bool serve( const msg::mid_t& id_ );
+    int  attach( zmq::socket_t& sub_ );
+    int  send( const void* msg_, size_t length_ );
 
-private:
+protected:
     BindingEnd                      _binding;
     std::unique_ptr<zmq::socket_t>  _sock;
     std::unique_ptr<zmq::context_t> _ctx;
 };
 
 struct Reactor {
+    static constexpr int kMaxPubCount = 16;
+
     static Reactor& instance();
 
     ~Reactor();
@@ -52,10 +61,7 @@ struct Reactor {
     int sub( const MsgIdSet& msg_set_, MsgHandler h_ );
 
 private:
-    MsgIdSet classfy( const MsgIdSet& ids_ );
-
-private:
-    std::unique_ptr<Publisher> _data_pub, _trader_pub, _ctl_pub;
+    std::array<std::unique_ptr<Publisher>, kMaxPubCount> _pubs;
 };
 
 CUB_NS_END

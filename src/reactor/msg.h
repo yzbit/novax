@@ -6,8 +6,6 @@
 CUB_NS_BEGIN
 
 namespace msg {
-using mid_t = uint32_t;
-
 enum class mid_t : int32_t {
     exception = -1,
 

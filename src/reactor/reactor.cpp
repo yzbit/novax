@@ -1,4 +1,4 @@
-
+#include <algorithm>
 #include <comm/log.hpp>
 
 #include "reactor.h"
@@ -6,11 +6,26 @@
 CUB_NS_BEGIN
 
 //"tcp://*:5555" );
-Publisher::Publisher( const std::string& id_ ) {
+Publisher::Publisher( const BindingEnd& binding_ )
+    : _binding( binding_ ) {
     _ctx  = std::make_unique<zmq::context_t>( 1 );
     _sock = std::make_unique<zmq::socket_t>( *_ctx, ZMQ_PUB );
+
     LOG_INFO( "create pub with id=%s", id_.c_str() );
-    _sock->bind( id_ );
+
+    // 一个pub可以绑定到多个节点
+    //_publisher->bind( "ipc://msg.ipc" );
+    _sock->bind( binding_.pub );
+}
+
+bool Publisher::serve( const MsgIdSet& ids_ ) {
+    return std::find_first_of( _binding.topics.begin(), _binding.topics.end(), ids_.begin(), ids_.end() )
+           != _binding.topics.end();
+}
+
+int Publisher::attach( zmq::socket_t& sub_ ) {
+    sub_.connect( _binding.sub );
+    return 0;
 }
 
 Publisher::~Publisher() {
@@ -27,17 +42,46 @@ Reactor::Reactor() {
     //  init();
 }
 
-int Publisher::sub( const MsgIdSet& msg_set_, MsgHandler h_ ) {
+int Publisher::send( const void* msg_, size_t length_ ) {
+    zmq::const_buffer buff{ msg_, length_ };
+    // zmq::send_result_t rc =
+    _sock->send( buff, zmq::send_flags::none );
+
+    return 0;
+}
+
+bool Publisher::serve( const msg::mid_t& id_ ) {
+    return _binding.topics.count( id_ ) > 0;
+}
+
+int Reactor::pub( void* data_, size_t length_ ) {
+    // if ( msg::mid_t::data_tick == mid ) {
+    //
+    //}
+    msg::Header* h = static_cast<msg::Header*>( data_ );
+
+    for ( auto& p : _pubs ) {
+        if ( p->serve( h->id ) ) {
+            return p->send( data_, length_ );
+        }
+    }
+
+    return 0;
+}
+
+int Reactor::sub( const MsgIdSet& msg_set_, MsgHandler h_ ) {
     LOG_INFO( "prepare to recv messages." );
+    static constexpr int kMaxMessgageLength = 1204;
+
     std::thread( [ = ]() {
         zmq::context_t context( 1 );
         zmq::socket_t  subsock( context, ZMQ_SUB );
 
-        LOG_INFO( "connect pub @local 5555" );
-        subsock.connect( "tcp://localhost:5555" );
-
         if ( msg_set_.empty() ) {
             subsock.set( zmq::sockopt::subscribe, "" );
+            for ( auto& p : _pubs ) {
+                p->attach( subsock );
+            }
         }
         else {
             for ( auto& id : msg_set_ ) {
@@ -51,9 +95,16 @@ int Publisher::sub( const MsgIdSet& msg_set_, MsgHandler h_ ) {
             }
         }
 
-        Msg m;
+        for ( auto& p : _pubs ) {
+            LOG_INFO( "connect pub @local 5555" );
+            if ( p->serve( msg_set_ ) ) {
+                p->attach( subsock );
+            }
+        }
 
-        zmq::mutable_buffer rbuff{ &m, sizeof( m ) };
+        std::unique_ptr<char[]> m = std::make_unique<char[]>( kMaxMessgageLength );
+
+        zmq::mutable_buffer rbuff{ m.get(), kMaxMessgageLength };  // todo :是按照消息来边界做接收 吗 ?
         while ( 1 ) {
             auto rc = subsock.recv( rbuff, zmq::recv_flags::none );
             if ( !rc.has_value() ) {
@@ -62,7 +113,7 @@ int Publisher::sub( const MsgIdSet& msg_set_, MsgHandler h_ ) {
             }
             else {
                 LOG_INFO( "got message" );
-                h_( m );
+                // h_( m );
             }
         }  // while(1)
 
@@ -70,44 +121,13 @@ int Publisher::sub( const MsgIdSet& msg_set_, MsgHandler h_ ) {
         context.close();
     } ).detach();
     return 0;
-}
-
-int Reactor::pub( void* data_, size_t length_ ) {
-    zmq::const_buffer buff{ data_, length_ };
-
-    // zmq::send_result_t rc =
-    _publisher->send( buff, zmq::send_flags::none );
-    return 0;
-}
-
-MsgIdSet Reactor::classfy( const MsgIdSet& ids_ ) {
-    return ids_;
-}
-
-int Reactor::sub( const MsgIdSet& msg_set_, MsgHandler h_ ) {
-    auto ids = classfy( msg_set_ );
-
-    _data_pub->sub( ids, h_ );
-    _trader_pub->sub( ids, h_ );
-    _ctl_pub->sub( ids, h_ );
-
     return 0;
 }
 
 Reactor::~Reactor() {
-    _publisher->close();
-    _pub_context->close();
 }
 
 int Reactor::init() {
-    _pub_context = std::make_unique<zmq::context_t>( 1 );
-
-    _publisher = std::make_unique<zmq::socket_t>( *_pub_context, ZMQ_PUB );
-    _publisher->bind( "tcp://*:5555" );
-
-    //一个pub可以绑定到多个节点
-    //_publisher->bind( "ipc://msg.ipc" );
-
     return 0;
 }
 
