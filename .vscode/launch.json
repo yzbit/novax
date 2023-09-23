@@ -8,7 +8,7 @@
             "name": "sf_car", // 配置名称，将会在启动配置的下拉菜单中显示
             "type": "cppdbg", // ++
             "request": "launch",
-            "program": "/home/surgerii/yaozn/cub/code/build/src/reactor/cub_reactor", // 调试程序的位置及程序名称
+            "program": "/home/data/code/cub/build/src/reactor/cub_reactor", // 调试程序的位置及程序名称
             "args": [ // 传送进来的参数，像C函数中的argc个的args
             ],
             "stopAtEntry": false, // 设为true时程序将暂停在程序入口处， false时停在断点处

@@ -12,35 +12,8 @@
 
 CUB_NS_BEGIN
 
-using MsgIdSet = std::set<msg::mid_t>;
-struct BindingEnd {
-    const char* pub;
-    const char* sub;
-    MsgIdSet    topics;
-};
-
-#define DECL_BINDDING( _name_, _pub_, _sub_ ) constexpr BindingEnd _name_ = { _pub_, _sub_ }
-
-DECL_BINDDING( TOPIC_DATA_BINDING, "tcp://*:5010", "tcp://localhost:5010" );
-
+using MsgIdSet   = std::set<msg::mid_t>;
 using MsgHandler = std::function<void( const msg::Header& h_ )>;
-
-#define D( id_, pub, sub )
-
-struct Publisher {
-    Publisher( const BindingEnd& binding_ );
-    ~Publisher();
-
-    bool serve( const MsgIdSet& ids_ );
-    bool serve( const msg::mid_t& id_ );
-    int  attach( zmq::socket_t& sub_ );
-    int  send( const void* msg_, size_t length_ );
-
-protected:
-    BindingEnd                      _binding;
-    std::unique_ptr<zmq::socket_t>  _sock;
-    std::unique_ptr<zmq::context_t> _ctx;
-};
 
 struct Reactor {
     static constexpr int kMaxPubCount = 16;
@@ -57,11 +30,11 @@ struct Reactor {
         return pub( &m_, sizeof( T ) );
     }
 
-    int pub( void* data_, size_t length_ );
+    int pub( const void* data_, size_t length_ );
     int sub( const MsgIdSet& msg_set_, MsgHandler h_ );
 
 private:
-    std::array<std::unique_ptr<Publisher>, kMaxPubCount> _pubs;
+    std::unique_ptr<zmq::context_t> _context;
 };
 
 CUB_NS_END

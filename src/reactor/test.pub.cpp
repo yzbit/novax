@@ -7,20 +7,21 @@
 int main() {
     LOG_INIT( "log_reactor", -1 );
 
-    REACTOR.init();
+    // REACTOR.init();
 
-    REACTOR.sub( {1024 }, []( const CUB_NS::Msg& m ) {
+    REACTOR.sub( { cub::msg::mid_t::data_tick }, []( const cub::msg::Header& h ) {
         // REACTOR.sub( { }, []( const CUB_NS::Msg& m ) {
-        printf( "sub,code=%u\n", m.id );
+        printf( "sub,code=%u\n", ( unsigned )h.id );
     } );
 
     std::thread( []() {
         for ( ;; ) {
             fprintf( stderr, "pub\n" );
-            CUB_NS::Msg m = { 0 };
-            //strcpy( m.topic, "abc" );
-            m.id = 1024;
-            REACTOR.pub( m );
+            CUB_NS::msg::DataTickFrame d;
+            // strcpy( m.topic, "abc" );
+            d.h.id = cub::msg::mid_t::data_tick;
+
+            REACTOR.pub( d );
             ::sleep( 1 );
         }
     } ).join();
