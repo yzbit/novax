@@ -8,9 +8,13 @@ int main() {
     LOG_INIT_KEEP( "log_reactor.log", -1 );
 
     // REACTOR.init();
-
+#if 0
     REACTOR.sub( { cub::msg::mid_t::data_tick }, []( const cub::msg::Header& h ) {
-        // REACTOR.sub( { }, []( const CUB_NS::Msg& m ) {
+        printf( "sub,code=%u\n", ( unsigned )h.id );
+    } );
+#endif
+
+    REACTOR.sub( { cub::msg::mid_t::svc_data }, []( const cub::msg::Header& h ) {
         printf( "sub,code=%u\n", ( unsigned )h.id );
     } );
 
@@ -21,7 +25,11 @@ int main() {
             // strcpy( m.topic, "abc" );
             d.h.id = cub::msg::mid_t::data_tick;
 
+            //REACTOR.pub( d );
+
+            d.h.id = cub::msg::mid_t::svc_data;
             REACTOR.pub( d );
+
             ::sleep( 1 );
         }
     } ).join();

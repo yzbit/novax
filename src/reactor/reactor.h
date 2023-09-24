@@ -12,13 +12,25 @@
 
 CUB_NS_BEGIN
 
-using MsgIdSet   = std::set<msg::mid_t>;
-using MsgHandler = std::function<void( const msg::Header& h_ )>;
+using MsgIdSet    = std::set<msg::mid_t>;
+using MsgHandler  = std::function<void( const msg::Header& h_ )>;
+using FilterToken = char[ 4 ];
 
 struct Reactor {
-    static constexpr int kMaxPubCount = 16;
+    struct Svc {
+        Svc( const std::string& endpoint_ );
+        ~Svc();
 
-    static Reactor& instance();
+        void init( const std::string& endpoint_ );
+        Svc() = default;
+
+        zmq::socket_t  chan;
+        zmq::context_t context;
+        std::string    endpoint;
+    };
+
+    static constexpr int kMaxPubCount = 16;
+    static Reactor&      instance();
 
     ~Reactor();
     Reactor();
@@ -34,7 +46,18 @@ struct Reactor {
     int sub( const MsgIdSet& msg_set_, MsgHandler h_ );
 
 private:
-    std::unique_ptr<zmq::context_t> _context;
+    zmq::socket_t& distribute( const msg::mid_t& id_ );
+    zmq::socket_t& therad_safe_sock();
+
+    void init_svc();
+
+private:
+    void filter_from_id( FilterToken& filter_, const msg::mid_t& ids_ );
+
+private:
+    Svc _data,
+        _trade;
+    zmq::context_t _center_ctx;
 };
 
 CUB_NS_END
