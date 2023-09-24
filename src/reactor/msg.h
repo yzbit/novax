@@ -9,7 +9,7 @@ namespace msg {
 enum class mid_t : int32_t {
     exception = -1,
 
-    data_tick = 1,
+    data_tick = 4096,
     book_data,
     unbook_data,
 

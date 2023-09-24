@@ -30,7 +30,7 @@ struct LocalSocket {
 int Reactor::pub( const void* data_, size_t length_ ) {
     static thread_local LocalSocket _lsock( _context.get(), zmq::socket_type::pub );
 
-    _lsock.connect( REACTOR_XPUB );
+    _lsock.connect( REACTOR_XSUB );
 
     zmq::const_buffer buff{ data_, length_ };
 
@@ -54,12 +54,13 @@ int Reactor::init() {
     auto mainloop = [ & ]() {
         zmq::socket_t xpub = zmq::socket_t( *_context.get(), zmq::socket_type::xpub );
         xpub.bind( REACTOR_XPUB );
+        xpub.set( zmq::sockopt::xpub_verbose, 1 );
 
         zmq::socket_t xsub = zmq::socket_t( *_context.get(), zmq::socket_type::xsub );
         xsub.bind( REACTOR_XSUB );
 
-         zmq::proxy( xpub, xsub );
-        //zmq::proxy( xsub, xpub );
+        zmq::proxy( xpub, xsub );
+        // zmq::proxy( xsub, xpub );
     };
 
     std::thread( mainloop ).detach();
@@ -74,24 +75,29 @@ int Reactor::sub( const MsgIdSet& msg_set_, MsgHandler h_ ) {
     std::thread( [ = ]() {
         // zmq::context_t context( 1 );
         zmq::socket_t subsock( *_context.get(), ZMQ_SUB );
-
         if ( msg_set_.empty() ) {
             subsock.set( zmq::sockopt::subscribe, "" );
         }
         else {
             for ( auto& id : msg_set_ ) {
-                char id_str[ 8 ] = { 0 };
-                sprintf( id_str, "%04x", ( int )id );
-                fprintf( stderr, id_str );
+                char     id_str[ 4 ] = { 0 };
+                unsigned uid         = ( unsigned )id;
 
-                LOG_INFO( "sub: %s", id_str );
-                // subsock.set( zmq::sockopt::subscribe, id_str );
-                // subsock.set( zmq::sockopt::subscribe, "\00\04" );
-                subsock.set( zmq::sockopt::subscribe, "\01" );
+                int index = 0;
+                LOG_TRACE( "subs id=" );
+                while ( uid ) {
+                    id_str[ index++ ] = uid & 0xFF;
+                    LOG_TRACE( "%02X ", id_str[ index - 1 ] );
+                    fprintf( stderr, "%02X ", id_str[ index - 1 ] );
+                    uid >>= 8;
+                }
+                LOG_TRACE( "\n" );  // new line.
+
+                subsock.set( zmq::sockopt::subscribe, id_str );
             }
         }
 
-        subsock.connect( REACTOR_XSUB );
+        subsock.connect( REACTOR_XPUB );
         std::unique_ptr<char[]> m = std::make_unique<char[]>( kMaxMessgageLength );
 
         zmq::mutable_buffer rbuff{ m.get(), kMaxMessgageLength };  // todo :是按照消息来边界做接收 吗 ?

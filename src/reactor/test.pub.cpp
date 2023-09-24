@@ -5,7 +5,7 @@
 #include <unistd.h>
 
 int main() {
-    LOG_INIT( "log_reactor", -1 );
+    LOG_INIT_KEEP( "log_reactor.log", -1 );
 
     // REACTOR.init();
 

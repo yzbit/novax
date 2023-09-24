@@ -33,7 +33,7 @@ struct Logz {
     int shut();
 
     // log_file_ 包含路径
-    int  init( const char* log_file_, bool remove_old_, int rotate_ );
+    int  init( const char* log_file_, int rotate_, bool keep_ );
     int  lite( const char* msg_ );
     int  details( const char* file_, const char* func_, int line_, const char* fmt_, ... );
     int  fmt( const char* fmt_, ... );
@@ -46,6 +46,7 @@ private:
     std::string time_str_file();
 
 private:
+    bool        _keep             = false;
     std::string _log_file         = "";
     int         _log_fd           = -1;
     int32_t     _log_size         = 0;
@@ -79,7 +80,10 @@ CUB_NS_END
 
 #define LOG_FLUSH LOGZ.flush
 #define LOG_INIT( _name_, _rotate_ ) \
-    LOGZ.init( _name_, true, _rotate_ )
+    LOGZ.init( _name_, _rotate_, false )
+
+#define LOG_INIT_KEEP( _name_, _rotate_ ) \
+    LOGZ.init( _name_, _rotate_, true )
 
 #define LOG_TRACE LOGZ.fmt
 
@@ -135,6 +139,8 @@ inline std::string Logz::time_str_file() {
 }
 
 inline std::string Logz::real_log( const std::string& name_ ) {
+    if ( _keep ) return name_;
+
     std::string real = name_ + std::string( "-" ) + time_str_file() + ".log";
     return real;
 }
@@ -157,20 +163,18 @@ inline int Logz::lite( const char* msg_ ) {
 
     if ( _log_size > _rotate_threshold ) {
         printf( "----------logger rotating---------\n" );
-#if 0
-        if ( _self_rotate ) {
-            std::string n = _real_file + ".00";
-            rename( _real_file.c_str(), n.c_str() );
+        if ( _keep ) {
+            std::string real = this->real_log( _log_file );
+            std::string n    = real + ".00";
+            rename( real.c_str(), n.c_str() );
 
-            auto fd = open( _real_file.c_str(), O_CREAT | O_RDWR, 0666 );
+            auto fd = open( real.c_str(), O_CREAT | O_RDWR, 0666 );
             dup2( fd, _log_fd );
             close( fd );
 
             remove( n.c_str() );
         }
         else {
-#endif
-        if ( true ) {
             std::string real = this->real_log( _log_file );
             auto        fd   = open( real.c_str(), O_CREAT | O_RDWR, 0666 );
             dup2( fd, _log_fd );
@@ -230,17 +234,14 @@ inline int Logz::fmt( const char* fmt_, ... ) {
 
 inline int Logz::archive( const char* file_ ) {
     close( _log_fd );
-
-    ::remove( file_ );
-    ::rename( _log_file.c_str(), file_ );
-
     return 0;
 }
 
-inline int Logz::init( const char* log_file_, bool remove_old_, int rotate_ ) {
+inline int Logz::init( const char* log_file_, int rotate_, bool keep_ ) {
     if ( _log_fd > 0 )
         return 0;
 
+    _keep     = keep_;
     _log_file = log_file_;
     if ( rotate_ > 0 )
         _rotate_threshold = rotate_;

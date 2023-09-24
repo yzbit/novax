@@ -1,3 +1,5 @@
+
+---架构设计:
 最开始的设计是有问题的,数据接受模块和交易模块和其他的模块，比如策略，订单管理，ui等是对等的
 只不过数据和交易主要是pub，同时也接受 命令
 
@@ -29,8 +31,11 @@ data     trader
  |          |
  ----reactor---
         |
+        pub------------------------上面的模式还是需要的，只是变成了架构的子模式
         |
- ----pub----
+        xsub/xpub
+        |
+    --------
  |          |
  |          |
  sub        sub
@@ -88,3 +93,31 @@ $ mkdir build
 $ cd build
 $ cmake ..
 $ sudo make -j4 install
+
+1）基线校准的目录：
+
+目前会对如下目录进行基线校准：当这些目录有任何#增删改#的动作的时候，
+重启机器后会进行检查和重新覆盖。
+
+linux:
+
+/home/surgerii/apps
+/home/surgerii/trolley
+/home/surgerii/calibration
+
+qnx:
+/nfs/apps
+
+2）需要临时修改目录内容如何办（比如调试）
+为了避免新修改被覆盖，需要手工重新构建基线
+linux:
+~/apps/scripts/integrity.sh linux g
+
+qnx:
+ksh /nfs/apps/scripts/integrity.sh qnx g
+
+3) 手工基线校准
+linux：
+~/apps/scripts/integrity.sh linux c
+ksh /nfs/apps/scripts/integrity.sh qnx c
+
