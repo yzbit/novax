@@ -9,18 +9,19 @@ int main() {
 
 
 //如果下面两个sub都开启,后面的pub无论那种消息都会被第二个sub拦截
-//如果只开第一个sub,但是却pub 了两种消息,则会卡在第二个pub上
-#if 0
+//如果只开第一个sub,但是却pub 了两种消息,则会卡在第二个pub上  
+
+
+#if 1
     REACTOR.sub( { cub::msg::mid_t::data_tick }, []( const cub::msg::Header& h ) {
         printf( "@@sub,code=%u, %d\n", ( unsigned )h.id, cub::msg::frame_cast<CUB_NS::msg::DataTickFrame>( h ).body.debug );
     } );
 #endif
 
-    REACTOR.sub( { cub::msg::mid_t::svc_data }, []( const cub::msg::Header& h ) {
+  REACTOR.sub( { cub::msg::mid_t::svc_data }, []( const cub::msg::Header& h ) {
         // printf( "svc+data code=%u\n", ( unsigned )h.id );
         printf( "###sub,code=%u, %d\n", ( unsigned )h.id, cub::msg::frame_cast<CUB_NS::msg::DataTickFrame>( h ).body.debug );
     } );
-
 
 #if 0
     std::thread( [ & ]() {
