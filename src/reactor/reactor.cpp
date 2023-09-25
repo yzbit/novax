@@ -5,8 +5,8 @@
 
 CUB_NS_BEGIN
 
-#define REACTOR_XPUB "inproc://cub-xpub.chan"
-#define REACTOR_XSUB "inproc://cub-xsub.chan"
+#define REACTOR_XPUB "inproc://cub-xpub-chan"
+#define REACTOR_XSUB "inproc://cub-xsub-chan"
 #define REACTOR_DATA "inproc://cub-data.chan"
 #define REACTOR_TRADE "inproc://cub-trade.chan"
 
@@ -25,17 +25,19 @@ struct LocalSocket {
         // todo  connect 是有时间的,如果立刻ub消息,可能会导致第一条消息丢失, 可以等welcome msg之后再发送
         // https://github.com/zeromq/libzmq/issues/2267--zmq的welcome msg可能就是因为这个bug添加的
         sock.connect( addr_ );
+        connected = true;
         // todo verify ..
         std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
     }
 
-    bool          connected = false;
+    bool connected = false;
+    // zmq::context_t context;
     zmq::socket_t sock;
 };
 
 zmq::socket_t& Reactor::therad_safe_pub() {
     static thread_local LocalSocket _lsock( _center_ctx, zmq::socket_type::pub );
-    _lsock.connect( "tcp://localhost:6666" );
+    _lsock.connect( REACTOR_XSUB );
     return _lsock.sock;
 }
 
@@ -70,10 +72,11 @@ Reactor& Reactor::instance() {
 }
 
 Reactor::Reactor() {
-    // init();
+    init();
 }
 
 void Reactor::init_svc() {
+    fprintf( stderr, "##init svc\n" );
     _data.init( REACTOR_DATA );
     _trade.init( REACTOR_TRADE );
 }
@@ -85,11 +88,11 @@ int Reactor::init() {
 
     auto mainloop = [ & ]() {
         zmq::socket_t xpub = zmq::socket_t( _center_ctx, zmq::socket_type::xpub );
-        xpub.bind( "tcp://*:5555" );
+        xpub.bind( REACTOR_XPUB );
         xpub.set( zmq::sockopt::xpub_verbose, 1 );
 
         zmq::socket_t xsub = zmq::socket_t( _center_ctx, zmq::socket_type::xsub );
-        xsub.bind( "tcp://*:6666" );
+        xsub.bind( REACTOR_XSUB );
 
         // http://api.zeromq.org/3-2:zmq-proxy
         // When the frontend is a ZMQ_XSUB socket, and the backend is a ZMQ_XPUB socket,
@@ -164,12 +167,6 @@ int Reactor::sub( const MsgIdSet& msg_set_, MsgHandler h_ ) {
 
     std::thread( [ = ]() {
         zmq::socket_t chan;
-        zmq::socket_t sub( _center_ctx, ZMQ_SUB );
-        sub.set( zmq::sockopt::subscribe, "" );
-        sub.connect( "tcp://localhost:5555" );  // connect to xpub
-        loop( sub );
-
-#if 0
 
         fprintf( stderr, "create sub thread\n" );
 
@@ -213,8 +210,6 @@ int Reactor::sub( const MsgIdSet& msg_set_, MsgHandler h_ ) {
         loop( chan );
         fprintf( stderr, "loop finished\n" );
         chan.close();
-
-#endif
     } ).detach();
     return 0;
 }

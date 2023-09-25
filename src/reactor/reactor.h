@@ -35,8 +35,6 @@ struct Reactor {
     ~Reactor();
     Reactor();
 
-    int init();
-
     template <typename T>
     int pub( const T& m_ ) {
         return pub( &m_, sizeof( T ) );
@@ -49,6 +47,7 @@ private:
     zmq::socket_t& distribute( const msg::mid_t& id_ );
     zmq::socket_t& therad_safe_pub();
 
+    int  init();
     void init_svc();
 
 private:
