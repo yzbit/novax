@@ -7,7 +7,7 @@
 int main() {
     LOG_INIT_KEEP( "log_reactor.log", -1 );
 
-    // REACTOR.init();
+    REACTOR.init();
     REACTOR.sub( { cub::msg::mid_t::data_tick }, []( const cub::msg::Header& h ) {
         printf( "sub,code=%u, %d\n", ( unsigned )h.id, cub::msg::frame_cast<CUB_NS::msg::DataTickFrame>( h ).body.debug );
     } );
@@ -28,10 +28,32 @@ int main() {
     // d.h.id = cub::msg::mid_t::svc_data;
     // REACTOR.pub( d );
 
-    int seq = 0;
+    ::sleep( 5 );
+
     std::thread( [ & ]() {
+        int seq = 10000;
         for ( ;; ) {
-            fprintf( stderr, "pub---1\n" );
+            // fprintf( stderr, "pub---1\n" );
+            CUB_NS::msg::DataTickFrame d;
+            // strcpy( m.topic, "abc" );
+            d.h.id       = cub::msg::mid_t::data_tick;
+            d.body.debug = seq++;
+
+            fprintf( stderr, "pub---%d\n", d.body.debug );
+            REACTOR.pub( d );
+
+            // fprintf( stderr, "pub---3\n" );
+            //  d.h.id = cub::msg::mid_t::svc_data;
+            //   REACTOR.pub( d );
+            //::usleep( 300 );
+            ::sleep( 2 );
+        }
+    } ).detach();
+
+    std::thread( [ & ]() {
+        int seq = 0;
+        for ( ;; ) {
+            // fprintf( stderr, "pub---1\n" );
             CUB_NS::msg::DataTickFrame d;
             // strcpy( m.topic, "abc" );
             d.h.id       = cub::msg::mid_t::data_tick;
@@ -43,12 +65,12 @@ int main() {
                 continue;
             }
 
-            fprintf( stderr, "pub---2\n" );
+            fprintf( stderr, "pub---%d\n", d.body.debug );
             REACTOR.pub( d );
 
-            fprintf( stderr, "pub---3\n" );
-            // d.h.id = cub::msg::mid_t::svc_data;
-            //  REACTOR.pub( d );
+            // fprintf( stderr, "pub---3\n" );
+            //  d.h.id = cub::msg::mid_t::svc_data;
+            //   REACTOR.pub( d );
             //::usleep( 300 );
             ::sleep( 1 );
         }

@@ -22,7 +22,11 @@ struct LocalSocket {
     void connect( const char* addr_ ) {
         if ( connected ) return;
 
+        // todo  connect 是有时间的,如果立刻ub消息,可能会导致第一条消息丢失, 可以等welcome msg之后再发送
+        // https://github.com/zeromq/libzmq/issues/2267--zmq的welcome msg可能就是因为这个bug添加的
         sock.connect( addr_ );
+        // todo verify ..
+        std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
     }
 
     bool          connected = false;
@@ -31,7 +35,7 @@ struct LocalSocket {
 
 zmq::socket_t& Reactor::therad_safe_pub() {
     static thread_local LocalSocket _lsock( _center_ctx, zmq::socket_type::pub );
-    _lsock.connect( REACTOR_XSUB );
+    _lsock.connect( "tcp://localhost:6666" );
     return _lsock.sock;
 }
 
@@ -52,7 +56,7 @@ int Reactor::pub( const void* data_, size_t length_ ) {
     auto& sock = distribute( h->id );
 
     zmq::const_buffer buff{ data_, length_ };
-    fprintf( stderr, "before send" );
+    // fprintf( stderr, "before send" );
     zmq::send_result_t rc = sock.send( buff, zmq::send_flags::none );
 
     fprintf( stderr, "send ok sock = 0x%lx ,rc=%lu\n", ( int64_t )&sock, rc.has_value() ? rc.value() : 0 );
@@ -66,7 +70,7 @@ Reactor& Reactor::instance() {
 }
 
 Reactor::Reactor() {
-    init();
+    // init();
 }
 
 void Reactor::init_svc() {
@@ -81,11 +85,11 @@ int Reactor::init() {
 
     auto mainloop = [ & ]() {
         zmq::socket_t xpub = zmq::socket_t( _center_ctx, zmq::socket_type::xpub );
-        xpub.bind( REACTOR_XPUB );
+        xpub.bind( "tcp://*:5555" );
         xpub.set( zmq::sockopt::xpub_verbose, 1 );
 
         zmq::socket_t xsub = zmq::socket_t( _center_ctx, zmq::socket_type::xsub );
-        xsub.bind( REACTOR_XSUB );
+        xsub.bind( "tcp://*:6666" );
 
         // http://api.zeromq.org/3-2:zmq-proxy
         // When the frontend is a ZMQ_XSUB socket, and the backend is a ZMQ_XPUB socket,
@@ -150,7 +154,7 @@ int Reactor::sub( const MsgIdSet& msg_set_, MsgHandler h_ ) {
                 header->id = msg::mid_t::exception;
             }
             else {
-                fprintf( stderr, "good receive %lu\n", rc.value().size );
+                // fprintf( stderr, "good receive %lu\n", rc.value().size );
                 LOG_INFO( "got message" );
             }
 
@@ -162,7 +166,7 @@ int Reactor::sub( const MsgIdSet& msg_set_, MsgHandler h_ ) {
         zmq::socket_t chan;
         zmq::socket_t sub( _center_ctx, ZMQ_SUB );
         sub.set( zmq::sockopt::subscribe, "" );
-        sub.connect( REACTOR_XPUB );
+        sub.connect( "tcp://localhost:5555" );  // connect to xpub
         loop( sub );
 
 #if 0
