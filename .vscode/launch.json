@@ -1,0 +1,30 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "sf_car", // 配置名称，将会在启动配置的下拉菜单中显示
+            "type": "cppdbg", // ++
+            "request": "launch",
+            //"program": "/home/data/code/cub/build/src/reactor/cub_reactor", // 调试程序的位置及程序名称
+            "program": "/home/ubuntu/code/cub/build/src/reactor/cub_reactor", // 调试程序的位置及程序名称
+            "args": [ // 传送进来的参数，像C函数中的argc个的args
+            ],
+            "stopAtEntry": false, // 设为true时程序将暂停在程序入口处， false时停在断点处
+            "cwd": "${workspaceFolder}", // 调试程序时的工作目录
+            "environment": [],
+            "externalConsole": false, // 调试时是否显示控制台窗口，一般设置为true显示控制台
+            "MIMode": "gdb", // 指定连接的调试器，可以为gdb或lldb。
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "miDebuggerPath": "/usr/bin/gdb"
+        }
+    ]
+}
