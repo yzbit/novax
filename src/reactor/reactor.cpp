@@ -150,7 +150,7 @@ int Reactor::sub( const MsgIdSet& msg_set_, MsgHandler h_ ) {
 
         msg::Header* header = reinterpret_cast<msg::Header*>( m.get() );
         while ( 1 ) {
-            //fprintf( stderr, "recv sock=0x%lx\n", ( uint64_t )&sock_ );
+            // fprintf( stderr, "recv sock=0x%lx\n", ( uint64_t )&sock_ );
             auto rc = sock_.recv( rbuff, zmq::recv_flags::none );
             if ( !rc.has_value() ) {
                 printf( "bad receive\n" );
@@ -176,7 +176,6 @@ int Reactor::sub( const MsgIdSet& msg_set_, MsgHandler h_ ) {
 
             zmq::socket_t d = zmq::socket_t( _data.context, zmq::socket_type::pair );
             d.connect( REACTOR_DATA );
-            loop( d );
             chan.swap( d );
         }
         else if ( msg_set_.size() == 1 && *msg_set_.begin() == msg::mid_t::svc_order ) {
@@ -206,12 +205,11 @@ int Reactor::sub( const MsgIdSet& msg_set_, MsgHandler h_ ) {
             }
             sub.connect( REACTOR_XPUB );
 
-            loop( sub );
             chan.swap( sub );
         }
 
         fprintf( stderr, "into loop\n" );
-        // loop( chan );
+        loop( chan );
         fprintf( stderr, "loop finished\n" );
         chan.close();
     } ).detach();
