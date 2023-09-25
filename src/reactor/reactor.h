@@ -47,7 +47,7 @@ struct Reactor {
 
 private:
     zmq::socket_t& distribute( const msg::mid_t& id_ );
-    zmq::socket_t& therad_safe_sock();
+    zmq::socket_t& therad_safe_pub();
 
     void init_svc();
 

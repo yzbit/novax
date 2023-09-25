@@ -41,6 +41,7 @@ struct Header {
 };
 
 struct DataTick {
+    int debug;
 };
 
 template <typename T>
@@ -52,6 +53,12 @@ struct Msg {
 using DataTickFrame = Msg<DataTick>;
 
 #pragma pack()
+
+template <typename T>
+const T& frame_cast( const Header& h ) {
+    return reinterpret_cast<const T&>( h );
+}
+
 }  // namespace msg
 
 CUB_NS_END

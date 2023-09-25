@@ -29,7 +29,7 @@ struct LocalSocket {
     zmq::socket_t sock;
 };
 
-zmq::socket_t& Reactor::therad_safe_sock() {
+zmq::socket_t& Reactor::therad_safe_pub() {
     static thread_local LocalSocket _lsock( _center_ctx, zmq::socket_type::pub );
     _lsock.connect( REACTOR_XSUB );
     return _lsock.sock;
@@ -38,11 +38,11 @@ zmq::socket_t& Reactor::therad_safe_sock() {
 zmq::socket_t& Reactor::distribute( const msg::mid_t& id_ ) {
     switch ( id_ ) {
     case msg::mid_t::svc_data:
-        return _trade.chan;
-    case msg::mid_t::svc_order:
         return _data.chan;
+    case msg::mid_t::svc_order:
+        return _trade.chan;
     default:
-        return therad_safe_sock();
+        return therad_safe_pub();
     }
 }
 
@@ -55,7 +55,7 @@ int Reactor::pub( const void* data_, size_t length_ ) {
     fprintf( stderr, "before send" );
     zmq::send_result_t rc = sock.send( buff, zmq::send_flags::none );
 
-    fprintf( stderr, "send ok" );
+    fprintf( stderr, "send ok sock = 0x%lx ,rc=%lu\n", ( int64_t )&sock, rc.has_value() ? rc.value() : 0 );
 
     return rc.has_value() ? 0 : -1;
 }
@@ -87,7 +87,11 @@ int Reactor::init() {
         zmq::socket_t xsub = zmq::socket_t( _center_ctx, zmq::socket_type::xsub );
         xsub.bind( REACTOR_XSUB );
 
-        zmq::proxy( xpub, xsub );
+        // http://api.zeromq.org/3-2:zmq-proxy
+        // When the frontend is a ZMQ_XSUB socket, and the backend is a ZMQ_XPUB socket,
+        // the proxy shall act as a message forwarder that collects messages from a set
+        // of publishers and forwards these to a set of subscribers
+        zmq::proxy( xsub, xpub );
     };
 
     std::thread( mainloop ).detach();
@@ -146,7 +150,7 @@ int Reactor::sub( const MsgIdSet& msg_set_, MsgHandler h_ ) {
                 header->id = msg::mid_t::exception;
             }
             else {
-                printf( "good receive\n" );
+                fprintf( stderr, "good receive %lu\n", rc.value().size );
                 LOG_INFO( "got message" );
             }
 
@@ -156,18 +160,31 @@ int Reactor::sub( const MsgIdSet& msg_set_, MsgHandler h_ ) {
 
     std::thread( [ = ]() {
         zmq::socket_t chan;
+        zmq::socket_t sub( _center_ctx, ZMQ_SUB );
+        sub.set( zmq::sockopt::subscribe, "" );
+        sub.connect( REACTOR_XPUB );
+        loop( sub );
+
+#if 0
+
+        fprintf( stderr, "create sub thread\n" );
 
         if ( msg_set_.size() == 1 && *msg_set_.begin() == msg::mid_t::svc_data ) {
+            fprintf( stderr, "svc data sub\n" );
+
             zmq::socket_t d = zmq::socket_t( _data.context, zmq::socket_type::pair );
             d.connect( REACTOR_DATA );
             chan.swap( d );
         }
         else if ( msg_set_.size() == 1 && *msg_set_.begin() == msg::mid_t::svc_order ) {
+
+            fprintf( stderr, "create svc-trade sub thread\n" );
             zmq::socket_t t = zmq::socket_t( _trade.context, zmq::socket_type::pair );
             t.connect( REACTOR_TRADE );
             chan.swap( t );
         }
         else {
+            fprintf( stderr, "create comm sub thread\n" );
             zmq::socket_t sub( _center_ctx, ZMQ_SUB );
             if ( msg_set_.empty() ) {
                 sub.set( zmq::sockopt::subscribe, "" );
@@ -188,8 +205,12 @@ int Reactor::sub( const MsgIdSet& msg_set_, MsgHandler h_ ) {
             chan.swap( sub );
         }
 
+        fprintf( stderr, "into loop\n" );
         loop( chan );
+        fprintf( stderr, "loop finished\n" );
         chan.close();
+
+#endif
     } ).detach();
     return 0;
 }
