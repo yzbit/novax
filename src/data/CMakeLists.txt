@@ -38,22 +38,16 @@ target_include_directories(cub_data
     ${REPO_ROOT}/include
 )
 
-#[[
 target_link_directories(cub_data
     PRIVATE
     ${REPO_ROOT}/lib/ctp
 )
-]]
 
 target_link_libraries(cub_data
     PRIVATE
     #reactor
     data
-    /home/ubuntu/code/cub/lib/ctp/thostmduserapi_se.so
-#/home/ubuntu/code/cub/lib/ctp/internal/v6.7.0_20230209_api_linux/thosttraderapi_se.so
-#/home/ubuntu/code/cub/lib/ctp/thostmduserapi_se.so
-    #/home/ubuntu/code/cub/lib/ctp/thosttraderapi_se.so
-    #thosttraderapi_se.so
+    thostmduserapi_se
 )
 
 install (TARGETS ${PROJECT_NAME} DESTINATION lib)
