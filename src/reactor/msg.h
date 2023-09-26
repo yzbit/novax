@@ -7,7 +7,8 @@ CUB_NS_BEGIN
 
 namespace msg {
 enum class mid_t : int32_t {
-    exception = -1,
+    exception       = -1,
+    insuficent_room = -2,
 
     svc_data = 1,
     svc_order,
@@ -33,6 +34,8 @@ enum class mid_t : int32_t {
 };
 
 #pragma pack( 1 )
+
+constexpr int kMaxMsgLength=1024;
 
 #define COMPOSE_MSG( MsgDataTick )
 struct Header {

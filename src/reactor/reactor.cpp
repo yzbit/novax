@@ -143,13 +143,12 @@ void Reactor::filter_from_id( FilterToken& filter_, const msg::mid_t& id_ ) {
 
 int Reactor::sub( const MsgIdSet& msg_set_, MsgHandler h_ ) {
     LOG_INFO( "prepare to recv messages." );
-    static constexpr int kMaxMessgageLength = 1204;
 
     // warn capture h_ by value
     auto loop = [ = ]( zmq::socket_t& sock_ ) {
-        std::unique_ptr<char[]> m = std::make_unique<char[]>( kMaxMessgageLength );
+        std::unique_ptr<char[]> m = std::make_unique<char[]>( msg::kMaxMsgLength );
 
-        zmq::mutable_buffer rbuff{ m.get(), kMaxMessgageLength };  // todo :是按照消息来边界做接收 吗 ?
+        zmq::mutable_buffer rbuff{ m.get(), msg::kMaxMsgLength };  // todo :是按照消息来边界做接收 吗 ?
 
         msg::Header* header = reinterpret_cast<msg::Header*>( m.get() );
         while ( 1 ) {
@@ -159,6 +158,10 @@ int Reactor::sub( const MsgIdSet& msg_set_, MsgHandler h_ ) {
                 header->id = msg::mid_t::exception;
             }
             else {
+                if ( rc.value().size != rc.value().untruncated_size ) {
+                    LOG_INFO( "!!NOT enough buffer" );
+                    header->id = msg::mid_t::insuficent_room;
+                }
             }
 
             h_( *header );
