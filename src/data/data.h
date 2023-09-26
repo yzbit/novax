@@ -1,8 +1,8 @@
 #ifndef F4D9DAEC_B9A1_48EF_8FEB_A99D60585AD3
 #define F4D9DAEC_B9A1_48EF_8FEB_A99D60585AD3
-#include <comm/definitions.h>
+
+#include <cub.h>
 #include <memory>
-#include <comm/ns.h>
 
 #include "indicator.h"
 #include "market.h"

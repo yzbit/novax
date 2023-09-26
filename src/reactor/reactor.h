@@ -1,7 +1,7 @@
 #ifndef C20EEFC2_0BE4_4918_AAD4_2F0119D413CB
 #define C20EEFC2_0BE4_4918_AAD4_2F0119D413CB
 #include <array>
-#include <comm/ns.h>
+#include <cub.h>
 #include <functional>
 #include <memory>
 #include <set>

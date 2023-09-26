@@ -1,7 +1,9 @@
 #ifndef CB707429_D0BF_4054_8203_04C2541044AD
 #define CB707429_D0BF_4054_8203_04C2541044AD
 #include <memory>
-#include <ns.h>
+
+#include <cub.h>
+
 #include <zmq.hpp>
 
 CUB_NS_BEGIN

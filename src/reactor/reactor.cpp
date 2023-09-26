@@ -1,5 +1,5 @@
 #include <algorithm>
-#include <comm/log.hpp>
+#include <cub.h>
 
 #include "reactor.h"
 

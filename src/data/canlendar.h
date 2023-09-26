@@ -1,7 +1,6 @@
 #ifndef BB813C61_80B5_4C65_966A_8F423BC7ECEA
 #define BB813C61_80B5_4C65_966A_8F423BC7ECEA
-#include <comm/ns.h>
-
+#include <cub.h>
 CUB_NS_BEGIN
 
 struct FinCanlendar {

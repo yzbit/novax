@@ -1,4 +1,4 @@
-#include <comm/log.hpp>
+#include <cub.h>
 #include <reactor/reactor.h>
 #include <stdio.h>
 #include <thread>

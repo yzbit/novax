@@ -1,6 +1,6 @@
 #ifndef D0A82F45_7141_4EE1_ABB6_9929837DA41C
 #define D0A82F45_7141_4EE1_ABB6_9929837DA41C
-#include <comm/ns.h>
+#include <cub.h>
 #include <stdint.h>
 
 CUB_NS_BEGIN
@@ -35,7 +35,7 @@ enum class mid_t : int32_t {
 
 #pragma pack( 1 )
 
-constexpr int kMaxMsgLength=1024;
+constexpr int kMaxMsgLength = 1024;
 
 #define COMPOSE_MSG( MsgDataTick )
 struct Header {
