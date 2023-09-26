@@ -4,13 +4,12 @@
 #include <cub.h>
 #include <memory>
 
-#include "indicator.h"
-#include "market.h"
-
 CUB_NS_BEGIN
+class Indicator;
+class Market;
 
 struct Data {
-    Data& instance();
+    static Data& instance();
 
     Data();
     virtual ~Data();
@@ -19,11 +18,11 @@ struct Data {
     int unsubscribe( const code_t& code_ );
 
 private:
-    std::unique_ptr<Market>    _market;
-    std::unique_ptr<Indicator> _indicator;
+    Market*    _market    = nullptr;
+    Indicator* _indicator = nullptr;
 };
 
 CUB_NS_END
-#define DATA cub::data::instance()
+#define DATA cub::Data::instance()
 
 #endif /* F4D9DAEC_B9A1_48EF_8FEB_A99D60585AD3 */

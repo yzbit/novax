@@ -14,6 +14,7 @@ SET(SRC
     data.cpp
     indicator.cpp
     market.cpp
+    ctp_proxy.cpp
 )
 
 
@@ -22,6 +23,7 @@ add_library(${PROJECT_NAME}  ${SRC})
 target_include_directories(${PROJECT_NAME}
     PRIVATE
     ${REPO_ROOT}/include
+    ${REPO_ROOT}/lib
 )
 
 
@@ -29,7 +31,6 @@ target_link_libraries(${PROJECT_NAME} PRIVATE pthread)
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
 target_compile_options(${PROJECT_NAME} PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Wall >)
 
-#[[
 add_executable(cub_data test.data.cpp)
 
 target_include_directories(cub_data
@@ -37,10 +38,22 @@ target_include_directories(cub_data
     ${REPO_ROOT}/include
 )
 
-target_link_libraries(cub_data
+#[[
+target_link_directories(cub_data
     PRIVATE
-    reactor
-    zmq
+    ${REPO_ROOT}/lib/ctp
 )
 ]]
+
+target_link_libraries(cub_data
+    PRIVATE
+    #reactor
+    data
+    /home/ubuntu/code/cub/lib/ctp/thostmduserapi_se.so
+#/home/ubuntu/code/cub/lib/ctp/internal/v6.7.0_20230209_api_linux/thosttraderapi_se.so
+#/home/ubuntu/code/cub/lib/ctp/thostmduserapi_se.so
+    #/home/ubuntu/code/cub/lib/ctp/thosttraderapi_se.so
+    #thosttraderapi_se.so
+)
+
 install (TARGETS ${PROJECT_NAME} DESTINATION lib)
