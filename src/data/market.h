@@ -1,8 +1,15 @@
-#ifndef F4D9DAEC_B9A1_48EF_8FEB_A99D60585AD3
-#define F4D9DAEC_B9A1_48EF_8FEB_A99D60585AD3
+#ifndef B791BD3D_D69F_45B3_8E6C_D92191157DA5
+#define B791BD3D_D69F_45B3_8E6C_D92191157DA5
+//市场相关的所有特新,包括日历和每天的交易时间等
+#include <comm/ns.h>
 
+CUB_NS_BEGIN
 
 struct Market {
+    Market();
+    virtual ~Market();
 };
 
-#endif /* F4D9DAEC_B9A1_48EF_8FEB_A99D60585AD3 */
+CUB_NS_END
+
+#endif /* B791BD3D_D69F_45B3_8E6C_D92191157DA5 */

@@ -1,0 +1,13 @@
+#ifndef D6D9BFBD_05B1_43C7_8B60_8B3036A8326E
+#define D6D9BFBD_05B1_43C7_8B60_8B3036A8326E
+
+#include <comm/ns.h>
+
+CUB_NS_BEGIN
+
+struct Indicator {
+};
+
+CUB_NS_END
+
+#endif /* D6D9BFBD_05B1_43C7_8B60_8B3036A8326E */
