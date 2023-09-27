@@ -15,6 +15,7 @@ SET(SRC
     indicator.cpp
     market.cpp
     ctp_proxy.cpp
+    algo/ma.cpp
 )
 
 
