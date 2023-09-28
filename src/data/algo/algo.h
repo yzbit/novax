@@ -87,9 +87,9 @@ struct Algo {
     // void set_value( int track_, int index_, const SeriesValue& sv_ );
 private:
     void initialize() {
-        for ( int i = 0; i <= total; ++i ) {
-            on_calculate( i, context );
-        }
+       // for ( int i = 0; i <= total; ++i ) {
+       //     on_calculate( i, context );
+       // }
     }
 };
 
