@@ -12,10 +12,8 @@ message("####repo dir=${MODULE_ROOT}/../..")
 
 SET(SRC 
     data.cpp
-    indicator.cpp
     market.cpp
     ctp_proxy.cpp
-    algo/ma.cpp
 )
 
 
@@ -46,8 +44,9 @@ target_link_directories(cub_data
 
 target_link_libraries(cub_data
     PRIVATE
-    #reactor
     data
+    reactor
+    zmq
     thostmduserapi_se
 )
 

@@ -1,0 +1,12 @@
+#ifndef FF72955C_ACC6_4839_BA9D_5BA5BB151C3F
+#define FF72955C_ACC6_4839_BA9D_5BA5BB151C3F
+#include <cub.h>
+
+CUB_NS_BEGIN
+
+struct Strategy : Algo {
+};
+
+CUB_NS_END
+
+#endif /* FF72955C_ACC6_4839_BA9D_5BA5BB151C3F */

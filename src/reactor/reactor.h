@@ -1,11 +1,11 @@
 #ifndef C20EEFC2_0BE4_4918_AAD4_2F0119D413CB
 #define C20EEFC2_0BE4_4918_AAD4_2F0119D413CB
 #include <array>
-#include <cub.h>
+#include <comm/definitions.h>
+#include <cub_ns.h>
 #include <functional>
 #include <memory>
 #include <set>
-#include <string>
 #include <zmq.hpp>
 
 #include "msg.h"
@@ -13,20 +13,20 @@
 CUB_NS_BEGIN
 
 using MsgIdSet    = std::set<msg::mid_t>;
-using MsgHandler  = std::function<void( const msg::Header& h_ )>;
+using MsgHandler  = std::function<void( const msg::header_t& h_ )>;
 using FilterToken = char[ 4 ];
 
 struct Reactor {
     struct Svc {
-        Svc( const std::string& endpoint_ );
+        Svc( const string_t& endpoint_ );
         ~Svc();
 
-        void init( const std::string& endpoint_ );
+        void init( const string_t& endpoint_ );
         Svc() = default;
 
         zmq::socket_t  chan;
         zmq::context_t context;
-        std::string    endpoint;
+        string_t       endpoint;
     };
 
     static constexpr int kMaxPubCount = 16;
@@ -54,8 +54,7 @@ private:
     void filter_from_id( FilterToken& filter_, const msg::mid_t& ids_ );
 
 private:
-    Svc _data,
-        _trade;
+    Svc            _data, _trade;
     zmq::context_t _center_ctx;
 };
 

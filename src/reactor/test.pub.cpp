@@ -1,18 +1,20 @@
+#include <chrono>
 #include <cub.h>
 #include <reactor/reactor.h>
 #include <stdio.h>
 #include <thread>
 #include <unistd.h>
-
 int main() {
     LOG_INIT_KEEP( "log_reactor.log", -1 );
 
-    REACTOR.sub( { cub::msg::mid_t::data_tick }, []( const cub::msg::Header& h ) {
-        printf( "@@sub,code=%u, %d\n", ( unsigned )h.id, cub::msg::frame_cast<CUB_NS::msg::DataTickFrame>( h ).body.debug );
+    REACTOR.sub( { cub::msg::mid_t::data_tick }, []( const cub::msg::header_t& h ) {
+        fprintf( stderr, "@" );
+        // printf( "@@sub,code=%u, %d\n", ( unsigned )h.id, cub::msg::frame_cast<CUB_NS::msg::DataTickFrame>( h ).body.debug );
     } );
 
-    REACTOR.sub( { cub::msg::mid_t::data_tick }, []( const cub::msg::Header& h ) {
-        printf( "&&sub,code=%u, %d\n", ( unsigned )h.id, cub::msg::frame_cast<CUB_NS::msg::DataTickFrame>( h ).body.debug );
+    REACTOR.sub( { cub::msg::mid_t::data_tick }, []( const cub::msg::header_t& h ) {
+        fprintf( stderr, "~" );
+        // printf( "&&sub,code=%u, %d\n", ( unsigned )h.id, cub::msg::frame_cast<CUB_NS::msg::DataTickFrame>( h ).body.debug );
     } );
 
     std::thread( [ & ]() {
@@ -23,8 +25,9 @@ int main() {
             d.body.debug = ++seq;
 
             if ( seq == 3 ) {
-                REACTOR.sub( { cub::msg::mid_t::svc_data }, []( const cub::msg::Header& h ) {
+                REACTOR.sub( { cub::msg::mid_t::svc_data }, []( const cub::msg::header_t& h ) {
                     // printf( "svc+data code=%u\n", ( unsigned )h.id );
+                    ::sleep( 5 );  // 测试一下水位设置，看看会不会丢消息
                     printf( "###sub,code=%u, %d\n", ( unsigned )h.id, cub::msg::frame_cast<CUB_NS::msg::DataTickFrame>( h ).body.debug );
                 } );
             }
@@ -37,7 +40,7 @@ int main() {
 
             // todo 如果inproc数据没有订阅者,这里会在send函数中卡住
             REACTOR.pub( d );
-            ::sleep( 1 );
+            std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) );
         }
     } ).join();
 

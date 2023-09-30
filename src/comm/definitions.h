@@ -2,19 +2,20 @@
 #define C096ECC6_D3E8_4656_A4DF_F125629A8BE4
 
 #include <algorithm>
+#include <cub_ns.h>
 #include <stdint.h>
 #include <string.h>
 #include <string>
 
-#include "ns.h"
-
 CUB_NS_BEGIN
 
-using kid_t   = uint32_t;
-using price_t = double;
-using amnt_t  = double;
-using oid_t   = int32_t;
-using text_t  = std::string;
+using id_t     = uint32_t;
+using price_t  = double;
+using vol_t    = double;
+using oid_t    = int32_t;
+using text_t   = std::string;
+using string_t = std::string;
+using money_t  = double;
 
 struct code_t {
     static constexpr int kMaxCodeLength = 16;
@@ -34,16 +35,35 @@ struct code_t {
 
     code_t() = default;
 
+    code_t& operator=( const code_t& c_ ) {
+        memcpy( code, c_.code, sizeof( code ) );
+        return *this;
+    }
+
+    bool operator==( const code_t& c_ ) {
+        return memcmp( code, c_.code, sizeof( code ) ) == 0;
+    }
+
+    bool operator!=( const code_t& c_ ) {
+        return !( *this == c_ );
+    }
+
     operator char*() {
+        return code;
+    }
+
+    operator const char*() const {
         return code;
     }
 
     char code[ kMaxCodeLength ] = { 0 };
 };
 
+using ex_t = code_t;  // 交易所
+
 struct period_t {
     enum class type_t {
-        tick,
+        mili,
         seconds,
         min,
         hour,

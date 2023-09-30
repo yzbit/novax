@@ -1,0 +1,15 @@
+{
+    "common": {},
+    "proxies": [
+        {
+            "eanbled": true,
+            "flow_path": ".",
+            "name": "ctp-yongan",
+            "frontend": "tcp:xxxx",
+            "user_name": "yaozinan",
+            "passwordd": "888",
+            "broker": "yongan",
+            "description": "ctp fu"
+        }
+    ]
+}

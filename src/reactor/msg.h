@@ -1,6 +1,6 @@
-#ifndef D0A82F45_7141_4EE1_ABB6_9929837DA41C
-#define D0A82F45_7141_4EE1_ABB6_9929837DA41C
-#include <cub.h>
+#ifndef D0A82F45_7141_4EE2_ABB6_9929837DA41C
+#define D0A82F45_7141_4EE2_ABB6_9929837DA41C
+#include <cub_ns.h>
 #include <stdint.h>
 
 CUB_NS_BEGIN
@@ -15,6 +15,7 @@ enum class mid_t : int32_t {
     svc_data_cmd,
     svc_trade_cmd,
 
+    clock_time,  //! 系统时钟
     data_tick = 100,
     book_data,
     unbook_data,
@@ -38,7 +39,8 @@ enum class mid_t : int32_t {
 constexpr int kMaxMsgLength = 1024;
 
 #define COMPOSE_MSG( MsgDataTick )
-struct Header {
+
+struct header_t {
     mid_t  id;
     size_t length;
 };
@@ -48,17 +50,17 @@ struct DataTick {
 };
 
 template <typename T>
-struct Msg {
-    Header h;
-    T      body;
+struct msg_t {
+    header_t h;
+    T        body;
 };
 
-using DataTickFrame = Msg<DataTick>;
+using DataTickFrame = msg_t<DataTick>;
 
 #pragma pack()
 
 template <typename T>
-const T& frame_cast( const Header& h ) {
+const T& frame_cast( const header_t& h ) {
     return reinterpret_cast<const T&>( h );
 }
 
@@ -66,4 +68,4 @@ const T& frame_cast( const Header& h ) {
 
 CUB_NS_END
 
-#endif /* D0A82F45_7141_4EE1_ABB6_9929837DA41C */
+#endif /* D0A82F45_7141_4EE2_ABB6_9929837DA41C */

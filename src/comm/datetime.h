@@ -1,6 +1,6 @@
 #ifndef AAC2F2D8_B117_447B_9C22_5AD01AD16BE1
 #define AAC2F2D8_B117_447B_9C22_5AD01AD16BE1
-#include <cub.h>
+#include <cub_ns.h>
 
 CUB_NS_BEGIN
 

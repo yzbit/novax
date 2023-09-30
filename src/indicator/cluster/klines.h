@@ -7,8 +7,8 @@
 
 CUB_NS_BEGIN
 
-struct KLine : Algo {
-    KLine();
+struct Kline : Algo {
+    Kline();
 
 private:
     code_t   _symbol;

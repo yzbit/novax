@@ -12,7 +12,7 @@
  */
 
 #include <chrono>
-#include <comm/ns.h>
+#include <cub_ns.h>
 #include <fcntl.h>
 #include <filesystem>
 #include <libgen.h>

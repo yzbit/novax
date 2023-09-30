@@ -55,7 +55,7 @@ zmq::socket_t& Reactor::distribute( const msg::mid_t& id_ ) {
 }
 
 int Reactor::pub( const void* data_, size_t length_ ) {
-    const msg::Header* h = static_cast<const msg::Header*>( data_ );
+    const msg::header_t* h = static_cast<const msg::header_t*>( data_ );
 
     auto& sock = distribute( h->id );
 
@@ -108,7 +108,7 @@ int Reactor::init() {
     return 0;
 }
 
-Reactor::Svc::Svc( const std::string& endpoint_ ) {
+Reactor::Svc::Svc( const string_t& endpoint_ ) {
     init( endpoint_ );
 }
 
@@ -117,7 +117,7 @@ Reactor::Svc::~Svc() {
     context.close();
 }
 
-void Reactor::Svc::init( const std::string& endpoint_ ) {
+void Reactor::Svc::init( const string_t& endpoint_ ) {
     endpoint = endpoint_;
 
     context = std::move( zmq::context_t( 1 ) );
@@ -125,6 +125,8 @@ void Reactor::Svc::init( const std::string& endpoint_ ) {
 
     assert( context );
     assert( chan );
+
+    // chan.set( zmq::sockopt::sndhwm, 5);
 
     LOG_INFO( "context=0x%lx ,sock=0x%lx, endpoint=%s", ( intptr_t )&context, ( intptr_t )&chan, endpoint_.c_str() );
     chan.bind( endpoint.c_str() );
@@ -150,7 +152,7 @@ int Reactor::sub( const MsgIdSet& msg_set_, MsgHandler h_ ) {
 
         zmq::mutable_buffer rbuff{ m.get(), msg::kMaxMsgLength };  // todo :是按照消息来边界做接收 吗 ?
 
-        msg::Header* header = reinterpret_cast<msg::Header*>( m.get() );
+        msg::header_t* header = reinterpret_cast<msg::header_t*>( m.get() );
         while ( 1 ) {
             auto rc = sock_.recv( rbuff, zmq::recv_flags::none );
             if ( !rc.has_value() ) {
@@ -178,6 +180,7 @@ int Reactor::sub( const MsgIdSet& msg_set_, MsgHandler h_ ) {
 
             // note 从源代码可以看到，inproc属于single connection，后续的连接会被忽略
             zmq::socket_t d = zmq::socket_t( _data.context, zmq::socket_type::pair );
+            /// d.set( zmq::sockopt::rcvhwm, 5);
             d.connect( REACTOR_DATA );
             chan.swap( d );
         }
