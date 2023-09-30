@@ -15,15 +15,17 @@ Data& Data::instance() {
 // aspect应该是数据的接口,客户调用data.subscribe的时候，自动创建aspect，如果两个aspect有关联，比如1分钟和10分钟明显前者可以拼成后者，虽然没有太大必要，
 // 直接通过ticp拼是没什么区别的（性能上无差）
 void Data::on_data( const quotation_t& tick_ ) {
-    _job.clear();
+    _jobs.shutdown();
 
-    _job.run( STATEGY.fire( currnet_bar ), true );  // 单开一个线程
+    _jobs.run( STATEGY.fire, tick_ );  // 单开一个线程
 
     for ( auto& as : aspects ) {
-        _job.run( as->update() );
+        _jobs.run( []() { as->update( tick_ ) } );
     }
 
-    _job.join();
+    while ( _jobs.busy() ) {
+        std::this_thread::yield();
+    }
 
     STRATEGY.invoke();
 }
@@ -59,6 +61,8 @@ Data::Data() {
         delete _market;
         _market = nullptr;
     }
+
+    _jobs = TaskQueue::create( 4 );
 }
 
 Data::~Data() {

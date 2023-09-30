@@ -4,21 +4,20 @@
 #include <cub_ns.h>
 #include <math.h>
 
-#include "datetime.h"
 #include "definitions.h"
 
 CUB_NS_BEGIN
 
 struct candle_t {
-    id_t     id;
-    price_t  high;
-    price_t  low;
-    price_t  close;
-    price_t  open;
-    vol_t    volume;
-    vol_t    opi;  // opi
-    code_t   symbol;
-    DateTime dt;
+    id_t       id;
+    price_t    high;
+    price_t    low;
+    price_t    close;
+    price_t    open;
+    vol_t      volume;
+    vol_t      opi;  // opi
+    code_t     symbol;
+    datetime_t time;
 
     price_t body() { return fabs( close - open ); }
     price_t long_shadow() { return std::max( uppers(), lowers() ); }
@@ -64,15 +63,15 @@ struct quotation_t {
     price_t bid[ PRICE_DEPTH ];
     price_t ask[ PRICE_DEPTH ];
 
-    price_t  highest;
-    price_t  lowest;
-    price_t  avgprice;    // 均价
-    price_t  upperlimit;  // 涨跌停
-    price_t  lowerlimit;
-    price_t  last;  // 上次成交的价格
-    price_t  open;
-    price_t  close;
-    DateTime time;
+    price_t    highest;
+    price_t    lowest;
+    price_t    avgprice;    // 均价
+    price_t    upperlimit;  // 涨跌停
+    price_t    lowerlimit;
+    price_t    last;  // 上次成交的价格
+    price_t    open;
+    price_t    close;
+    datetime_t time;
 };
 
 CUB_NS_END

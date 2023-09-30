@@ -29,7 +29,12 @@
 			"memory": "cpp",
 			"future": "cpp",
 			"system_error": "cpp",
-			"sstream": "cpp"
+			"sstream": "cpp",
+			"istream": "cpp",
+			"mutex": "cpp",
+			"ostream": "cpp",
+			"stop_token": "cpp",
+			"typeinfo": "cpp"
 		}
 	}
 }

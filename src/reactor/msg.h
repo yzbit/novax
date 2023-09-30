@@ -34,7 +34,9 @@ enum class mid_t : int32_t {
     cub_log
 };
 
-#pragma pack( 1 )
+// todo 不考虑跨平台和分布式的情况，否则很多数据结构需要定义两套：一套是不带pack的，一套是专门给msg使用的
+// 以后看情况，如果有必要再做重构
+// #pragma pack( 1 )
 
 constexpr int kMaxMsgLength = 1024;
 
@@ -49,15 +51,39 @@ struct DataTick {
     int debug;
 };
 
-template <typename T>
+template <typename T, mid_t ID>
 struct msg_t {
+    using PayloadType = T;
+
+    msg_t() {
+        h.id     = ID;
+        h.length = sizeof( T );
+    }
+
+    msg_t( const T& p_ )
+        : msg_t() {
+        payload = p_;
+    }
+
+    PayloadType& body() { return payload; }
+
     header_t h;
-    T        body;
+    T        payload;
 };
 
-using DataTickFrame = msg_t<DataTick>;
+#define DECL_MESSAGE( _name_, _payload_, _id_ ) \
+    struct _name_ : msg_t<_payload_, _id_> {    \
+        _name_( const _payload_& p_ )           \
+            : msg_t( p_ ) {}                    \
+        _name_() = default;                     \
+        msg_t::PayloadType* operator->() {      \
+            return &payload;                    \
+        }                                       \
+    }
 
-#pragma pack()
+DECL_MESSAGE( QuotationFrame, quotation_t, mid_t::svc_data );
+
+// #pragma pack()
 
 template <typename T>
 const T& frame_cast( const header_t& h ) {

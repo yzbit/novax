@@ -5,6 +5,7 @@
 #include "comm/candle.h"
 #include "comm/definitions.h"
 #include "comm/log.hpp"
+#include "comm/utils.h"
 #include "data/data.h"
 #include "reactor/msg.h"
 #include "reactor/reactor.h"

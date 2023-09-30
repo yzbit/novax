@@ -65,7 +65,7 @@ private:
     std::unique_ptr<char*[]> set2arr( std::set<code_t>& s );
 
 private:
-    void cvt_datetime( DateTime&                     dt,
+    void cvt_datetime( datetime_t&                   dt,
                        const TThostFtdcDateType&     ctp_day_,
                        const TThostFtdcTimeType&     ctp_time_,
                        const TThostFtdcMillisecType& ctp_milli_ );

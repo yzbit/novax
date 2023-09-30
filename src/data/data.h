@@ -3,6 +3,7 @@
 
 #include <comm/candle.h>
 #include <comm/definitions.h>
+#include <comm/utils.h>
 #include <cub_ns.h>
 #include <memory>
 #include <reactor/msg.h>
@@ -25,6 +26,7 @@ private:
     void on_msg( const msg::header_t& h );
 
 private:
+    TaskQueue* _jobs      = nullptr;
     Market*    _market    = nullptr;
     Indicator* _indicator = nullptr;
 };

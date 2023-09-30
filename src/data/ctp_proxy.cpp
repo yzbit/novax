@@ -1,9 +1,12 @@
+#include <comm/candle.h>
 #include <comm/log.hpp>
 #include <filesystem>
 #include <fstream>
 #include <rapidjson/document.h>
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
+#include <reactor/msg.h>
+#include <reactor/reactor.h>
 #include <sstream>
 
 #include "ctp_proxy.h"
@@ -206,12 +209,25 @@ void CtpExMd::OnRspUserLogin( CThostFtdcRspUserLoginField* pRspUserLogin, CThost
               pRspUserLogin->SessionID,
               pRspUserLogin->MaxOrderRef );
 
-    _clock[ ( int )extype_t::SHFE ].tune( pRspUserLogin->SHFETime );
-    _clock[ ( int )extype_t::DCE ].tune( pRspUserLogin->DCETime );
-    _clock[ ( int )extype_t::CZCE ].tune( pRspUserLogin->CZCETime );
-    _clock[ ( int )extype_t::FFEX ].tune( pRspUserLogin->FFEXTime );
-    _clock[ ( int )extype_t::INE ].tune( pRspUserLogin->INETime );
-    _clock[ ( int )extype_t::GFEX ].tune( pRspUserLogin->GFEXTime );
+    datetime_t dt = { 0 };
+
+    dt.from_ctp( pRspUserLogin->TradingDay, pRspUserLogin->SHFETime, 0 );
+    _clock[ ( int )extype_t::SHFE ].tune( dt );
+
+    dt.from_ctp( pRspUserLogin->TradingDay, pRspUserLogin->DCETime, 0 );
+    _clock[ ( int )extype_t::DCE ].tune( dt );
+
+    dt.from_ctp( pRspUserLogin->TradingDay, pRspUserLogin->CZCETime, 0 );
+    _clock[ ( int )extype_t::CZCE ].tune( dt );
+
+    dt.from_ctp( pRspUserLogin->TradingDay, pRspUserLogin->FFEXTime, 0 );
+    _clock[ ( int )extype_t::FFEX ].tune( dt );
+
+    dt.from_ctp( pRspUserLogin->TradingDay, pRspUserLogin->INETime, 0 );
+    _clock[ ( int )extype_t::INE ].tune( dt );
+
+    dt.from_ctp( pRspUserLogin->TradingDay, pRspUserLogin->GFEXTime, 0 );
+    _clock[ ( int )extype_t::GFEX ].tune( dt );
 
     {
         std::unique_lock<std::mutex> lock{ _sub_mtx };
@@ -229,33 +245,35 @@ void CtpExMd::OnRspUserLogout( CThostFtdcUserLogoutField* pUserLogout, CThostFtd
     _is_svc_online = false;
 }
 
-void CtpExMd::cvt_datetime( DateTime&                     dt,
+void CtpExMd::cvt_datetime( datetime_t&                   dt_,
                             const TThostFtdcDateType&     ctp_day_,
                             const TThostFtdcTimeType&     ctp_time_,
                             const TThostFtdcMillisecType& ctp_milli_ ) {
-    assert( 0 );
+    dt_.from_ctp( ctp_day_, ctp_time_, ctp_milli_ );
 }
 
 void CtpExMd::OnRtnDepthMarketData( CThostFtdcDepthMarketDataField* f ) {
-    quotation_t q{ 0 };
+    msg::QuotationFrame r;
 
-    cvt_datetime( q.time, f->TradingDay, f->UpdateTime, f->UpdateMillisec );  // todo use ActionDay?
+    cvt_datetime( r->time, f->TradingDay, f->UpdateTime, f->UpdateMillisec );  // todo use ActionDay?
 
-    q.last        = f->LastPrice;
-    q.volume      = f->Volume;
-    q.code        = f->InstrumentID;
-    q.opi         = f->OpenInterest;
-    q.depth       = 1;
-    q.ask[ 0 ]    = f->AskPrice1;
-    q.askvol[ 0 ] = f->AskVolume1;
-    q.bid[ 0 ]    = f->BidPrice1;
-    q.bidvol[ 0 ] = f->BidVolume1;
-    q.highest     = f->HighestPrice;
-    q.lowest      = f->LowestPrice;
-    q.avgprice    = f->AveragePrice;
-    q.amount      = f->Turnover;
-    q.open        = f->OpenPrice;
-    q.close       = f->ClosePrice;
+    r->last        = f->LastPrice;
+    r->volume      = f->Volume;
+    r->code        = f->InstrumentID;
+    r->opi         = f->OpenInterest;
+    r->depth       = 1;
+    r->ask[ 0 ]    = f->AskPrice1;
+    r->askvol[ 0 ] = f->AskVolume1;
+    r->bid[ 0 ]    = f->BidPrice1;
+    r->bidvol[ 0 ] = f->BidVolume1;
+    r->highest     = f->HighestPrice;
+    r->lowest      = f->LowestPrice;
+    r->avgprice    = f->AveragePrice;
+    r->turnover    = f->Turnover;
+    r->open        = f->OpenPrice;
+    r->close       = f->ClosePrice;
+
+    REACTOR.pub( r );
 
     /*
     鉴于夜盘交易时间非常混乱，我们不使用服务器时间（日期），和常用的交易软件时间划分类似
@@ -270,8 +288,6 @@ void CtpExMd::OnRtnDepthMarketData( CThostFtdcDepthMarketDataField* f ) {
     https://zhuanlan.zhihu.com/p/33553653
     总之（敲黑板），处理上期所和大商所的夜盘品种，可以直接用TradingDay取一个完整的交易日，而处理郑商所的夜盘品种，则需要拼接上一个TradingDay的夜盘和当前TradingDay的日盘作为一个完整的交易日。
     */
-
-    // this->proxy->OnStreaming( f->InstrumentID, t );
 }
 
 void CtpExMd::OnRspQryMulticastInstrument( CThostFtdcMulticastInstrumentField* pMulticastInstrument, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) {
