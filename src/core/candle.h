@@ -1,7 +1,7 @@
 #ifndef CE4E9C03_2146_4A3B_8E20_5B6B97897D11
 #define CE4E9C03_2146_4A3B_8E20_5B6B97897D11
 #include <algorithm>
-#include <cub_ns.h>
+#include "ns.h"
 #include <math.h>
 
 #include "definitions.h"

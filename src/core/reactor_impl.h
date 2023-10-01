@@ -1,15 +1,15 @@
 #ifndef C20EEFC2_0BE4_4918_AAD4_2F0119D413CB
 #define C20EEFC2_0BE4_4918_AAD4_2F0119D413CB
 #include <array>
-#include <cub_ns.h>
 #include <functional>
 #include <memory>
-#include <reactor.h>
 #include <set>
 #include <zmq.hpp>
 
 #include "definitions.h"
 #include "msg.h"
+#include "ns.h"
+#include "reactor.h"
 
 CUB_NS_BEGIN
 

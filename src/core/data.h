@@ -1,16 +1,19 @@
 #ifndef F4D9DAEC_B9A1_48EF_8FEB_A99D60585AD3
 #define F4D9DAEC_B9A1_48EF_8FEB_A99D60585AD3
 
-#include <comm/candle.h>
-#include <comm/definitions.h>
-#include <comm/utils.h>
-#include <cub_ns.h>
+#include <list>
 #include <memory>
-#include <reactor/msg.h>
+
+#include "candle.h"
+#include "definitions.h"
+#include "msg.h"
+#include "ns.h"
+#include "utils.h"
 
 CUB_NS_BEGIN
 class Indicator;
 class Market;
+class Aspect;
 
 struct Data {
     static Data& instance();
@@ -26,9 +29,10 @@ private:
     void on_msg( const msg::header_t& h );
 
 private:
-    TaskQueue* _jobs      = nullptr;
-    Market*    _market    = nullptr;
-    Indicator* _indicator = nullptr;
+    std::list<Aspect*> _aspects;
+    TaskQueue*         _jobs      = nullptr;
+    Market*            _market    = nullptr;
+    Indicator*         _indicator = nullptr;
 };
 
 CUB_NS_END

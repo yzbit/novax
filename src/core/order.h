@@ -1,6 +1,6 @@
 #include <comm/datetime.h>
 #include <comm/definitions.h>
-#include <cub_ns.h>
+#include "ns.h"
 
 CUB_NS_BEGIN
 struct order_t {

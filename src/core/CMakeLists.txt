@@ -13,6 +13,14 @@ message("####repo dir=${MODULE_ROOT}/../..")
 SET(SRC 
     reactor_impl.cpp
     application.cpp
+    data.cpp
+    algo.cpp
+    clock.cpp
+    market.cpp
+    indicator.cpp
+    aspect.cpp
+    ctp/ctp_md_proxy.cpp
+    strategy.cpp
 )
 
 add_library(${PROJECT_NAME}  ${SRC}) 
@@ -20,6 +28,7 @@ add_library(${PROJECT_NAME}  ${SRC})
 target_include_directories(${PROJECT_NAME}
     PRIVATE
     ${REPO_ROOT}/include
+    ${REPO_ROOT}/lib
 )
 
 install (TARGETS ${PROJECT_NAME} DESTINATION lib)

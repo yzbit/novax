@@ -1,14 +1,14 @@
 #ifndef DF548D9F_3819_44FA_89F5_6218193C54F2
 #define DF548D9F_3819_44FA_89F5_6218193C54F2
-#include <comm/clock.h>
-#include <comm/definitions.h>
-#include <comm/utils.h>
 #include <ctp/ThostFtdcMdApi.h>
-#include <cub_ns.h>
 #include <mutex>
 #include <set>
 
-#include "market.h"
+#include "../clock.h"
+#include "../definitions.h"
+#include "../market.h"
+#include "../ns.h"
+#include "../utils.h"
 
 #define CTP_MD_SETTING_FILE "ctp_md.json"
 

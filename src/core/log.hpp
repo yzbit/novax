@@ -12,7 +12,6 @@
  */
 
 #include <chrono>
-#include <cub_ns.h>
 #include <fcntl.h>
 #include <filesystem>
 #include <libgen.h>
@@ -24,6 +23,8 @@
 #include <sys/types.h>
 #include <thread>
 #include <unistd.h>
+
+#include "ns.h"
 
 CUB_NS_BEGIN
 

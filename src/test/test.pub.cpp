@@ -5,6 +5,8 @@
 #include <thread>
 #include <unistd.h>
 
+#include "../core/msg_int.h"
+
 void foo( int a ) {
     int n = 10;
     while ( n-- >= 0 ) {

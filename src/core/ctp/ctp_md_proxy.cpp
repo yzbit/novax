@@ -1,15 +1,16 @@
-#include <comm/candle.h>
-#include <comm/log.hpp>
 #include <filesystem>
 #include <fstream>
 #include <rapidjson/document.h>
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
-#include <reactor/msg.h>
-#include <reactor/reactor.h>
 #include <sstream>
 
-#include "ctp_proxy.h"
+#include "ctp_md_proxy.h"
+
+#include "../candle.h"
+#include "../log.hpp"
+#include "../msg_int.h"
+#include "../reactor.h"
 
 CUB_NS_BEGIN
 namespace js = rapidjson;
@@ -42,20 +43,6 @@ int CtpExMd::unsubscribue( const code_t& code_ ) {
         unsub( const_cast<code_t&>( code_ ) );
 
     return 0;
-}
-
-int CtpExMd::init() {
-    if ( read_settings() < 0 ) {
-        LOG_INFO( "#ERR,read ctp setings failed" );
-        return -1;
-    }
-
-    if ( login() < 0 ) {
-        LOG_INFO( "log failed" );
-        return -2;
-    }
-
-    return Market::init();
 }
 
 int CtpExMd::sub() {
@@ -162,13 +149,20 @@ int CtpExMd::login() {
 int CtpExMd::init() {
     LOG_INFO( "ctp md init,flow=%s,font=%s", _settings.flow_path.c_str(), _settings.conn.frontend.c_str() );
 
-    _api = CThostFtdcMdApi::CreateFtdcMdApi( _settings.flow_path.c_str(), false );  // true: udp mode
-    _api->RegisterSpi( this );
-    _api->RegisterFront( const_cast<char*>( _settings.conn.frontend.c_str() ) );
-    _api->Init();
-    _api->Join();
+    if ( read_settings() < 0 ) {
+        LOG_INFO( "#ERR,read ctp setings failed" );
+        return -1;
+    }
 
-    return 0;
+    std::thread( [ & ]() {
+        _api = CThostFtdcMdApi::CreateFtdcMdApi( _settings.flow_path.c_str(), false );  // true: udp mode
+        _api->RegisterSpi( this );
+        _api->RegisterFront( const_cast<char*>( _settings.conn.frontend.c_str() ) );
+        _api->Init();
+        _api->Join();
+    } ).detach();
+
+    return Market::init();
 }
 
 // ctp overrides

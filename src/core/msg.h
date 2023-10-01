@@ -1,6 +1,6 @@
 #ifndef D0A82F45_7141_4EE2_ABB6_9929837DA41C
 #define D0A82F45_7141_4EE2_ABB6_9929837DA41C
-#include <cub_ns.h>
+#include "ns.h"
 #include <stdint.h>
 
 CUB_NS_BEGIN
@@ -47,10 +47,6 @@ struct header_t {
     size_t length;
 };
 
-struct DataTick {
-    int debug;
-};
-
 template <typename T, mid_t ID>
 struct msg_t {
     using PayloadType = T;
@@ -80,8 +76,6 @@ struct msg_t {
             return &payload;                    \
         }                                       \
     }
-
-DECL_MESSAGE( QuotationFrame, quotation_t, mid_t::svc_data );
 
 // #pragma pack()
 

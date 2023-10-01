@@ -2,7 +2,7 @@
 #define C096ECC6_D3E8_4656_A4DF_F125629A8BE4
 
 #include <algorithm>
-#include <cub_ns.h>
+#include "ns.h"
 #include <stdint.h>
 #include <string.h>
 #include <string>

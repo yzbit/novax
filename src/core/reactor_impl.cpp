@@ -1,7 +1,10 @@
 #include <algorithm>
-#include <cub.h>
+#include <thread>
 
 #include "reactor_impl.h"
+
+#include "log.hpp"
+#include "ns.h"
 
 CUB_NS_BEGIN
 
