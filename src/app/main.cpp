@@ -1,7 +1,18 @@
 
+#include <definitions.h>
 #include <stdio.h>
 
 #include "application.h"
+
+struct BreakBuy : Algo {
+    void on_refresh() {
+        if ( aaa ) {
+            c->sell();
+            c.get_money();
+            c->cover();
+        }
+    }
+};
 
 struct Quant : cub::QuantApp {
     int init() override {
@@ -16,9 +27,23 @@ struct Quant : cub::QuantApp {
 };
 
 int main() {
+    Context& c = Context::initialize();
+
+    auto asp = c.createt( "rb2410", cub::period_t{ cub::period_t::type_t::hour, 1 }, 40, "1hour" );
+
+    id_t wm   = asp->attach( wmi );
+    id_t ma1  = asp->attach( "ma", { 1, 2, 3, 4 } );
+    id_t psi1 = asp->attach( "psi", { 27, 12, 3 } );
+
+    c.load( "break", { 1, 2, 3, 4 } );
+    // c.load( algo );
+
+    return c.exec();
+
+#if 0
     Quant* q = new Quant();
 
-    //!交易系统初始化要做哪些事情：
+    //! 交易系统初始化要做哪些事情：
     /*!
     1）初始化reactor进行进行初始--其实没必要
     2）设置日志
@@ -87,4 +112,5 @@ int main() {
     q->init();
 
     return q->exec();
+#endif
 }

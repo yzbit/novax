@@ -2,12 +2,13 @@
 #define B2AD377C_2C34_45B8_829B_C12AABBC4481
 #include <assert.h>
 #include <condition_variable>
-#include "ns.h"
 #include <functional>
 #include <list>
 #include <mutex>
 #include <thread>
 #include <vector>
+
+#include "ns.h"
 
 CUB_NS_BEGIN
 struct TaskQueue {

@@ -2,11 +2,15 @@
 #define C096ECC6_D3E8_4656_A4DF_F125629A8BE4
 
 #include <algorithm>
-#include "ns.h"
+#include <array>
+#include <memory>
+#include <optional>
 #include <stdint.h>
 #include <string.h>
 #include <string>
 #include <time.h>
+
+#include "ns.h"
 
 CUB_NS_BEGIN
 
@@ -124,6 +128,55 @@ struct period_t {
 
     type_t t;
     int    rep;
+};
+
+template <typename T>
+struct array_t {
+    array_t( int n )
+        : _size( n )
+        , _data( nullptr ) {
+        _data = std::make_unique<T[]>( n );
+    }
+
+    T& operator[]( int index_ ) {
+        return get( index_ );
+    }
+
+    T& get( int index_ ) {
+        assert( ( uint32_t )index_ < _size );
+        return element( index_ );
+    }
+
+    void set( const T& t_, int index_ ) {
+        assert( ( uint32_t )index_ < _size );
+        element[ index_ ] = t_;
+    }
+
+    void set( const T&& t_, int index_ ) {
+        assert( ( uint32_t )index_ < _size );
+        element[ index_ ] = t_;
+    }
+
+    int size() { return _size; }
+
+    void for_each( std::function<bool( T& t_ )> op_ ) {
+        int i = 0;
+        while ( i < _size && op_( element( i++ ) ) )
+            ;
+    }
+
+private:
+    bool is_valid( int index_ ) {
+        return ( uint32_t )index_ < _size;
+    }
+
+    T& element( int index_ ) {
+        return _data.get()[ index_ ];
+    }
+
+private:
+    int                _size;
+    std::unique_ptr<T> _data;
 };
 
 #define _( _literal_ ) std::string( _literal_ )

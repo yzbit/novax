@@ -2,10 +2,12 @@
 #define E93F5C75_9223_409D_8F98_DFFDE2E179BF
 #include <any>
 #include <array>
-#include "ns.h"
 #include <functional>
 #include <optional>
 #include <string>
+
+#include "candle.h"
+#include "ns.h"
 
 CUB_NS_BEGIN
 
@@ -14,7 +16,9 @@ struct AlgoContext {
 
 struct Algo {
     virtual ~Algo() {}
-    virtual void on_refresh( AlgoContext* context_ ) = 0;
+    virtual void on_refresh( Context* context_ )    = 0;
+    virtual void on_init( Context* context_ ) = 0;
+    virtual void on_instant( const quotation_t& q_ );
 };
 
 struct AlgoArg {
