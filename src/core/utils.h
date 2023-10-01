@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <condition_variable>
 #include <cub_ns.h>
+#include <functional>
 #include <list>
 #include <mutex>
 #include <thread>

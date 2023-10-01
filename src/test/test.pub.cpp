@@ -1,6 +1,6 @@
 #include <chrono>
 #include <cub.h>
-#include <reactor/reactor.h>
+#include <reactor.h>
 #include <stdio.h>
 #include <thread>
 #include <unistd.h>

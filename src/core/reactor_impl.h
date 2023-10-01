@@ -1,22 +1,21 @@
 #ifndef C20EEFC2_0BE4_4918_AAD4_2F0119D413CB
 #define C20EEFC2_0BE4_4918_AAD4_2F0119D413CB
 #include <array>
-#include <comm/definitions.h>
 #include <cub_ns.h>
 #include <functional>
 #include <memory>
+#include <reactor.h>
 #include <set>
 #include <zmq.hpp>
 
+#include "definitions.h"
 #include "msg.h"
 
 CUB_NS_BEGIN
 
-using MsgIdSet    = std::set<msg::mid_t>;
-using MsgHandler  = std::function<void( const msg::header_t& h_ )>;
 using FilterToken = char[ 4 ];
 
-struct Reactor {
+struct ReactorImpl : Reactor {
     struct Svc {
         Svc( const string_t& endpoint_ );
         ~Svc();
@@ -30,18 +29,12 @@ struct Reactor {
     };
 
     static constexpr int kMaxPubCount = 16;
-    static Reactor&      instance();
 
-    ~Reactor();
-    Reactor();
+    ~ReactorImpl();
+    ReactorImpl();
 
-    template <typename T>
-    int pub( const T& m_ ) {
-        return pub( &m_, sizeof( T ) );
-    }
-
-    int pub( const void* data_, size_t length_ );
-    int sub( const MsgIdSet& msg_set_, MsgHandler h_ );
+    int pub( const void* data_, size_t length_ ) override;
+    int sub( const mid_set_t& msg_set_, msg_handler_t h_ ) override;
 
 private:
     zmq::socket_t& distribute( const msg::mid_t& id_ );
@@ -59,7 +52,5 @@ private:
 };
 
 CUB_NS_END
-
-#define REACTOR CUB_NS::Reactor::instance()
 
 #endif /* C20EEFC2_0BE4_4918_AAD4_2F0119D413CB */

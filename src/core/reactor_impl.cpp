@@ -1,7 +1,7 @@
 #include <algorithm>
 #include <cub.h>
 
-#include "reactor.h"
+#include "reactor_impl.h"
 
 CUB_NS_BEGIN
 
@@ -37,13 +37,13 @@ struct LocalSocket {
     zmq::socket_t sock;
 };
 
-zmq::socket_t& Reactor::therad_safe_pub() {
+zmq::socket_t& ReactorImpl::therad_safe_pub() {
     static thread_local LocalSocket _lsock( _center_ctx, zmq::socket_type::pub );
     _lsock.connect( REACTOR_XSUB );
     return _lsock.sock;
 }
 
-zmq::socket_t& Reactor::distribute( const msg::mid_t& id_ ) {
+zmq::socket_t& ReactorImpl::distribute( const msg::mid_t& id_ ) {
     switch ( id_ ) {
     case msg::mid_t::svc_data:
         return _data.chan;
@@ -54,7 +54,7 @@ zmq::socket_t& Reactor::distribute( const msg::mid_t& id_ ) {
     }
 }
 
-int Reactor::pub( const void* data_, size_t length_ ) {
+int ReactorImpl::pub( const void* data_, size_t length_ ) {
     const msg::header_t* h = static_cast<const msg::header_t*>( data_ );
 
     auto& sock = distribute( h->id );
@@ -69,21 +69,21 @@ int Reactor::pub( const void* data_, size_t length_ ) {
 }
 
 Reactor& Reactor::instance() {
-    static Reactor r;
+    static ReactorImpl r;
     return r;
 }
 
-Reactor::Reactor() {
+ReactorImpl::ReactorImpl() {
     init();
 }
 
-void Reactor::init_svc() {
+void ReactorImpl::init_svc() {
     LOG_INFO( "##init svc" );
     _data.init( REACTOR_DATA );
     _trade.init( REACTOR_TRADE );
 }
 
-int Reactor::init() {
+int ReactorImpl::init() {
     init_svc();
 
     _center_ctx = std::move( zmq::context_t( 2 ) );
@@ -108,16 +108,16 @@ int Reactor::init() {
     return 0;
 }
 
-Reactor::Svc::Svc( const string_t& endpoint_ ) {
+ReactorImpl::Svc::Svc( const string_t& endpoint_ ) {
     init( endpoint_ );
 }
 
-Reactor::Svc::~Svc() {
+ReactorImpl::Svc::~Svc() {
     chan.close();
     context.close();
 }
 
-void Reactor::Svc::init( const string_t& endpoint_ ) {
+void ReactorImpl::Svc::init( const string_t& endpoint_ ) {
     endpoint = endpoint_;
 
     context = std::move( zmq::context_t( 1 ) );
@@ -132,7 +132,7 @@ void Reactor::Svc::init( const string_t& endpoint_ ) {
     chan.bind( endpoint.c_str() );
 }
 
-void Reactor::filter_from_id( FilterToken& filter_, const msg::mid_t& id_ ) {
+void ReactorImpl::filter_from_id( FilterToken& filter_, const msg::mid_t& id_ ) {
     unsigned uid   = ( unsigned )id_;
     int      index = 0;
 
@@ -143,7 +143,7 @@ void Reactor::filter_from_id( FilterToken& filter_, const msg::mid_t& id_ ) {
     }
 }
 
-int Reactor::sub( const MsgIdSet& msg_set_, MsgHandler h_ ) {
+int ReactorImpl::sub( const mid_set_t& msg_set_, msg_handler_t h_ ) {
     LOG_INFO( "prepare to recv messages." );
 
     // warn capture h_ by value
@@ -222,7 +222,7 @@ int Reactor::sub( const MsgIdSet& msg_set_, MsgHandler h_ ) {
     return 0;
 }
 
-Reactor::~Reactor() {
+ReactorImpl::~ReactorImpl() {
 }
 
 CUB_NS_END
