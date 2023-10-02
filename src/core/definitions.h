@@ -64,6 +64,13 @@ struct code_t {
     char code[ kMaxCodeLength ] = { 0 };
 };
 
+struct code_hash_t {
+    std::size_t operator()( const code_t& c_ ) const {
+        // todo?
+        return std::hash<uint64_t>()( *( uint64_t* )&c_[ 0 ] ) ^ std::hash<uint64_t>()( *( uint64_t* )&c_[ 8 ] );
+    }
+};
+
 struct datetime_t {
     int year, month, day, wday, hour, minute, seconds, milli;
 

@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <math.h>
 
-#include "datetime.h"
 #include "definitions.h"
 #include "ns.h"
 
@@ -92,14 +91,32 @@ struct quotation_t {
     datetime_t time;
 };
 
-enum class dir_t {
-    p_long,
-    p_short,
-    sell,
-    cover,
-};
-
 struct order_t {
+    enum class dir_t {
+        none,
+        p_long,
+        p_short,
+        sell,
+        cover,
+    };
+
+    enum class mode_t {
+        fak,     // fill and kill,限价立即成交其余撤单
+        market,  //市价成交
+        fok,     // fill or kill,限价立刻成交，否则撤单
+        wok,     //限价等5秒，不能成交立即撤单,WAIT OR KILL==普通限价单
+        pursue,  //限价不能成交就提高1个tick追赶5次，然后撤单==循环的FAK
+        fam,     //立即成交，其余使用市价交易 = fak+market
+    };
+
+    struct attr_t {
+        code_t  symbol;
+        vol_t   qty;
+        price_t price;
+        // price_t stoploss;//止损止盈让用户来做就好,我们没必要
+        mode_t mode;
+    };
+
     enum class status_t {
         create          = 0x0001,
         pending         = 0x0002,
@@ -126,10 +143,16 @@ struct order_t {
     string_t   remark;    //! 如果会非常频繁的创建和拷贝订单，这里最好是用数组--string的实现必须健壮,考虑到各种可能的诡异操作~
 };
 
+using odir_t    = order_t::dir_t;
+using omode_t   = order_t::mode_t;
+using ostatus_t = order_t::status_t;
+using oattr_t   = order_t::attr_t;
+
 struct position_t {
     code_t     symbol;
     price_t    price;
-    dir_t      direction;
+    odir_t     direction;
+    ostatus_t  status;
     vol_t      open_qty; /*负数表示做空，就不需要方向字段*/
     vol_t      close_qty;
     money_t    open_amt;

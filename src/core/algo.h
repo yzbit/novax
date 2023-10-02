@@ -16,9 +16,9 @@ struct AlgoContext {
 
 struct Algo {
     virtual ~Algo() {}
-    virtual void on_refresh( Context* context_ )    = 0;
-    virtual void on_init( Context* context_ ) = 0;
-    virtual void on_instant( const quotation_t& q_ );
+    virtual void on_refresh( Context* context_ )     = 0;
+    virtual void on_init( Context* context_ )        = 0;
+    virtual void on_instant( const quotation_t& q_ ) = 0;
 };
 
 struct AlgoArg {

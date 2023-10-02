@@ -11,6 +11,7 @@
 #include "../log.hpp"
 #include "../msg_int.h"
 #include "../reactor.h"
+#include "comm.h"
 
 CUB_NS_BEGIN
 namespace js = rapidjson;
@@ -59,7 +60,7 @@ int CtpExMd::unsub() {
     return _api->UnSubscribeMarketData( arr.get(), _unsub_symbols.size() );
 }
 
-std::unique_ptr<char*[]> CtpExMd::set2arr( std::set<code_t>& s ) {
+std::unique_ptr<char* []> CtpExMd::set2arr( std::set<code_t>& s ) {
     auto arr = std::make_unique<char*[]>( _sub_symbols.size() );
     int  n   = 0;
 
@@ -127,9 +128,9 @@ id_t CtpExMd::session_id() {
 int CtpExMd::login() {
     CThostFtdcReqUserLoginField login_req = { 0 };
 
-    memcpy( login_req.BrokerID, _settings.conn.broker.c_str(), std::min( _settings.conn.broker.length(), sizeof( login_req.BrokerID ) - 1 ) );
-    memcpy( login_req.UserID, _settings.conn.user_name.c_str(), std::min( _settings.conn.user_name.length(), sizeof( login_req.UserID ) - 1 ) );
-    memcpy( login_req.Password, _settings.conn.password.c_str(), std::min( _settings.conn.password.length(), sizeof( login_req.Password ) - 1 ) );
+    CTP_COPY_SAFE( login_req.BrokerID, _settings.conn.broker.c_str() );
+    CTP_COPY_SAFE( login_req.UserID, _settings.conn.user_name.c_str() );
+    CTP_COPY_SAFE( login_req.Password, _settings.conn.password.c_str() );
 
     auto session = session_id();
 
