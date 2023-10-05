@@ -100,13 +100,14 @@ struct order_t {
         cover,
     };
 
-    enum class mode_t {
+    enum class type_t {
+        cond,    // 条件单-似乎有点复杂，tbd
         fak,     // fill and kill,限价立即成交其余撤单
-        market,  //市价成交
+        market,  // 市价成交
         fok,     // fill or kill,限价立刻成交，否则撤单
-        wok,     //限价等5秒，不能成交立即撤单,WAIT OR KILL==普通限价单
-        pursue,  //限价不能成交就提高1个tick追赶5次，然后撤单==循环的FAK
-        fam,     //立即成交，其余使用市价交易 = fak+market
+        wok,     // 限价等5秒，不能成交立即撤单,WAIT OR KILL==普通限价单
+        pursue,  // 限价不能成交就提高1个tick追赶5次，然后撤单==循环的FAK
+        fam,     // 立即成交，其余使用市价交易 = fak+market
     };
 
     struct attr_t {
@@ -114,51 +115,79 @@ struct order_t {
         vol_t   qty;
         price_t price;
         // price_t stoploss;//止损止盈让用户来做就好,我们没必要
-        mode_t mode;
+        type_t mode;
     };
 
     enum class status_t {
         create          = 0x0001,
         pending         = 0x0002,
         patial          = 0x0004,
-        dealed          = 0x0008,
+        dealt           = 0x0008,
         deleted         = 0x0010,
         closed          = 0x0040,
+        cancelling      = 0x0080,
+        finished        = 0x0100,  // ctp 已成交和finish是两个状态，参照onrtntrade的函数说明
         cancelled       = deleted,
-        patial_dealed   = patial | dealed,
+        patial_dealed   = patial | dealt,
         patial_deleted  = patial | deleted,
         patial_canelled = patial_deleted,
         error           = 0x0100
     };
+
+    void from_attr( const attr_t& a_ ) {
+        code  = a_.symbol;
+        price = a_.price;
+        mode  = a_.mode;
+        qty   = a_.qty;
+    }
 
     oid_t      id;        //! 订单id
     code_t     code;      //! 代码，RB1910
     ex_t       ex;        //! 交易所，SHEX
     dir_t      dir;       //! 方向，买、卖、平
     price_t    price;     //! 期望成交价格，已成交价格
-    vol_t      quantity;  //! 期望成交数量, 已成交数量
+    price_t    tp_price;  //! 止盈价格
+    price_t    sl_price;  //! 止损价格
+    vol_t      qty;       //! 期望成交数量, 已成交数量
+    vol_t      traded;    //! 已经成交
     status_t   status;
+    type_t     mode;
     bool       today;     //! 今仓，昨仓
     datetime_t datetime;  //! 成交或者下单的时间、日期
     string_t   remark;    //! 如果会非常频繁的创建和拷贝订单，这里最好是用数组--string的实现必须健壮,考虑到各种可能的诡异操作~
 };
 
 using odir_t    = order_t::dir_t;
-using omode_t   = order_t::mode_t;
+using otype_t   = order_t::type_t;
 using ostatus_t = order_t::status_t;
 using oattr_t   = order_t::attr_t;
 
+// todo.note 订单和仓位不要搞混,部分平仓的时候是可以计算利润的
+struct position_t {
+    code_t  symbol;
+    price_t price;  // avg
+    price_t last_price;
+    money_t profit;        // todo:浮盈-- 暂且不考虑手续费
+    money_t close_profit;  // 平仓利润
+    money_t value;         // 合约当杠杆总"价值"  = price * qty
+    vol_t   qty;
+    odir_t  dir;
+
+    datetime_t update_time;
+};
+
+#if 0
 struct position_t {
     code_t     symbol;
     price_t    price;
     odir_t     direction;
     ostatus_t  status;
     vol_t      open_qty; /*负数表示做空，就不需要方向字段*/
-    vol_t      close_qty;
+    vol_t      close_qty;//这些属于统计信息，和position关系也不是特别大
     money_t    open_amt;
     money_t    close_amt;
-    money_t    used_margin;
-    vol_t      margin_vol;  // by qty or by amount
+    money_t    used_margin;  // 这些和position没有太大关系
+    vol_t      margin_vol;   // by qty or by amount
     money_t    margin_amt;
     vol_t      position;       // 今仓--按照合约查询，今仓左仓可能合并查到的
     vol_t      last_position;  // 昨仓
@@ -167,11 +196,12 @@ struct position_t {
     money_t    open_cost;     // 开仓成本
     money_t    cost;          // 持仓成本，目前还不知道区别
     money_t    profit;        // pzt profit
-    money_t    frz_margin;    // 冻结的现金和保证金
+    money_t    frz_margin;    // 冻结的现金和保证金,和position关系不大，属于fund
     money_t    frz_cash;
     string_t   magic;
     datetime_t datetime;
 };
+#endif
 
 struct performance_t {
     int     records;  // 交易多少次

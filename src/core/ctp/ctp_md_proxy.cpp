@@ -14,6 +14,7 @@
 #include "comm.h"
 
 CUB_NS_BEGIN
+namespace ctp {
 namespace js = rapidjson;
 namespace fs = std::filesystem;
 
@@ -60,7 +61,7 @@ int CtpExMd::unsub() {
     return _api->UnSubscribeMarketData( arr.get(), _unsub_symbols.size() );
 }
 
-std::unique_ptr<char* []> CtpExMd::set2arr( std::set<code_t>& s ) {
+std::unique_ptr<char*[]> CtpExMd::set2arr( std::set<code_t>& s ) {
     auto arr = std::make_unique<char*[]>( _sub_symbols.size() );
     int  n   = 0;
 
@@ -181,14 +182,6 @@ void CtpExMd::OnFrontDisconnected( int nReason ) {
 //! as doc: this is decrecated
 void CtpExMd::OnHeartBeatWarning( int nTimeLapse ) {
 }
-
-#define LOG_ERROR_AND_RET( _rsp_, _req_, _lst_ )                                                                            \
-    do {                                                                                                                    \
-        if ( pRspInfo->ErrorID != 0 ) {                                                                                     \
-            LOG_INFO( "usr logout error: code=%d msg=%s, req=%d, last=%d", _rsp_->ErrorID, _rsp_->ErrorMsg, _req_, _lst_ ); \
-            return;                                                                                                         \
-        }                                                                                                                   \
-    } while ( 0 )
 
 // #这里有问题，如果重连的时候是否需要重新订阅
 void CtpExMd::OnRspUserLogin( CThostFtdcRspUserLoginField* pRspUserLogin, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) {
@@ -319,5 +312,5 @@ void CtpExMd::OnRspUnSubForQuoteRsp( CThostFtdcSpecificInstrumentField* pSpecifi
     LOG_ERROR_AND_RET( pRspInfo, nRequestID, bIsLast );
     LOG_INFO( "rsp for unsubquote" );
 }
-
+}  // namespace ctp
 CUB_NS_END

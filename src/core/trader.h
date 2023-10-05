@@ -5,7 +5,14 @@
 CUB_NS_BEGIN
 
 struct Trader {
-};
+    static Trader* create();
+
+    virtual ~Trader() {}
+    virtual int put( const order_t& o_ ) { return 0; }
+    virtual int cancel( oid_t o_ ) {
+        return 0;
+    };
+}
 
 CUB_NS_END
 

@@ -3,6 +3,7 @@
 #include "definitions.h"
 #include "models.h"
 #include "ns.h"
+#include "portfolio.h"
 
 CUB_NS_BEGIN
 struct Indicator;
@@ -22,17 +23,17 @@ struct Context {
     int clong( const code_t& c_, vol_t qty_ = 0 );
 
     //------高级下单模式-----
-    int pshort( const attr_t& a_ );
-    int plong( const attr_t& a_ );
-    int cshort( const attr_t& a_ );
-    int clong( const attr_t& a_ );
+    int pshort( const oattr_t& a_ );
+    int plong( const oattr_t& a_ );
+    int cshort( const oattr_t& a_ );
+    int clong( const oattr_t& a_ );
 
     //-------仓位查询-------
-    Portfolio    p();
+    Portfolio&   p();
     quotation_t& q();
-    vol_t        position();  //已成交持仓
+    vol_t        position();  // 已成交持仓
     vol_t        position( const code_t& c_ );
-    vol_t        pending();  //未成交持仓
+    vol_t        pending();  // 未成交持仓
     vol_t        pending( const code_t& c_ );
 
     //--------账户查询------
@@ -44,8 +45,8 @@ struct Context {
     candle_t bar( int index_ );
     price_t  put_price();
     price_t  last_deal();
-    int      last_entry();  //最近入场的k线
-    int      last_exit();   //最近出场的k线//和aspect相关
+    int      last_entry();  // 最近入场的k线
+    int      last_exit();   // 最近出场的k线//和aspect相关
 };
 
 CUB_NS_END

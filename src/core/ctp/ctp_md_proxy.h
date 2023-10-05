@@ -13,6 +13,8 @@
 #define CTP_MD_SETTING_FILE "ctp_md.json"
 
 CUB_NS_BEGIN
+
+namespace ctp {
 struct CtpExMd : Market, CThostFtdcMdSpi {
 
     CtpExMd();
@@ -25,35 +27,6 @@ private:
     int login();
 
 private:
-    struct conn_t {
-        string_t broker;
-        string_t frontend;
-        string_t user_name;
-        string_t password;
-    };
-
-    struct setting_t {
-        string_t flow_path;
-        conn_t   conn;
-    };
-
-    struct cert_t {
-        string_t auth;
-        string_t appid;
-        string_t token;
-    };
-
-    enum class extype_t : uint8_t {
-        SHFE = 0,
-        DCE,
-        CZCE,
-        FFEX,
-        INE,
-        GFEX,
-
-        Count
-    };
-
 private:
     int read_settings();
     int sub();
@@ -63,12 +36,6 @@ private:
 
 private:
     std::unique_ptr<char*[]> set2arr( std::set<code_t>& s );
-
-private:
-    void cvt_datetime( datetime_t&                   dt,
-                       const TThostFtdcDateType&     ctp_day_,
-                       const TThostFtdcTimeType&     ctp_time_,
-                       const TThostFtdcMillisecType& ctp_milli_ );
 
 private:
     // ctp overrides
@@ -98,6 +65,7 @@ private:
 private:
     static id_t session_id();
 };
+}  // namespace ctp
 CUB_NS_END
 
 #endif /* DF548D9F_3819_44FA_89F5_6218193C54F2 */

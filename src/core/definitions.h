@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <array>
+#include <assert.h>
 #include <memory>
 #include <optional>
 #include <stdint.h>
@@ -16,11 +17,13 @@ CUB_NS_BEGIN
 
 using id_t     = uint32_t;
 using price_t  = double;
-using vol_t    = double;
-using oid_t    = int32_t;
+using vol_t    = int;  // todo double ctp都是整数仓位;
+using oid_t    = id_t;
 using text_t   = std::string;
 using string_t = std::string;
 using money_t  = double;
+
+#define IS_VALID_ID( _id_ ) ( 0 != ( _id_ ) )
 
 struct code_t {
     static constexpr int kMaxCodeLength = 16;
