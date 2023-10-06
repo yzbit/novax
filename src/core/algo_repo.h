@@ -12,14 +12,23 @@
     }                   \
     ;
 
-#define DECL_ALGO( _name_, _creator_ ) {##_name_, _creator_ },
+// #define DECL_ALGO( _name_, _creator_ ) { #_name_, _creator_ },
+
+#define __NAME__( _n_ ) #_n_
+#define DECL_ALGO( _name_ ) { __NAME__( _name_ ), _name_::create },
+
+#define ALGO_NAME( _t_ ) __NAME__( _t_ )
 
 CUB_NS_BEGIN
 
+#define MA Ma
+#define KLINE Kline
+
 BEGIN_ALGO_REPO()
 
-DECL_ALGO( "ma", Ma::create )
-DECL_ALGO( "kline", Kline::create )
+// DECL_ALGO( ALGO_MA, Ma::create )
+// DECL_ALGO( ALGO_KLINE, Kline::create )
+DECL_ALGO( KLINE )
 
 END_ALGO_REPO()
 

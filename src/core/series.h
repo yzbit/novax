@@ -13,6 +13,7 @@ struct Series final {
         union {
             int    i;
             double f;
+            void*  p;
             char   arr[ 8 ];
         };
         element_t() = default;
@@ -24,14 +25,19 @@ struct Series final {
         element_t& operator=( int i_ );
         element_t& operator=( double f_ );
 
+        operator void*();
         operator int() const;
         operator double() const;
         operator char*();
         operator const char*() const;
     };
 
-    Series( int n_ );
+    using free_t = std::function<void( void* )>;
+
+    Series( int n_, free_t free_ = default_free() );
     ~Series();
+    static free_t default_free();
+
     void append( const element_t& t_ );
     int  size();
     void for_each( std::function<bool( element_t& e_ )> op_ );
@@ -47,6 +53,7 @@ private:
     int map( int index_ );
 
 private:
+    free_t     _free = nullptr;
     int        _total;
     int        _begin = 0;
     int        _end   = 0;
@@ -82,6 +89,10 @@ inline Series::element_t& Series::element_t::operator=( double f_ ) {
     return *this;
 }
 
+inline Series::element_t::operator void*() {
+    return p;
+}
+
 inline Series::element_t::operator int() const {
     return i;
 }
@@ -101,13 +112,24 @@ inline Series::element_t::operator const char*() const {
 #define ROUND_PTR( _index_, _capa_sz_ ) _index_ = _index_ == _capa_sz_ \
                                                       ? 0              \
                                                       : _index_
-inline Series::Series( int n_ )
-    : _total( n_ + 1 ) {
+inline Series::Series( int n_, free_t free_ )
+    : _total( n_ + 1 )
+    , _free{ free_ } {
     _values = new element_t[ _total ]{ 0 };
 }
 
 inline Series::~Series() {
+    for_each( [ & ]( auto& e_ ) {
+        _free( e_.p );
+        return true;
+    } );
+
     delete[] _values;
+}
+
+inline Series::free_t Series::default_free() {
+    static const auto default_free = []( void* ) {};
+    return default_free;
 }
 
 inline void Series::append( const element_t& t_ ) {
@@ -117,6 +139,8 @@ inline void Series::append( const element_t& t_ ) {
     ROUND_PTR( _end, _total );
 
     if ( _end == _begin ) {
+        _free( _values[ _begin ].p );
+
         ++_begin;
         ROUND_PTR( _begin, _total );
     }
@@ -150,19 +174,19 @@ inline bool Series::is_valid_slot( int slot_ ) {
     return slot_ >= _begin && slot_ < end;
 }
 
-Series::element_t& Series::operator[]( int index_ ) {
+inline Series::element_t& Series::operator[]( int index_ ) {
     return get( index_ );
 }
 
-Series::element_t& Series::get( int index_ ) {
+inline Series::element_t& Series::get( int index_ ) {
     return _values[ map( index_ ) ];
 }
 
-Series::element_t& Series::at( int index_ ) {
+inline Series::element_t& Series::at( int index_ ) {
     return get( index_ );
 }
 
-int Series::map( int index_ ) {
+inline int Series::map( int index_ ) {
     if ( index_ >= size() ) {
         throw std::range_error( "series index overflow" );
     }

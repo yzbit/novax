@@ -4,6 +4,14 @@
 
 CUB_NS_BEGIN
 
+Aspect::~Aspect() {
+    for ( auto& i : _algos ) {
+        delete i;
+    }
+
+    _algos.clear();
+}
+
 void Aspect::update( const quotation_t& q_ ) {
     for ( auto& i : _algos ) {
         i->on_calc( q_ );
@@ -11,10 +19,10 @@ void Aspect::update( const quotation_t& q_ ) {
 }
 
 int Aspect::attach( Indicator* i_ ) {
-    if ( _algos.end() != std::find( _algos.begin(), _algos.end(), i_ ) )
+    if ( _algos.end() == std::find( _algos.begin(), _algos.end(), i_ ) )
         _algos.push_back( i_ );
 
-    _algos.sort( []( auto& a_, auto& b_ ) { return a_->prio() > b_.prio() } );
+    _algos.sort( []( auto& a_, auto& b_ ) { return a_->prio() > b_->prio(); } );
 
     return 0;
 }

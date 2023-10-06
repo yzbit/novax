@@ -8,10 +8,14 @@ set(REPO_ROOT "${MODULE_ROOT}/../..")
 add_compile_options(-I${REPO_ROOT}/include)
 #add_link_options(-lzmq -lcub)
 
-add_executable(test_reactor test.pub.cpp)
+#add_executable(test_reactor test.pub.cpp)
 
+add_executable(test_kline test.kline.cpp ../core/aspect.cpp ../core/algos/klines.cpp ../core/indicator.cpp)
+
+#[[
 target_link_libraries(test_reactor PRIVATE 
     pthread
     cub
     zmq
 )
+]]

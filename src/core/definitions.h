@@ -160,6 +160,7 @@ struct period_t {
         default:
             break;
         }
+        return 0;
     }
 
     type_t t;
@@ -259,13 +260,12 @@ struct arg_t {
         }
     }
 
-    operator std::string() const {
+    operator string_t() const {
         try {
-            return std::any_cast<std::string>( value );
+            return std::any_cast<string_t>( value );
         }
         catch ( ... ) {
-            static std::string s = "";
-            return s;
+            return string_t( ( const char* )*this );
         }
     }
 };
@@ -276,13 +276,11 @@ using arg_pack_t = std::array<arg_t, MAX_ARG_SUPPORT>;
 struct Indicator;
 
 using algo_creator_t = std::function<Indicator*( const arg_pack_t& a )>;
+
 struct algo_t {
     string_t       name;
     algo_creator_t creator;
 };
-
-#define DECLARE_SERIES( _name_, _creator_ ) ;
-{ "ma", Ma::create }
 
 CUB_NS_END
 

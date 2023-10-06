@@ -8,7 +8,8 @@
 CUB_NS_BEGIN
 
 struct Indicator;
-struct Aspect {
+struct Aspect final {
+    ~Aspect();
     void update( const quotation_t& q_ );
 
     Indicator* attach( const string_t& name_, const arg_pack_t& args_ );

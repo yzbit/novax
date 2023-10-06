@@ -95,15 +95,17 @@ auto le = ACCOUNT.ganggan();
 #include "definitions.h"
 #include "models.h"
 #include "ns.h"
+#include "series.h"
 
 #define MAX_INDICATOR_PRIO -1
 
 CUB_NS_BEGIN
 struct Aspect;
-struct Series;
 
 struct Indicator {
     static Indicator* create( const string_t& name_, const arg_pack_t& args_, Aspect* asp_ );
+
+    virtual ~Indicator();
 
     virtual void on_init()                        = 0;
     virtual void on_calc( const quotation_t& q_ ) = 0;
@@ -113,12 +115,17 @@ struct Indicator {
     void set_prio( int p_ );
 
 protected:
-    Series* add_series( int track_, int size_ );
+    Series* add_series( int track_, int size_, Series::free_t free_ = Series::default_free() );
+
     Series* track( int index_ = 0 );
 
 private:
-    void    set_asp( Aspect* asp_ ) { _asp = asp_; }
-    Aspect* asp() { return _asp; }
+    void set_asp( Aspect* asp_ ) {
+        _asp = asp_;
+    }
+    Aspect* asp() {
+        return _asp;
+    }
 
 private:
     using series_repo_t = std::unordered_map<int, Series*>;
