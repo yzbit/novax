@@ -43,7 +43,7 @@ struct Series final {
 
 private:
     bool is_valid_slot( int slot_ );
-    // 0 是最右边的那个,也就是_end
+    // 0 是最右边的那个,也就是_end--把K线序列映射为存储序列
     int map( int index_ );
 
 private:

@@ -1,7 +1,9 @@
 #include "indicator.h"
 
 #include "algo_repo.h"
+#include "aspect.h"
 #include "log.hpp"
+#include "series.h"
 
 CUB_NS_BEGIN
 
@@ -26,6 +28,22 @@ int Indicator::prio() {
 
 void Indicator::set_prio( int p_ ) {
     _prio = p_;
+}
+
+Series* Indicator::add_series( int track_, int size_ ) {
+    if ( _series.find( track_ ) != _series.end() ) {
+        LOG_INFO( "series of track %d already EXISTING", track_ );
+    }
+
+    _series.emplace( track_, new Series( size_ ) );
+
+    return _series[ track_ ];
+}
+
+Series* Indicator::track( int index_ ) {
+    return _series.find( index_ ) == _series.end()
+               ? nullptr
+               : _series[ index_ ];
 }
 
 CUB_NS_END
