@@ -35,7 +35,7 @@ struct Series final {
     void append( const element_t& t_ );
     int  size();
     void for_each( std::function<bool( element_t& e_ )> op_ );
-    int  update( int index_, const element_t& t_ );
+    void update( int index_, const element_t& t_ );
 
     element_t& operator[]( int index_ );
     element_t& get( int index_ );
@@ -134,12 +134,8 @@ inline void Series::for_each( std::function<bool( element_t& e_ )> op_ ) {
     }
 }
 
-inline int Series::update( int index_, const element_t& t_ ) {
-    if ( !is_valid_slot( index_ ) ) return -1;
-
-    _values[ index_ ] = t_;
-
-    return 0;
+inline void Series::update( int index_, const element_t& t_ ) {
+    _values[ map( index_ ) ] = t_;
 }
 
 inline bool Series::is_valid_slot( int slot_ ) {
