@@ -1,14 +1,19 @@
 #ifndef B0FD204B_DBB0_4DB4_BA81_807E439AA053
 #define B0FD204B_DBB0_4DB4_BA81_807E439AA053
 #include <chrono>
-#include <cub.h>
 
-#include "algo.h"
+#include "../definitions.h"
+#include "../indicator.h"
+#include "../ns.h"
 
 CUB_NS_BEGIN
 
-struct Kline : Algo {
-    Kline();
+struct Kline : Indicator {
+    Kline( const code_t& code_, const period_t& p_ );
+    static Kline* create( const arg_pack_t& arg_ );
+
+    void on_init() override;
+    void on_calc( const quotation_t& q_ ) override;
 
 private:
     code_t   _symbol;

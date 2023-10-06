@@ -2,8 +2,10 @@
 #define C096ECC6_D3E8_4656_A4DF_F125629A8BE4
 
 #include <algorithm>
+#include <any>
 #include <array>
 #include <assert.h>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <stdint.h>
@@ -120,20 +122,44 @@ struct datetime_t {
 
 using ex_t = code_t;  // 交易所
 
+#define DAY_SECONDS ( 24 * 3600u )
+#define WEEK_SECONDS ( 7 * 24 * 3600u )
+#define MONTH_SECONDS ( 31 * 3600u )
+#define YEAR_SECONDS ( 266 * 24 * 3600u )
 struct period_t {
-    enum class type_t {
-        mili,
+    enum class type_t : uint8_t {
+        milli,
         seconds,
         min,
         hour,
         day,
         week,
+        month,
         year
     };
 
+    // todo note: 注意：如果t=year，rep > 1是没有意义的
     period_t( const type_t& t_, int r_ )
         : t( t_ )
         , rep( r_ ) {
+
+        assert( ( uint32_t )( *this ) <= 1 * 365 * 24 * 3600 );
+    }
+
+    // 转成秒--时间粒度不仅仅要和绝对时间有关系还和分割边界有关系，比如1天显然不能按照绝对秒数来算，应该按照收盘时间和开盘时间来算，每周则只能基于小时来算,分钟其实会出现跨天的状况,可以按照秒来算，同时按照自然阅读来分
+    operator uint32_t() {
+        switch ( t ) {
+        case type_t::milli: return rep / 1000;
+        case type_t::seconds: return rep;
+        case type_t::min: return rep * 60;
+        case type_t::hour: return rep * 3600;
+        case type_t::day: return rep * DAY_SECONDS;
+        case type_t::week: return rep * WEEK_SECONDS;
+        case type_t::month: return rep * MONTH_SECONDS;
+        case type_t::year: return rep * YEAR_SECONDS;
+        default:
+            break;
+        }
     }
 
     type_t t;
@@ -193,6 +219,70 @@ private:
 
 #define THREAD_DETACHED( _func_ ) std::thread( _func_ ).detach()
 #define THREAD_JOINED( _func_ ) std::thread( _func_ ).join()
+
+struct arg_t {
+    std::any value;
+
+    operator const int() const {
+        try {
+            return std::any_cast<int>( value );
+        }
+        catch ( ... ) {
+            return 0;
+        }
+    }
+
+    operator const double() const {
+        try {
+            return std::any_cast<double>( value );
+        }
+        catch ( ... ) {
+            return 0.0;
+        }
+    }
+
+    operator const char*() const {
+        try {
+            return std::any_cast<const char*>( value );
+        }
+        catch ( ... ) {
+            return "";
+        }
+    }
+
+    operator const period_t() const {
+        try {
+            return std::any_cast<const period_t>( value );
+        }
+        catch ( ... ) {
+            return period_t( period_t::type_t::min, 1 );
+        }
+    }
+
+    operator std::string() const {
+        try {
+            return std::any_cast<std::string>( value );
+        }
+        catch ( ... ) {
+            static std::string s = "";
+            return s;
+        }
+    }
+};
+
+#define MAX_ARG_SUPPORT 16
+using arg_pack_t = std::array<arg_t, MAX_ARG_SUPPORT>;
+
+struct Indicator;
+
+using algo_creator_t = std::function<Indicator*( const arg_pack_t& a )>;
+struct algo_t {
+    string_t       name;
+    algo_creator_t creator;
+};
+
+#define DECLARE_SERIES( _name_, _creator_ ) ;
+{ "ma", Ma::create }
 
 CUB_NS_END
 

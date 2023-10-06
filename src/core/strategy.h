@@ -1,19 +1,25 @@
-#ifndef FF72955C_ACC6_4839_BA9D_5BA5BB151C3F
-#define FF72955C_ACC6_4839_BA9D_5BA5BB151C3F
+#ifndef E93F5C75_9223_409D_8F98_DFFDE2E179BF
+#define E93F5C75_9223_409D_8F98_DFFDE2E179BF
+#include <any>
+#include <array>
+#include <functional>
+#include <optional>
+#include <string>
+
+#include "context.h"
+#include "definitions.h"
+#include "models.h"
 #include "ns.h"
 
 CUB_NS_BEGIN
 
-// 用来管理交易策略，而真正的交易策略叫algo
 struct Strategy {
-    static Strategy& instance();
+    virtual ~Strategy() {}
 
-    void fire( const void* ) {}
-    void invoke( const void* ) {}
+    virtual void on_refresh( Context* context_ )     = 0;
+    virtual void on_init( Context* context_ )        = 0;
+    virtual void on_instant( const quotation_t& q_ ) = 0;
 };
 
 CUB_NS_END
-
-#define STRATEGY cub::Strategy::instance()
-
-#endif /* FF72955C_ACC6_4839_BA9D_5BA5BB151C3F */
+#endif /* E93F5C75_9223_409D_8F98_DFFDE2E179BF */

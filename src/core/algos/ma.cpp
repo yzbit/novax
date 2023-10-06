@@ -4,7 +4,7 @@
 
 CUB_NS_BEGIN
 
-Ma* Ma::create( const ArgPack& p_ ) {
+Ma* Ma::create( const arg_pack_t& p_ ) {
     return new Ma( p_[ 0 ], ( int )p_[ 1 ] );
 }
 

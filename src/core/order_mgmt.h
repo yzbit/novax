@@ -25,7 +25,8 @@ struct OrderMgmt {
     oid_t sellshort( const oattr_t& attr_, price_t sl_, price_t tp_, const text_t& remark = "open short" );
     oid_t buylong( const oattr_t& attr_, price_t sl_, price_t tp_, const text_t& remark_ = "open buy" );
 
-    int close( const oattr_t& a_ = { "", 0, 0, otype_t::market } );
+    int sell( const oattr_t& a_ = { "", 0, 0, otype_t::market } );
+    int buy( const oattr_t& a_ = { "", 0, 0, otype_t::market } );
     int cancel( oid_t id_ );
     int close( oid_t id_ );
 
@@ -40,6 +41,7 @@ struct OrderMgmt {
 private:
     void herge( order_t* src_, const order_t* update_ );
     void accum( order_t* src_, const order_t* update_ );
+    int  close( odir_t dir_, const oattr_t& a_ = { "", 0, 0, otype_t::market } );
 
 private:
     oid_t       oid();

@@ -90,22 +90,45 @@ amnt_t total_money = ACCOUNT.captical();
 auto le = ACCOUNT.ganggan();
 */
 
-#include <cub.h>
-CUB_NS_BEGIN
-struct Indicator : Algo {
-    void on_refresh( AlgoContext* ctx_ ) override{};
+#include "definitions.h"
+#include "models.h"
+#include "ns.h"
 
-    int add_series( int type_, int size_ );
-    int series_cnt();
-    // SeriesValue& value( int track_, int index_ );
-    // void set_value( int track_, int index_, const SeriesValue& sv_ );
+#define MAX_INDICATOR_PRIO -1
+
+CUB_NS_BEGIN
+struct Aspect;
+
+struct Indicator {
+    static Indicator* create( const string_t& name_, const arg_pack_t& args_, Aspect* asp_ );
+
+    virtual void on_init()                        = 0;
+    virtual void on_calc( const quotation_t& q_ ) = 0;
+    virtual int  series_cnt() { return 0; };
+
+    int  prio();
+    void set_prio( int p_ );
+
+protected:
+    template <typename T>
+    int add_series( int size_ );
+
 private:
-    void initialize() {
-        // for ( int i = 0; i <= total; ++i ) {
-        //     on_calculate( i, context );
-        // }
-    }
+    void    set_asp( Aspect* asp_ );
+    Aspect* asp() { return _asp; }
+
+private:
+    Aspect* _asp;
+
+    // 创建的越晚优先级越高--需要先计算，当我们创建A的时候，A可能创建B,然后B要先计算然后再计算A-这并不绝对，但是也是最简单的处理方式
+    int _prio;
 };
+
+template <typename T>
+inline int Indicator::add_series( int size_ ) {
+    return 0;
+}
+
 CUB_NS_END
 
 #endif /* B4872862_3AFF_45FF_86DA_A0808D740978 */

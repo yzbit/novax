@@ -30,37 +30,10 @@ oid_t OrderMgmt::sellshort( const oattr_t& attr_, price_t sl_, price_t tp_, cons
     return ord->id;
 }
 
-int OrderMgmt::cover( oid_t id_, const oattr_t& attr_ ) {
-    if ( _close.find( id_ ) != _close.end() ) {
-        LOG_INFO( "order of %d is on closing", id_ );
-        return -1;
-    }
-
-    if ( _open.find( id_ ) != _open.end() ) {
-        LOG_INFO( "cannot find order with id= %d", id_ );
-        return -2;
-    }
-
-    auto order = _open[ id_ ];
-
-    vol_t qty = qty_ == 0 ? order->qty : std::min( qty_, order->qty );
-
-    price_ = attr_.price == 0 ? DATA.current_ask();
-
-    // return close( { order->code, std::min( order->qty, attr_.qty ), price_, mode_ } );
-}
-
 oid_t OrderMgmt::buylong( const oattr_t& attr_, price_t sl_, price_t tp_, const text_t& remark_ = "open buy" ) {
     order_t o = { 0 };
     o.from_attr( attr_ );
     return 0 == _trader->put( o ) ? o.id : 0;
-}
-
-int OrderMgmt::sell( oid_t id_, price_t price_ = 0, vol_t qty_ = 0, otype_t mode_ = otype_t::market ) {
-    order_t o = { 0 };
-    o.from_attr( attr_ );
-    o.id = id_;
-    return _trader->put( o );
 }
 
 int OrderMgmt::cancel( oid_t id_ ) {
@@ -219,7 +192,51 @@ void OrderMgmt::update( const order_t& o_ ) {
         accum( o, &o_ );
 }
 
-int OrderMgmt::close( const oattr_t& attr_ ) {
+int OrderMgmt::sell( const oattr_t& a_ = { "", 0, 0, otype_t::market } ) {
+    return close( odir_t::sell, a_ );
+}
+
+int OrderMgmt::buy( const oattr_t& a_ = { "", 0, 0, otype_t::market } ) {
+    return close( odir_t::cover, a_ );
+}
+/*如下的仓位如何关闭：
+rb2410 long     4
+rb2410 short    2
+
+todo 总仓位是 2，那么此时关闭的是什么，关闭净仓? 使用参数决定,我们目前只支持单腿
+*/
+int OrderMgmt::close( odir_t dir_, const oattr_t& a_ ) {
+    assert( dir_ == odir_t::sell || dir_ == odir_t::cover );
+
+    if ( a_.qty == 0 ) {
+        LOG_INFO( "close [%s] with qty=0, and will close all avaiable", a_.symbol );
+    }
+
+    auto pv = dir_ == odir_t::sell ? long_position( a_.symbol ) : short_position( a_.symbol );
+
+    if ( 0 >= pv ) {
+        LOG_INFO( "no position of [%s] , close ign", a_.symbol );
+        return -2;
+    }
+
+    if ( pv > a_.qty && a_.qty > 0 )
+        pv = a_.qty;
+
+    LOG_INFO( "close position for [%s %d]", a_.symbol, pv );
+
+    order_t order = { 0 };
+    order.from_attr( a_ );
+    order.qty = pv;
+    order.id  = oid();
+    order.dir = dir_;
+
+    if ( _trader->put( order ) != 0 ) {
+        LOG_INFO( "close position failed, dir=%d ,sym=%s, qty=%d ,price=%ld ,mode=%d", dir_, a_.symbol, a_.qty, order.price, order.mode );
+        return -1;
+    }
+
+    _book.emplace( order.code, order );
+
     return 0;
 }
 

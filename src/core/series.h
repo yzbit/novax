@@ -1,5 +1,7 @@
 #ifndef A37995CF_4ECF_464C_B471_04E26CC7055C
 #define A37995CF_4ECF_464C_B471_04E26CC7055C
+#include "ns.h"
+CUB_NS_BEGIN
 
 template <typename T, int N>
 struct Series {
@@ -55,4 +57,6 @@ private:
     int              _end   = 0;
     std::array<T, N> _values;
 };
+
+CUB_NS_END
 #endif /* A37995CF_4ECF_464C_B471_04E26CC7055C */

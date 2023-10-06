@@ -1,13 +1,15 @@
 #ifndef B1DEFD41_1804_4B09_B322_42B7E58CD280
 #define B1DEFD41_1804_4B09_B322_42B7E58CD280
-#include <cub.h>
 
-#include "algo.h"
+#include "../definitions.h"
+#include "../indicator.h"
+#include "../ns.h"
 
 CUB_NS_BEGIN
 
-struct Ma : Algo {
-    static Ma* create( const ArgPack& p_ );
+struct Ma : Indicator {
+    static Ma* create( const arg_pack_t& p_ );
+
     Ma( const std::string& code_, int period_ );
 };
 
