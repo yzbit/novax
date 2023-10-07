@@ -45,70 +45,63 @@ struct CtpTrader : Trader, CThostFtdcTraderSpi {
         TThostFtdcFrontIDType   front;
         TThostFtdcSessionIDType sess;
         TThostFtdcOrderRefType  init_ref;  // 因为这个字段是从右边对齐，为了处理方便，我们可以先给他一个很大的值，比如'1000000000'，这样每次只需要处理进位即可
+
+        session_t( TThostFtdcFrontIDType f_, TThostFtdcSessionIDType s_, const TThostFtdcOrderRefType& r_ );
     };
 
     struct ex_oid_t {
-        ex_oid_t( const TThostFtdcExchangeIDType& ex_, const TThostFtdcOrderSysIDType& oid_ ) {
-            memcpy( ex, ex_, sizeof( ex ) );
-            memcpy( oid, oid_, sizeof( oid ) );
-        }
-
         TThostFtdcExchangeIDType ex;
         TThostFtdcOrderSysIDType oid;
+
+        ex_oid_t( const TThostFtdcExchangeIDType& ex_, const TThostFtdcOrderSysIDType& oid_ );
     };
 
     struct order_ids_t {
-        order_ids_t( oid_t id_, const ex_oid_t& ex_oid_, TThostFtdcOrderRefType& ref_ ) {
-            id = id_;
-            memcpy( &eoid, &ex_oid_, sizeof( eoid ) );
-            memcpy( ref, ref_, sizeof( ref ) );
-        }
-
         oid_t                  id;
         ex_oid_t               eoid;
         TThostFtdcOrderRefType ref;
 
-        bool is_exoid_valid() {
-            return eoid.ex[ 0 ] != '\0';
-        }
-
-        // todo
-        bool is_id_valid() {
-            return IS_VALID_ID( id );
-        }
-
-        bool is_ref_valid() {
-            return ref[ sizeof ref - 1 ] != '\0';  // 靠右对齐
-        }
+        order_ids_t( oid_t id_, const ex_oid_t& ex_oid_, TThostFtdcOrderRefType& ref_ );
+        bool is_exoid_valid();
+        bool is_id_valid();
+        bool is_ref_valid();
     };
 
     int put( const order_t& o_ ) override;
     int cancel( oid_t o_ ) override;
 
 private:
-    struct settings_t {
-    };
+    int  login();
+    int  logout();
+    int  auth();
+    int  init();
+    void tune_clock();
+    int  teardown();
+    int  qry_settlement();
+    int  confirm_settlement();
+    int  qry_fund();
+    int  qry_marginrate();
+    int  qry_commission();
+    int  qry_position();
 
 private:
-    int login();
-    int logout();
-    int auth();
-    int init();
-    int teardown();
-    int qry_settlement();
-    int confirm_settlement();
-    int qry_fund();
-    int qry_marginrate();
-    int qry_commission();
-    int qry_position();
-
-private:
-    void   on_session_changed( const session_t& s_ );
+    void   session_changed( const session_t& s_ );
     int    assign_ref( oid_t id_ );
     int    update_order_ids( order_ids_t& ids_ );
     oid_t  id_of_ref( const TThostFtdcOrderRefType& ref_ );
     odir_t cvt_direction( const TThostFtdcDirectionType& di_, const TThostFtdcCombOffsetFlagType& comb_ );
     odir_t cvt_direction( const TThostFtdcDirectionType& di_, const TThostFtdcOffsetFlagType& comb_ );
+
+private:
+    CThostFtdcTraderApi* _api;
+
+private:
+    using pending_t = std::unordered_map<oid_t, order_ids_t>;
+
+    setting_t _settings;
+    pending_t _orders;
+    session_t _ss;
+    req_map_t _reqs;
 
 private:
     void OnRtnBulletin( CThostFtdcBulletinField* pBulletin ) override;                                                                                                                     /// 交易所公告通知
@@ -138,18 +131,37 @@ private:
     void OnRspQryInstrumentMarginRate( CThostFtdcInstrumentMarginRateField* pInstrumentMarginRate, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) override;              // 保证金率
     void OnRspQryExchangeMarginRateAdjust( CThostFtdcExchangeMarginRateAdjustField* pExchangeMarginRateAdjust, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) override;  //
     void OnRspQryInstrumentCommissionRate( CThostFtdcInstrumentCommissionRateField* pInstrumentCommissionRate, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) override;  // 手续费
-
-private:
-    CThostFtdcTraderApi* _api;
-
-private:
-    using pending_t = std::unordered_map<oid_t, order_ids_t>;
-
-    setting_t _settings;
-    pending_t _orders;
-    session_t _ss;
-    req_map_t _reqs;
 };
+
+inline CtpTrader::session_t::session_t( TThostFtdcFrontIDType f_, TThostFtdcSessionIDType s_, const TThostFtdcOrderRefType& r_ )
+    : front( f_ )
+    , sess( s_ ) {
+    memcpy( init_ref, r_, sizeof( init_ref ) );
+}
+
+inline CtpTrader::ex_oid_t::ex_oid_t( const TThostFtdcExchangeIDType& ex_, const TThostFtdcOrderSysIDType& oid_ ) {
+    memcpy( ex, ex_, sizeof( ex ) );
+    memcpy( oid, oid_, sizeof( oid ) );
+}
+
+inline CtpTrader::order_ids_t::order_ids_t( oid_t id_, const ex_oid_t& ex_oid_, TThostFtdcOrderRefType& ref_ ) {
+    id = id_;
+    memcpy( &eoid, &ex_oid_, sizeof( eoid ) );
+    memcpy( ref, ref_, sizeof( ref ) );
+}
+
+inline bool CtpTrader::order_ids_t::is_exoid_valid() {
+    return eoid.ex[ 0 ] != '\0';
+}
+
+inline bool CtpTrader::order_ids_t::is_id_valid() {
+    return IS_VALID_ID( id );
+}
+
+inline bool CtpTrader::order_ids_t::is_ref_valid() {
+    return ref[ sizeof ref - 1 ] != '\0';  // 靠右对齐
+}
+
 }  // namespace ctp
 
 CUB_NS_END

@@ -16,11 +16,14 @@ struct Series final {
             void*  p;
             char   arr[ 8 ];
         };
+
         element_t() = default;
         element_t( const element_t& e_ );
         element_t( int i_ );
         element_t( double f_ );
         element_t( const char a_[] );
+        element_t( void* p );
+        element_t& operator=( void* p );
         element_t& operator=( const char a_[] );
         element_t& operator=( int i_ );
         element_t& operator=( double f_ );
@@ -59,6 +62,14 @@ private:
     int        _end   = 0;
     element_t* _values;
 };
+
+inline Series::element_t::element_t( void* p_ )
+    : p( p_ ) {
+}
+
+inline Series::element_t& Series::element_t::operator=( void* p_ ) {
+    p = p_;
+}
 
 inline Series::element_t::element_t( const element_t& e_ ) {
     memcpy( arr, e_.arr, sizeof( arr ) );

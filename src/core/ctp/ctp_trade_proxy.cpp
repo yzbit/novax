@@ -1,6 +1,7 @@
 #include "ctp_trade_proxy.h"
 
 #include "../log.hpp"
+#include "../order_mgmt.h"
 #include "comm.h"
 
 CUB_NS_BEGIN
@@ -17,21 +18,12 @@ int CtpTrader::qry_marginrate() {
 int CtpTrader::qry_commission() {
     CThostFtdcQryInstrumentCommissionRateField field = { 0 };
 
-    CTP_COPY_SAFE( filed.BrokerID, _settings.broker.c_str() );
-    CTP_COPY_SAFE( filed.InvestorID, _settings.broker.c_str() );
+    CTP_COPY_SAFE( field.BrokerID, _settings.i.broker.c_str() );
+    CTP_COPY_SAFE( field.InvestorID, _settings.i.id.c_str() );
     // CTP_COPY_SAFE( filed.InstrumentID, _settings..c_str() );
 
-    int reqId = CtpProxy::GetRequestId();
-    wait( []() {} );
-
-    int rt = _api->ReqQryInstrumentCommissionRate( &commissionReq, reqId );
-
-    if ( !rt ) {
-        return this->_sync_wait_full_return( csd, lck, cmsn );
-    }
-    else {
-        return -1;
-    }
+    return !_api->ReqQryInstrumentCommissionRate( &field, req_id() ) ? 0
+                                                                     : -1;
 }
 
 int CtpTrader::qry_position() {
@@ -51,11 +43,11 @@ int CtpTrader::init() {
     _api->SubscribePrivateTopic( THOST_TERT_QUICK );   // 订阅私有流
     LOG_INFO( "RegisterSpi@{ctp}初始化交易网关:注册交易前端\n" );
 
-    for ( auto& a : _settigns.frontend ) {
+    for ( auto& a : _settings.frontend ) {
         // char *s = "tcp://180.168.146.187:10010";
-        _api->RegisterFront( addr );  // 设置交易前置地址,设置多个，内部ctp可以自动切换
-
-        LOG_INFO( "RegisterSpi@[ctp] tfront={}\n", addr );
+        // todo 设置多个地址和一次性还是循环调用
+        _api->RegisterFront( const_cast<char*>( a.c_str() ) );  // 设置交易前置地址,设置多个，内部ctp可以自动切换
+        LOG_INFO( "RegisterSpi@[ctp] tfront=%s\n", a.c_str() );
     }
 
     LOG_INFO( "{ctp} init\n" );
@@ -80,7 +72,7 @@ int CtpTrader::cancel( oid_t o_ ) {
     CThostFtdcInputOrderActionField field = { 0 };
 
     CTP_COPY_SAFE( field.BrokerID, _settings.i.broker.c_str() );
-    CTP_COPY_SAFE( field.InvestorID, _settings.i.name.c_str() );
+    CTP_COPY_SAFE( field.InvestorID, _settings.i.id.c_str() );
 
     /*来自网络的解释：
     如果单子还在CTP就要用FrontID+SessionID+OrderRef撤，因为送到exchange前还没有OrderSysID.
@@ -91,29 +83,29 @@ int CtpTrader::cancel( oid_t o_ ) {
     if ( oids == _orders.end() ) {
         LOG_INFO( "xModifyOrder@试图删除一个不存在订单ID,%d\n", o_ );
         return -1;
+    }
 
-        if ( oids->second.is_exoid_valid() ) {
-            memcpy( field.OrderSysID, oids->second.eoid.sys_oid, sizeof( field.OrderSysID ) );
-            memcpy( field.ExchangeID, oids->second.eoid.ex, sizeof( field.ExchangeID ) );
-        }
-        else if ( oids->second.is_ref_valid() ) {
-            memcpy( field.OrderRef, oids->second.ref, sizeof( field.OrderRef ) );
-            field.FrontID   = _ss.front;
-            field.SessionID = _ss.sess;
-        }
-        else {
-            LOG_INFO( "xModifyOrder@试图删除一个不存在订单ID,oid=%d\n", o_ );
-            return -2;
-        }
+    if ( oids->second.is_exoid_valid() ) {
+        memcpy( field.OrderSysID, oids->second.eoid.sys_oid, sizeof( field.OrderSysID ) );
+        memcpy( field.ExchangeID, oids->second.eoid.ex, sizeof( field.ExchangeID ) );
+    }
+    else if ( oids->second.is_ref_valid() ) {
+        memcpy( field.OrderRef, oids->second.ref, sizeof( field.OrderRef ) );
+        field.FrontID   = _ss.front;
+        field.SessionID = _ss.sess;
+    }
+    else {
+        LOG_INFO( "xModifyOrder@试图删除一个不存在订单ID,oid=%d\n", o_ );
+        return -2;
     }
 
     field.ActionFlag = THOST_FTDC_AF_Delete;
 
     LOG_INFO( "-------------------------------ctp撤单参数----------------------------------\n" );
-    LOG_INFO( "BrokerID = {} InvestorID={}\
-        ExchangeID={},OrderSysID={}\
-        FrontID={},SessionID={},OrderRef={}\
-        ActionFlag={},InstrumentID={}\n\n",
+    LOG_INFO( "BrokerID = %s, InvestorID=%s\
+        ExchangeID=%s,OrderSysID=%s\
+        FrontID=%d,SessionID=%d,OrderRef=%s\
+        ActionFlag=%d,InstrumentID=%s\n",
               field.BrokerID,
               field.InvestorID,
               field.ExchangeID,
@@ -126,7 +118,7 @@ int CtpTrader::cancel( oid_t o_ ) {
 
     // todo
     // 这里不能这么做，因为用户可能发出很多次req--比如在返回之前多次cancel，put,只能假设用户不会通过其他客户端也在操作
-    _reqs[ act_t::cancel_order ] = req_id();
+    _reqs[ act_t::cancel_order ] = req_id();  // todo
     return !_api->ReqOrderAction( &field, _reqs[ act_t::cancel_order ] ) ? 0 : -1;
 }
 
@@ -135,7 +127,7 @@ int CtpTrader::put( const order_t& o_ ) {
 
     CThostFtdcInputOrderField field = { 0 };
     CTP_COPY_SAFE( field.BrokerID, _settings.i.broker.c_str() );
-    CTP_COPY_SAFE( field.InvestorID, _settings.i.name.c_str() );
+    CTP_COPY_SAFE( field.InvestorID, _settings.i.id.c_str() );
     memcpy( field.InstrumentID, o_.code, sizeof( o_.code ) );
 
     // todo 如果是平仓，还需要给id吗?
@@ -226,12 +218,12 @@ int CtpTrader::put( const order_t& o_ ) {
     field.UserForceClose     = 0;                             /// 用户强评标志: 否
 
     LOG_INFO( "---------------------------ctp下单参数------------------------------------------\n" );
-    LOG_INFO( "\nbroker={}\ninvestor={}\ncode={}\nref={}\n\
-    LimitPrice={}\nVolumeTotalOriginal={}\nContingentCondition={}\n\
-    MinVolume={}\nOrderPriceType={}\nTimeCondition={}\n\
-    VolumeCondition={}\nDirection={}\n\
-    CombOffsetFlag[0]={}\nCombHedgeFlag={}\n\
-    ForceCloseReason={}\nIsAutoSuspend={}\nUserForceClose={}\n",
+    LOG_INFO( "\nbroker=%s\ninvestor=%s\ncode=%s\nref=%s\n\
+    LimitPrice=%lf\nVolumeTotalOriginal=%d\nContingentCondition=%d\n\
+    MinVolume=%d\nOrderPriceType=%d\nTimeCondition=%d\n\
+    VolumeCondition=%d\nDirection=%d\n\
+    CombOffsetFlag[0]=%d\nCombHedgeFlag=%d\n\
+    ForceCloseReason=%d\nIsAutoSuspend=%d\nUserForceClose=%d\n",
               field.BrokerID,
               field.InvestorID,
               field.InstrumentID,
@@ -347,7 +339,7 @@ void CtpTrader::OnFrontConnected() {
 int CtpTrader::qry_settlement() {
     CThostFtdcQrySettlementInfoField field = { 0 };
     CTP_COPY_SAFE( field.BrokerID, _settings.i.broker.c_str() );
-    CTP_COPY_SAFE( field.InvestorID, _settings.i.name.c_str() );
+    CTP_COPY_SAFE( field.InvestorID, _settings.i.id.c_str() );
 
     /*! 不能带有日期参数，否则会失败*/
     // strcpy(settleInfoReq.TradingDay, m_tradingDay);
@@ -361,7 +353,7 @@ int CtpTrader::confirm_settlement() {
     CThostFtdcSettlementInfoConfirmField field = { 0 };
 
     CTP_COPY_SAFE( field.BrokerID, _settings.i.broker.c_str() );
-    CTP_COPY_SAFE( field.InvestorID, _settings.i.name.c_str() );
+    CTP_COPY_SAFE( field.InvestorID, _settings.i.id.c_str() );
 
     return _api->ReqSettlementInfoConfirm( &field, req_id() ) != 0 ? 0 : -1;
 }
@@ -387,6 +379,9 @@ void CtpTrader::OnRspUserLogin( CThostFtdcRspUserLoginField* pRspUserLogin, CTho
         LOG_INFO( "bad login request .ing" );
         return;
     }
+
+    session_changed( { pRspUserLogin->FrontID, pRspUserLogin->SessionID, pRspUserLogin->MaxOrderRef } );
+    tune_clock();  // todo
 
     qry_settlement();
 }
@@ -667,6 +662,7 @@ void CtpTrader::OnRtnTrade( CThostFtdcTradeField* f_ ) {
     o.code  = f_->InstrumentID;
     o.price = f_->Price;
     o.dir   = cvt_direction( f_->Direction, f_->OffsetFlag );
+
     if ( odir_t::none == o.dir ) {
         LOG_INFO( "bad order direction'" );
     }

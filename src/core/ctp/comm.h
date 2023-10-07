@@ -30,15 +30,16 @@ struct cert_t {
 
 struct investor_t {
     string_t broker;
-    string_t frontend;
     string_t name;
     string_t password;
+    string_t id;
 };
 
 struct setting_t {
-    string_t   flow_path;
-    investor_t i;
-    cert_t     c;
+    std::vector<string_t> frontend;
+    string_t              flow_path;
+    investor_t            i;
+    cert_t                c;
 };
 
 enum class extype_t : uint8_t {

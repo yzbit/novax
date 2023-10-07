@@ -1,6 +1,6 @@
 #include "klines.h"
 
-#define KLINE_TRACK 0
+#define BAR_TRACK 0
 CUB_NS_BEGIN
 
 Kline::Kline( const code_t& code_, const period_t& p_, int series_count_ )
@@ -17,13 +17,14 @@ Kline* Kline::create( const arg_pack_t& arg_ ) {
 }
 
 void Kline::on_init() {
-    add_series( KLINE_TRACK, _count, ::free );
+    _data = add_series( BAR_TRACK, _count, ::free );
 }
 
-// 可能是任意类型，那就有点麻烦
 void Kline::on_calc( const quotation_t& q_ ) {
     // 合并生成指定的K线
     auto s = track();
+
+    s->append( new int );
 
     auto bar = s->at( 0 ).p;
 }

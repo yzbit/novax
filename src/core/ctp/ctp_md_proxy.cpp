@@ -7,8 +7,8 @@
 
 #include "ctp_md_proxy.h"
 
-#include "../candle.h"
 #include "../log.hpp"
+#include "../models.h"
 #include "../msg_int.h"
 #include "../reactor.h"
 #include "comm.h"
@@ -61,7 +61,7 @@ int CtpExMd::unsub() {
     return _api->UnSubscribeMarketData( arr.get(), _unsub_symbols.size() );
 }
 
-std::unique_ptr<char*[]> CtpExMd::set2arr( std::set<code_t>& s ) {
+std::unique_ptr<char* []> CtpExMd::set2arr( std::set<code_t>& s ) {
     auto arr = std::make_unique<char*[]>( _sub_symbols.size() );
     int  n   = 0;
 

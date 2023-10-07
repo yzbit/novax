@@ -20,6 +20,7 @@ private:
     code_t   _symbol;
     period_t _period;
     int      _curr_bar;
+    Series*  _data;
 };
 
 CUB_NS_END
