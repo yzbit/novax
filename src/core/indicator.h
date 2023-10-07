@@ -114,9 +114,12 @@ struct Indicator {
     int  prio();
     void set_prio( int p_ );
 
+    Series::element_t& value( int track_ = 0, int index_ = 0 );
+    Series::element_t& recent();
+    void               shift();
+
 protected:
     Series* add_series( int track_, int size_, Series::free_t free_ = Series::default_free() );
-
     Series* track( int index_ = 0 );
 
 private:

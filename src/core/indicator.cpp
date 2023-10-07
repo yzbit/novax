@@ -54,6 +54,20 @@ Series* Indicator::add_series( int track_, int size_, Series::free_t free_ ) {
     return _series[ track_ ];
 }
 
+Series::element_t& Indicator::value( int track_, int index_ ) {
+    return track( track_ )->at( index_ );
+}
+
+void Indicator::shift() {
+    for ( auto& [ i, s ] : _series ) {
+        s->shift();
+    }
+}
+
+Series::element_t& Indicator::recent() {
+    return value();
+}
+
 Series* Indicator::track( int index_ ) {
     return _series.find( index_ ) == _series.end()
                ? nullptr

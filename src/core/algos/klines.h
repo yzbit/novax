@@ -16,11 +16,12 @@ struct Kline : Indicator {
     void on_calc( const quotation_t& q_ ) override;
 
 private:
-    int      _count;
-    code_t   _symbol;
-    period_t _period;
-    int      _curr_bar;
-    Series*  _data;
+    int        _count;
+    code_t     _symbol;
+    period_t   _period;
+    int        _curr_bar;
+    Series*    _data;
+    datetime_t _curr_start;  //当前k的起始时间
 };
 
 CUB_NS_END

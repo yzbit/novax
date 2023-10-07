@@ -41,7 +41,10 @@ struct Series final {
     ~Series();
     static free_t default_free();
 
-    void append( const element_t& t_ );
+    void init( std::function<void( element_t& e_ )> );
+    //指针类型会有赋值困难,默认数组是已经完整的,只shift即可
+    // void append( const element_t& t_ );
+    void shift();
     int  size();
     void for_each( std::function<bool( element_t& e_ )> op_ );
     void update( int index_, const element_t& t_ );
@@ -127,6 +130,8 @@ inline Series::Series( int n_, free_t free_ )
     : _total( n_ + 1 )
     , _free{ free_ } {
     _values = new element_t[ _total ]{ 0 };
+
+    shift();
 }
 
 inline Series::~Series() {
@@ -143,6 +148,22 @@ inline Series::free_t Series::default_free() {
     return default_free;
 }
 
+inline void Series::init( std::function<void( element_t& e_ )> f_ ) {
+    for ( int i = 0; i < _total; ++i )
+        f_( _values[ i ] );
+}
+
+inline void Series::shift() {
+    ++_end;
+    ROUND_PTR( _end, _total );
+
+    if ( _end == _begin ) {
+        ++_begin;
+        ROUND_PTR( _begin, _total );
+    }
+}
+
+/*
 inline void Series::append( const element_t& t_ ) {
     _values[ _end ] = t_;
 
@@ -156,6 +177,7 @@ inline void Series::append( const element_t& t_ ) {
         ROUND_PTR( _begin, _total );
     }
 }
+*/
 
 inline int Series::size() {
     return _end >= _begin

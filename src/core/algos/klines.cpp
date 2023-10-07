@@ -18,15 +18,24 @@ Kline* Kline::create( const arg_pack_t& arg_ ) {
 
 void Kline::on_init() {
     _data = add_series( BAR_TRACK, _count, ::free );
+    _data->init( []( Series::element_t& e_ ) {
+        e_.p = new candle_t();
+    } );
 }
 
+// todo 所有的指标的shift不应该由指标来调,因为都是和aspect(kline)同步的,可以先不做,避免过度优化
+// 分钟k一定是和分钟对齐,至少结束的时候是和分钟对齐
+// 如果q-start大于某个周期则一定要换下一个K
+//---把q-start换成秒,如果大于1秒,则一定是下一个,如果大于60s则一定是下一分钟;同理,如果大于1小时一定是另外一个小时k,不过对于小时k来说,然后应该用时钟
+//来定义,也就是当时钟过了5点,那么一定是第6根K线,理论不应该出现第5小时的tick时间是5.00.001
 void Kline::on_calc( const quotation_t& q_ ) {
-    // 合并生成指定的K线
-    auto s = track();
+    auto& s = recent();
 
-    s->append( new int );
+    bool next_bar = true;
 
-    auto bar = s->at( 0 ).p;
+    if ( next_bar ) {
+        shift();
+    }
 }
 
 CUB_NS_END
