@@ -92,20 +92,29 @@ struct datetime_t {
         milli = 0;
     }
 
+#define TK_DIFF ( 1000 + 100 + 10 + 1 ) * '0'
+#define H_DIFF ( 10 + 1 ) * '0'
+
     // YYYYMMDD，HH:MM:SS，MILLI ctp独有的格式
     void from_ctp( const char* day_, const char* time_, int milli_ ) {
-        year  = ( day_[ 0 ] - '0' ) * 1000 + ( day_[ 1 ] - '0' ) * 100 + ( day_[ 2 ] - '0' ) * 10 + ( day_[ 3 ] - '0' );
-        month = ( day_[ 4 ] - '0' ) * 10 + ( day_[ 5 ] - '0' );
-        day   = ( day_[ 6 ] - '0' ) * 10 + ( day_[ 7 ] - '0' );
+        // year  = ( day_[ 0 ] - '0' ) * 1000 + ( day_[ 1 ] - '0' ) * 100 + ( day_[ 2 ] - '0' ) * 10 + ( day_[ 3 ] - '0' );
+        // month = ( day_[ 4 ] - '0' ) * 10 + ( day_[ 5 ] - '0' );
+        // day   = ( day_[ 6 ] - '0' ) * 10 + ( day_[ 7 ] - '0' );
+        year  = day_[ 0 ] * 1000 + day_[ 1 ] * 100 + day_[ 2 ] * 10 + day_[ 3 ] - TK_DIFF;
+        month = day_[ 4 ] * 10 + day_[ 5 ] - H_DIFF;
+        day   = day_[ 6 ] * 10 + day_[ 7 ] - H_DIFF;
 
-        hour    = ( time_[ 0 ] - '0' ) * 10 + ( time_[ 1 ] - '0' );
-        minute  = ( time_[ 3 ] - '0' ) * 10 + ( time_[ 4 ] - '0' );
-        seconds = ( time_[ 6 ] - '0' ) * 10 + ( time_[ 7 ] - '0' );
+        // hour    = ( time_[ 0 ] - '0' ) * 10 + ( time_[ 1 ] - '0' );
+        // minute  = ( time_[ 3 ] - '0' ) * 10 + ( time_[ 4 ] - '0' );
+        // seconds = ( time_[ 6 ] - '0' ) * 10 + ( time_[ 7 ] - '0' );
+        hour    = time_[ 0 ] * 10 + time_[ 1 ] - H_DIFF;
+        minute  = time_[ 3 ] * 10 + time_[ 4 ] - H_DIFF;
+        seconds = time_[ 6 ] * 10 + time_[ 7 ] - H_DIFF;
 
         milli = milli_;
         // w=y+[y/4]+[c/4]-2c+[26(m+1)/10]+d-1
         // 2049: y=49, c=20,-0 星期日
-        wday = ( year % 100 + ( year % 100 ) / 4 + ( year / 100 ) / 4 - 2 * ( year / 100 ) + 26 * ( month + 1 ) / 10 + day - 1 ) % 7;
+        // wday = ( year % 100 + ( year % 100 ) / 4 + ( year / 100 ) / 4 - 2 * ( year / 100 ) + 26 * ( month + 1 ) / 10 + day - 1 ) % 7;
     }
 
     time_t to_time_t() {

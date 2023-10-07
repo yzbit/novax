@@ -26,7 +26,7 @@ struct Data {
 
 private:
     void on_data( const quotation_t& tick_ );
-    void on_msg( const msg::header_t& h );
+    //  void on_msg( const msg::header_t& h );
 
 private:
     std::list<Aspect*> _aspects;

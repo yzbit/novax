@@ -61,7 +61,7 @@ int CtpExMd::unsub() {
     return _api->UnSubscribeMarketData( arr.get(), _unsub_symbols.size() );
 }
 
-std::unique_ptr<char* []> CtpExMd::set2arr( std::set<code_t>& s ) {
+std::unique_ptr<char*[]> CtpExMd::set2arr( std::set<code_t>& s ) {
     auto arr = std::make_unique<char*[]>( _sub_symbols.size() );
     int  n   = 0;
 
@@ -200,22 +200,22 @@ void CtpExMd::OnRspUserLogin( CThostFtdcRspUserLoginField* pRspUserLogin, CThost
     datetime_t dt = { 0 };
 
     dt.from_ctp( pRspUserLogin->TradingDay, pRspUserLogin->SHFETime, 0 );
-    _clock[ ( int )extype_t::SHFE ].tune( dt );
+    CLOCK_OF( ( int )extype_t::SHFE ).tune( dt );
 
     dt.from_ctp( pRspUserLogin->TradingDay, pRspUserLogin->DCETime, 0 );
-    _clock[ ( int )extype_t::DCE ].tune( dt );
+    CLOCK_OF( ( int )extype_t::DCE ).tune( dt );
 
     dt.from_ctp( pRspUserLogin->TradingDay, pRspUserLogin->CZCETime, 0 );
-    _clock[ ( int )extype_t::CZCE ].tune( dt );
+    CLOCK_OF( ( int )extype_t::CZCE ).tune( dt );
 
     dt.from_ctp( pRspUserLogin->TradingDay, pRspUserLogin->FFEXTime, 0 );
-    _clock[ ( int )extype_t::FFEX ].tune( dt );
+    CLOCK_OF( ( int )extype_t::FFEX ).tune( dt );
 
     dt.from_ctp( pRspUserLogin->TradingDay, pRspUserLogin->INETime, 0 );
-    _clock[ ( int )extype_t::INE ].tune( dt );
+    CLOCK_OF( ( int )extype_t::INE ).tune( dt );
 
     dt.from_ctp( pRspUserLogin->TradingDay, pRspUserLogin->GFEXTime, 0 );
-    _clock[ ( int )extype_t::GFEX ].tune( dt );
+    CLOCK_OF( ( int )extype_t::GFEX ).tune( dt );
 
     {
         std::unique_lock<std::mutex> lock{ _sub_mtx };
@@ -233,10 +233,9 @@ void CtpExMd::OnRspUserLogout( CThostFtdcUserLogoutField* pUserLogout, CThostFtd
     _is_svc_online = false;
 }
 
-void CtpExMd::cvt_datetime( datetime_t&                   dt_,
-                            const TThostFtdcDateType&     ctp_day_,
-                            const TThostFtdcTimeType&     ctp_time_,
-                            const TThostFtdcMillisecType& ctp_milli_ ) {
+void CtpExMd::cvt_datetime( datetime_t&                                                       dt_,
+                            const TThostFtdcDateType&                                         ctp_day_,
+                            const TThostFtdcTimeType& ctp_time_ const TThostFtdcMillisecType& ctp_milli_ ) {
     dt_.from_ctp( ctp_day_, ctp_time_, ctp_milli_ );
 }
 
