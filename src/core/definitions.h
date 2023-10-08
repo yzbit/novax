@@ -170,7 +170,7 @@ struct period_t {
     // 转成秒--时间粒度不仅仅要和绝对时间有关系还和分割边界有关系，比如1天显然不能按照绝对秒数来算，应该按照收盘时间和开盘时间来算，每周则只能基于小时来算,分钟其实会出现跨天的状况,可以按照秒来算，同时按照自然阅读来分
     operator uint32_t() {
         switch ( t ) {
-        case type_t::milli: return rep / 1000;
+        case type_t::milli: return 0 == rep / 1000 ? 1 : rep / 1000;
         case type_t::seconds: return rep;
         case type_t::min: return rep * 60;
         case type_t::hour: return rep * 3600;

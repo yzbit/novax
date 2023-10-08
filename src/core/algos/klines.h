@@ -12,11 +12,12 @@ struct Kline : Indicator {
     Kline( const code_t& code_, const period_t& p_, int series_count_ );
     static Kline* create( const arg_pack_t& arg_ );
 
-    void on_init() override;
-    void on_calc( const quotation_t& q_ ) override;
+    void      on_init() override;
+    void      on_calc( const quotation_t& q_ ) override;
+    candle_t& bar( int index_ = 0 );
 
 private:
-    bool is_new_bar();
+    bool is_new_bar( const quotation_t& q_ );
 
 private:
     int        _count;
@@ -24,7 +25,7 @@ private:
     period_t   _period;
     int        _curr_bar;
     Series*    _data;
-    datetime_t _curr_start;  //当前k的起始时间
+    datetime_t _curr_start;  // 当前k的起始时间
 };
 
 CUB_NS_END

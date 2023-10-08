@@ -26,8 +26,18 @@ void Kline::on_init() {
     } );
 }
 
-bool Kline::is_new_bar() {
-    return true;
+candle_t& Kline::bar( int index_ = 0 ) {
+    return *( candle_t* )value( 0, index_ ).p
+}
+
+//--period如果是天，当然是以每天的开盘价作为上一个x线的结束
+//--以小时为单位，则必然是以开盘+n小时作为结果，而且以天为单位
+//--暂且不处理超过日的周期
+bool Kline::is_new_bar( const quotation_t& q_ ) {
+    uint32_t p     = _period;
+    uint32_t shift = CLOCK_OF( q_.ex ).open_shift();
+
+    return ( q_.time.to_unix_time() - shift ) / p != ( bar().time.to_unix_time() - shift ) / p;
 }
 
 // todo 所有的指标的shift不应该由指标来调,因为都是和aspect(kline)同步的,可以先不做,避免过度优化
@@ -43,41 +53,60 @@ TradingDay,InstrumentID,...,UpdateTime,UpdateMillisec...
 有时日盘连上会重新再收到一次夜盘的行情数据，是因为CTP日盘初始化时会将夜盘的数据重新跑一遍，所以还会再推一遍夜盘行情数据。
 这些都是垃圾数据，需要清洗掉。可以简单地采用行情里面的时间戳与本地时间戳比大小的方式清洗，不过要事先保证本地时间戳正确，如下
 */
+/*我们只要和开盘时间对齐即可
+
+比如开盘是9:00:00.000 那么当我们的软件启动的时候如果来了一个k线的时间是  10:31:00.000 ，如果我们按照5分钟收集
+从9+n*5 - 10：31
+实际上从31到34都应该是属于10：30的k线序列，而不是10：31-10：36属于第一根K线
+按照秒来收集足够了，假设1秒为单位，那么每一秒是一根k线
+
+9:00:00.456--这是第一根k线
+
+9:00:01.123--这是第二根
+9:00:01.786--
+9:00:02.111--这是第三根
+
+把周期全部转成s，
+1- 按照开盘时间对齐： 从开盘到现在必须是n秒的整数倍
+2- 小于ns的都算n根线
+3- 按照实际时间来算， 假如以3分钟或者3小时来统计，那么必然的，一根k线会跨越两天，但是这不重要
+
+文华财经的时间分布都以交易日来做的，如果一天只有7个小时，那么你按照5小时为周期，就会导致5+2，每天分为2个k线，第二个k线只有2个小时
+我们可以提供两种模式，一种按照自然日来分割，日内按照K线周期来分，最后不足一个周期就算了; 第二按照每根k线足够的周期来生成
+考虑到开盘价很重要，这么做可能意义不是很大
+*/
 void Kline::on_calc( const quotation_t& q_ ) {
     auto& s = recent();
 
-    //此时可以认为是新开盘
+    // 此时可以认为是新开盘
     if ( abs( CLOCK_OF( q_.ex ).now() - q_.time.to_unix_time() ) > 3 * 60 ) {
         LOG_INFO( "market open ;obsolete data recieved" );
         return;
     }
 
-    // q_属于当前x线还是属于下一根
-    //---先结束上一根k线--"左开右闭"--某个q到来之后先关闭上个,下次q来才是重新开始
-    auto k = ( candle_t* )recent().p;
+    candle_t* k = nullptr;
+
+    if ( is_new_bar( q_ ) ) {
+        // 结束上一个，并且开始下一个，但是对于新开始的来说，上个并不存在
+        k = &bar();
+        if ( k->time.is_valid() ) {
+            k->time   = q_.time;
+            k->volume = q_.volume - k->volume;
+
+            shift();
+            k = &bar();
+            memset( k, 0x00, sizeof( candle_t ) );
+        }
+
+        k->time   = q_.time;  // 开始时间
+        k->volume = q_.volume;
+        k->open   = q_.close;
+    }
 
     k->opi   = q_.opi;
     k->close = q_.close;
     k->high  = std::max( k->high, k->close );
     k->low   = std::min( k->low, k->close );
-
-    if ( 0 == k->volume ) {
-        k->volume = q_.volume;
-    }
-
-    if ( !k->time.is_valid() ) {
-        k->time = q_.time;  //开始时间
-    }
-
-    if ( is_new_bar() ) {
-        k->time   = q_.time;
-        k->volume = q_.volume - k->volume;
-
-        shift();
-
-        k = ( candle_t* )recent().p;
-        memset( k, 0x00, sizeof( candle_t ) );
-    }
 }
 
 CUB_NS_END
