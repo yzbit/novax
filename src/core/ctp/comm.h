@@ -42,6 +42,13 @@ struct setting_t {
     cert_t                c;
 };
 
+#define EX_SHFE "SHFE"
+#define EX_DCE "DCE"
+#define EX_FFEX "FFEX"
+#define EX_CZCE "CZCE"
+#define EX_INE "INE"
+#define EX_GFEX "GFEX"
+
 enum class extype_t : uint8_t {
     SHFE = 0,
     DCE,
@@ -80,6 +87,24 @@ inline void cvt_datetime( datetime_t&                   dt,
                           const TThostFtdcDateType&     ctp_day_,
                           const TThostFtdcTimeType&     ctp_time_,
                           const TThostFtdcMillisecType& ctp_milli_ );
+
+inline int cvt_ex( const TThostFtdcExchangeIDType& exid_ ) {
+    LOG_INFO( "ex id=%s", exid_ );
+    // gcc -o2的memcpm是非常快的,常用的交易所放在前面
+    if ( memcmp( exid_, EX_SHFE, 4 ) == 0 )
+        return ( int )extype_t::SHFE;
+    else if ( memcmp( exid_, EX_DCE, 3 ) == 0 )
+        return ( int )extype_t::DCE;
+    else if ( memcmp( exid_, EX_CZCE, 4 ) == 0 )
+        return ( int )extype_t::CZCE;
+    else if ( memcmp( exid, EX_INE, 3 ) == 0 )
+        return ( int )extype_t::INE;
+    else if ( memcmp( exid, EX_GFEX, 4 ) == 0 )
+        return ( int )extype_t::GFEX;
+
+    LOG_INFO( "cannot reg ex" );
+    return -1;
+}
 }  // namespace ctp
 CUB_NS_END
 #endif /* B43732C7_EA9D_4138_8023_E0627CD66A48 */

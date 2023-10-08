@@ -16,6 +16,9 @@ struct Kline : Indicator {
     void on_calc( const quotation_t& q_ ) override;
 
 private:
+    bool is_new_bar();
+
+private:
     int        _count;
     code_t     _symbol;
     period_t   _period;

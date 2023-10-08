@@ -1,5 +1,8 @@
 #include "klines.h"
 
+#include "../clock.h"
+#include "../log.hpp"
+
 #define BAR_TRACK 0
 CUB_NS_BEGIN
 
@@ -23,6 +26,10 @@ void Kline::on_init() {
     } );
 }
 
+bool Kline::is_new_bar() {
+    return true;
+}
+
 // todo 所有的指标的shift不应该由指标来调,因为都是和aspect(kline)同步的,可以先不做,避免过度优化
 // 分钟k一定是和分钟对齐,至少结束的时候是和分钟对齐
 // 如果q-start大于某个周期则一定要换下一个K
@@ -39,10 +46,37 @@ TradingDay,InstrumentID,...,UpdateTime,UpdateMillisec...
 void Kline::on_calc( const quotation_t& q_ ) {
     auto& s = recent();
 
-    bool next_bar = true;
+    //此时可以认为是新开盘
+    if ( abs( CLOCK_OF( q_.ex ).now() - q_.time.to_unix_time() ) > 3 * 60 ) {
+        LOG_INFO( "market open ;obsolete data recieved" );
+        return;
+    }
 
-    if ( next_bar ) {
+    // q_属于当前x线还是属于下一根
+    //---先结束上一根k线--"左开右闭"--某个q到来之后先关闭上个,下次q来才是重新开始
+    auto k = ( candle_t* )recent().p;
+
+    k->opi   = q_.opi;
+    k->close = q_.close;
+    k->high  = std::max( k->high, k->close );
+    k->low   = std::min( k->low, k->close );
+
+    if ( 0 == k->volume ) {
+        k->volume = q_.volume;
+    }
+
+    if ( !k->time.is_valid() ) {
+        k->time = q_.time;  //开始时间
+    }
+
+    if ( is_new_bar() ) {
+        k->time   = q_.time;
+        k->volume = q_.volume - k->volume;
+
         shift();
+
+        k = ( candle_t* )recent().p;
+        memset( k, 0x00, sizeof( candle_t ) );
     }
 }
 

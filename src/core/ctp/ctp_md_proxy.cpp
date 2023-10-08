@@ -61,7 +61,7 @@ int CtpExMd::unsub() {
     return _api->UnSubscribeMarketData( arr.get(), _unsub_symbols.size() );
 }
 
-std::unique_ptr<char*[]> CtpExMd::set2arr( std::set<code_t>& s ) {
+std::unique_ptr<char* []> CtpExMd::set2arr( std::set<code_t>& s ) {
     auto arr = std::make_unique<char*[]>( _sub_symbols.size() );
     int  n   = 0;
 
@@ -243,6 +243,7 @@ void CtpExMd::OnRtnDepthMarketData( CThostFtdcDepthMarketDataField* f ) {
     msg::QuotationFrame r;
 
     cvt_datetime( r->time, f->TradingDay, f->UpdateTime, f->UpdateMillisec );  // todo use ActionDay?
+    r->ex = cvt_ex( f->ExchangeID );
 
     r->last        = f->LastPrice;
     r->volume      = f->Volume;

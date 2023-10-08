@@ -79,7 +79,7 @@ struct code_hash_t {
 struct datetime_t {
     int year, month, day, wday, hour, minute, seconds, milli;
 
-    void from( const time_t& t_ ) {
+    void from_unix_time( const time_t& t_ ) {
         auto tm = localtime( &t_ );
         year    = tm->tm_year + 1900;
         month   = tm->tm_mon + 1;
@@ -90,6 +90,22 @@ struct datetime_t {
         seconds = tm->tm_sec;
 
         milli = 0;
+    }
+
+    time_t to_unix_time() const {
+        struct tm t;
+        t.tm_year = year - 1900;
+        t.tm_mon  = month - 1;
+        t.tm_mday = day;
+        t.tm_hour = hour;
+        t.tm_min  = minute;
+        t.tm_sec  = seconds;
+
+        return mktime( &t );
+    }
+
+    bool is_valid() {
+        return day != 0;
     }
 
 #define TK_DIFF ( 1000 + 100 + 10 + 1 ) * '0'
@@ -117,11 +133,7 @@ struct datetime_t {
         // wday = ( year % 100 + ( year % 100 ) / 4 + ( year / 100 ) / 4 - 2 * ( year / 100 ) + 26 * ( month + 1 ) / 10 + day - 1 ) % 7;
     }
 
-    time_t to_time_t() {
-        return 0;
-    }
-
-    std::string to_iso() {
+    std::string to_iso() const {
         char fmt[ 64 ];
         sprintf( fmt, "%04d-%02d-%02d %02d:%02d:%02d.%03dZ", year, month, day, hour, minute, seconds, milli );
 
