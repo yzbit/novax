@@ -1,7 +1,5 @@
 #ifndef FD2A6E11_0FF8_46D3_8383_601CBBFDBC45
 #define FD2A6E11_0FF8_46D3_8383_601CBBFDBC45
-#ifndef CPPTIME_H_
-#define CPPTIME_H_
 
 /**
  * The MIT License (MIT)
@@ -181,7 +179,7 @@ class Timer {
     std::multiset<detail::Time_event> time_events;
 
     // A list of ids to be re-used. If possible, ids are used from this pool.
-    std::stack<CppTime::timer_id> free_ids;
+    std::stack<cub::timer_id> free_ids;
 
 public:
     Timer()
@@ -290,7 +288,7 @@ private:
             }
             else {
                 detail::Time_event te = *time_events.begin();
-                if ( CppTime::clock::now() >= te.next ) {
+                if ( cub::clock::now() >= te.next ) {
 
                     // Remove time event
                     time_events.erase( time_events.begin() );
@@ -322,9 +320,7 @@ private:
 };
 
 CUB_NS_END
-
-#endif  // CPPTIME_H_
-
+// issue: update to gcc10 for mono.. clock
 /*link: https://github.com/eglimi/cpptime*/
 /*demo
 //--one shot
