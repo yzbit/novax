@@ -7,6 +7,13 @@
 #include "ns.h"
 
 CUB_NS_BEGIN
+
+enum class variety_t {
+    cn_fu,
+    cn_stock,
+    bitcoin,
+};
+
 struct fund_t {
     money_t    withdraw;    // 取款
     money_t    cashin;      // 存钱

@@ -5,8 +5,9 @@
 
 CUB_NS_BEGIN
 
-Trader* Trader::create() {
-    return new ctp::CtpTrader();
+Trader& Trader::instance() {
+    static ctp::CtpTrader _ctp;
+    return _ctp;
 }
 
 CUB_NS_END

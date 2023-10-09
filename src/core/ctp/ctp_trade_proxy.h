@@ -41,6 +41,8 @@ CUB_NS_BEGIN
 namespace ctp {
 
 struct CtpTrader : Trader, CThostFtdcTraderSpi {
+    CtpTrader() = default;
+
     struct session_t {
         TThostFtdcFrontIDType   front;
         TThostFtdcSessionIDType sess;

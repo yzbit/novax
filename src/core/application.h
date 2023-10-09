@@ -3,7 +3,8 @@
 #include "ns.h"
 
 CUB_NS_BEGIN
-struct QuantApp {
+
+struct App {
     virtual int init();
     virtual int exec();
 };

@@ -12,9 +12,10 @@ struct Aspect;
 
 // facade 类
 struct Context {
-    Aspect* create_aspect( const code_t& symbol_, const period_t& period_, int count_, const string_t& alias_ );
+    Aspect* add_aspect( const code_t& symbol_, const period_t& period_, int count_, const string_t& alias_ );
     int     load( const string_t& algo_name_, const ArgPack& arg_ );
     int     load( Algo* a_ );
+    Aspect* aspect();
 
     //------市价下单------
     int pshort( const code_t& c_, vol_t qty_ );

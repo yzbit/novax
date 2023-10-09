@@ -4,8 +4,8 @@
 #include <list>
 #include <memory>
 
-#include "candle.h"
 #include "definitions.h"
+#include "models.h"
 #include "msg.h"
 #include "ns.h"
 #include "utils.h"
@@ -20,6 +20,9 @@ struct Data {
 
     Data();
     virtual ~Data();
+
+    virtual int start() { return 0; }
+    virtual int stop() { return 0; }
 
     int subscribe( const code_t& code_ );
     int unsubscribe( const code_t& code_ );

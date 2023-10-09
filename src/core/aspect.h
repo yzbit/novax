@@ -12,6 +12,7 @@ struct Aspect final {
     ~Aspect();
     void update( const quotation_t& q_ );
 
+    int        load( const code_t& code_, const period_t& p_, int count_ );
     Indicator* attach( const string_t& name_, const arg_pack_t& args_ );
     int        attach( Indicator* i_ );
 
