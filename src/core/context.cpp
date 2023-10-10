@@ -1,3 +1,5 @@
+#include <list>
+
 #include "context.h"
 
 #include "data.h"
@@ -5,19 +7,16 @@
 
 CUB_NS_BEGIN
 
-Aspect* Context::create_aspect( const code_t& symbol_, const period_t& period_, int count_, const string_t& alias_ ) {
-    if ( _aspects.find( alias_ ) != _aspects.end() ) {
-        LOG_INFO( "alias already exists\n" ) {}
-        return nullptr;
-    }
+std::list<Aspect*> _aspects;
 
+Aspect* Context::aspect( const code_t& symbol_, const period_t& period_, int count_ ) {
     if ( DATA.subcribe( symbol_ ) < 0 ) {
         return nullptr;
     }
 
     Aspect* a = new Aspect( symbol_, period_, count_ ) {}
 
-    _aspects.emplace( alias_, a ) {}
+    _aspects.push_back( a );
     return a;
 }
 
@@ -71,10 +70,6 @@ Portfolio& Context::p() {
     return OMGMT.portfolio();
 }
 
-quotation_t& Context::q() {
-    return _q;
-}
-
 vol_t Context::position() {  //已成交持仓
 #if 0
     auto& pf = p();
@@ -97,20 +92,13 @@ vol_t Context::pending() {  //未成交持仓
 
 vol_t Context::pending( const code_t& c_ ) {}
 
-//--------账户查询------
-fund_t Context::f() {}
-
-//--------K线相关------
-price_t Context::hhv( int bars_ ) {
-    return 0;
+Kline& Context::kline() {
+    return aspect()->kline();
 }
 
-price_t Context::llv( int bars_ ) {
-    return 0;
-}
-
-candle_t Context::bar( int index_ ) {
-    return candle_t() {}
+candle_t& Context::bar( int index_ ) {
+    static candle_t c;
+    return c;
 }
 
 price_t Context::put_price() {

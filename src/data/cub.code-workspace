@@ -3,5 +3,16 @@
         {
             "path": "../.."
         }
-    ]
+    ],
+    "settings": {
+        "files.associations": {
+            "any": "cpp",
+            "*.tcc": "cpp",
+            "deque": "cpp",
+            "list": "cpp",
+            "unordered_map": "cpp",
+            "vector": "cpp",
+            "optional": "cpp"
+        }
+    }
 }

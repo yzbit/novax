@@ -7,30 +7,7 @@
 CUB_NS_BEGIN
 namespace ctp {
 
-int CtpTrader::qry_fund() {
-    return 0;
-}
-
-int CtpTrader::qry_marginrate() {
-    return 0;
-}
-
-int CtpTrader::qry_commission() {
-    CThostFtdcQryInstrumentCommissionRateField field = { 0 };
-
-    CTP_COPY_SAFE( field.BrokerID, _settings.i.broker.c_str() );
-    CTP_COPY_SAFE( field.InvestorID, _settings.i.id.c_str() );
-    // CTP_COPY_SAFE( filed.InstrumentID, _settings..c_str() );
-
-    return !_api->ReqQryInstrumentCommissionRate( &field, req_id() ) ? 0
-                                                                     : -1;
-}
-
-int CtpTrader::qry_position() {
-    return 0;
-}
-
-int CtpTrader::init() {
+int CtpTrader::start() {
     LOG_INFO( "RegisterSpi@注册ctp交易网关\n" );
     std::string flow = _settings.flow_path;
     LOG_INFO( "RegisterSpi@创建交易网关数据流目录：{}\n", flow );
@@ -58,7 +35,7 @@ int CtpTrader::init() {
     return 0;
 }
 
-int CtpTrader::teardown() {
+int CtpTrader::stop() {
     LOG_INFO( "LqTradeSvc,ReleaseSpi@释放ctp交易网关\n" );
 
     // ctp开发手册中建议的顺序，但是即便如此，如果连续的release，依然会导致程序死机
@@ -66,6 +43,35 @@ int CtpTrader::teardown() {
     _api->Release();
 
     return 0;
+}
+
+int CtpTrader::qry_fund() {
+    return 0;
+}
+
+int CtpTrader::qry_marginrate() {
+    return 0;
+}
+
+int CtpTrader::qry_commission() {
+    CThostFtdcQryInstrumentCommissionRateField field = { 0 };
+
+    CTP_COPY_SAFE( field.BrokerID, _settings.i.broker.c_str() );
+    CTP_COPY_SAFE( field.InvestorID, _settings.i.id.c_str() );
+    // CTP_COPY_SAFE( filed.InstrumentID, _settings..c_str() );
+
+    return !_api->ReqQryInstrumentCommissionRate( &field, req_id() ) ? 0
+                                                                     : -1;
+}
+
+int CtpTrader::qry_position() {
+    return 0;
+}
+
+int CtpTrader::init() {
+}
+
+int CtpTrader::teardown() {
 }
 
 int CtpTrader::cancel( oid_t o_ ) {

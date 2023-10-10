@@ -19,7 +19,7 @@ void BreakTh::on_refresh( Context& c ) {
 
     if ( c.position() == 0 ) {
         if ( c.bar().close() < c.kline().llv( 10, Kline::pricetype_t::close ) && t > 15 * 60 ) {  //开盘15分钟后
-            oid_t id = c.sellshort( _code, 1, c.bar().close, otype_t::market );
+            oid_t id = c.pshort( _code, 1, c.bar().close, otype_t::market );
 
             if ( id == 0 ) {
                 LOG_INFO( "sell short failed" );
@@ -27,7 +27,7 @@ void BreakTh::on_refresh( Context& c ) {
             }
         }
         else if ( c.bar().close() > c.kline().hhv( 10, Kline::pricetype_t::close ) && t > 15 * 60 ) {
-            oid_t id = c.buylong( _code, 1, c.bar().close, otype_t::market );
+            oid_t id = c.plong( _code, 1, c.bar().close, otype_t::market );
 
             if ( id == 0 ) {
                 LOG_INFO( "sell short failed" );
@@ -37,12 +37,12 @@ void BreakTh::on_refresh( Context& c ) {
     }
     else if ( c.position() < 0 ) {
         if ( c.bar( 1 ).is_red() && c.bar( 1 ).body_up() > _ma->at( 1 ) ) {
-            c.close();
+            c.close( _code );
         }
     }
     else {
         if ( c.bar( 1 ).is_black() && c.bar( 1 ).body_low() < _ma->at( 1 ) ) {
-            c.close();
+            c.close( _code );
         }
     }
 }

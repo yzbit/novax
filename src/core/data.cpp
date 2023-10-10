@@ -33,54 +33,11 @@ void Data::on_data( const quotation_t& tick_ ) {
     STRATEGY.invoke( 0 );
 }
 
-//
-// void Data::on_msg( const msg::header_t& h_ ) {
-//    switch ( h_.id ) {
-//    case msg::mid_t::book_data:
-//        break;
-//
-//    default:
-//        break;
-//    }
-//}
-//
-
 Data::Data() {
-#if 0
-    REACTOR.sub( { msg::mid_t::svc_data }, [ & ]( const msg::header_t& h ) {
-        if ( h.id != msg::mid_t::svc_data ) {
-            LOG_TRACE( "receive bad msg %u", h.id );
-            return;
-        }
-
-        on_data( { 0 } );
-    } );
-
-    REACTOR.sub( {}, [ & ]( const msg::header_t& h ) {
-        on_msg( h );
-    } );
-#endif
-
-    _market = Market::create();
-
-    if ( !_market || _market->init() != 0 ) {
-        LOG_INFO( "create market failed" );
-        delete _market;
-        _market = nullptr;
-    }
-
     _jobs = TaskQueue::create( 4 );
 }
 
 Data::~Data() {
-}
-
-int Data::subscribe( const code_t& code_ ) {
-    return _market->subscribue( code_ );
-}
-
-int Data::unsubscribe( const code_t& code_ ) {
-    return _market->unsubscribue( code_ );
 }
 
 CUB_NS_END

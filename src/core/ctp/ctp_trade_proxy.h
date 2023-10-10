@@ -69,22 +69,22 @@ struct CtpTrader : Trader, CThostFtdcTraderSpi {
         bool is_ref_valid();
     };
 
+    int start() override;
+    int stop() override;
     int put( const order_t& o_ ) override;
     int cancel( oid_t o_ ) override;
 
 private:
-    int  login();
-    int  logout();
-    int  auth();
-    int  init();
-    void tune_clock();
-    int  teardown();
-    int  qry_settlement();
-    int  confirm_settlement();
-    int  qry_fund();
-    int  qry_marginrate();
-    int  qry_commission();
-    int  qry_position();
+    int login();
+    int logout();
+    int auth();
+    int teardown();
+    int qry_settlement();
+    int confirm_settlement();
+    int qry_fund();
+    int qry_marginrate();
+    int qry_commission();
+    int qry_position();
 
 private:
     void   session_changed( const session_t& s_ );

@@ -1,10 +1,11 @@
-#ifndef B124668D_7ECD_44F4_8B97_03EC927050F9
-#define B124668D_7ECD_44F4_8B97_03EC927050F9
+#ifndef ABC258CE_1A2E_4412_B044_2334BA65204C
+#define ABC258CE_1A2E_4412_B044_2334BA65204C
+
 #include <map>
 
-#include "algos/all.h"
-#include "definitions.h"
-#include "ns.h"
+#include "../definitions.h"
+#include "../ns.h"
+#include "all.h"
 
 #define BEGIN_ALGO_REPO() static std::map<string_t, algo_creator_t> _s_algo_repo = {
 
@@ -35,4 +36,4 @@ END_ALGO_REPO()
 CUB_NS_END
 
 #define ALGO cub::_s_algo_repo
-#endif /* B124668D_7ECD_44F4_8B97_03EC927050F9 */
+#endif /* ABC258CE_1A2E_4412_B044_2334BA65204C */

@@ -22,7 +22,6 @@ struct CtpExMd : Data, CThostFtdcMdSpi {
     int unsubscribue( const code_t& code_ ) override;
 
 private:
-    int init() override;
     int login();
 
 private:
