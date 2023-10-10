@@ -5,17 +5,16 @@
 #include <set>
 
 #include "../clock.h"
+#include "../data.h"
 #include "../definitions.h"
-#include "../market.h"
 #include "../ns.h"
-#include "../utils.h"
 
 #define CTP_MD_SETTING_FILE "ctp_md.json"
 
 CUB_NS_BEGIN
 
 namespace ctp {
-struct CtpExMd : Market, CThostFtdcMdSpi {
+struct CtpExMd : Data, CThostFtdcMdSpi {
 
     CtpExMd();
 

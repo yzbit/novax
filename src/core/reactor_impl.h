@@ -16,18 +16,6 @@ CUB_NS_BEGIN
 using FilterToken = char[ 4 ];
 
 struct ReactorImpl : Reactor {
-    struct Svc {
-        Svc( const string_t& endpoint_ );
-        ~Svc();
-
-        void init( const string_t& endpoint_ );
-        Svc() = default;
-
-        zmq::socket_t  chan;
-        zmq::context_t context;
-        string_t       endpoint;
-    };
-
     static constexpr int kMaxPubCount = 16;
 
     ~ReactorImpl();
@@ -40,14 +28,12 @@ private:
     zmq::socket_t& distribute( const msg::mid_t& id_ );
     zmq::socket_t& therad_safe_pub();
 
-    int  init();
-    void init_svc();
+    int init();
 
 private:
     void filter_from_id( FilterToken& filter_, const msg::mid_t& ids_ );
 
 private:
-    Svc            _data, _trade;
     zmq::context_t _center_ctx;
 };
 

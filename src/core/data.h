@@ -8,7 +8,7 @@
 #include "models.h"
 #include "msg.h"
 #include "ns.h"
-#include "utils.h"
+#include "task_queue.h"
 
 CUB_NS_BEGIN
 class Indicator;
@@ -24,8 +24,8 @@ struct Data {
     virtual int start() { return 0; }
     virtual int stop() { return 0; }
 
-    int subscribe( const code_t& code_ );
-    int unsubscribe( const code_t& code_ );
+    virtual int subscribe( const code_t& code_ );
+    virtual int unsubscribe( const code_t& code_ );
 
 private:
     void on_data( const quotation_t& tick_ );
@@ -34,7 +34,6 @@ private:
 private:
     std::list<Aspect*> _aspects;
     TaskQueue*         _jobs      = nullptr;
-    Market*            _market    = nullptr;
     Indicator*         _indicator = nullptr;
 };
 

@@ -47,14 +47,7 @@ zmq::socket_t& ReactorImpl::therad_safe_pub() {
 }
 
 zmq::socket_t& ReactorImpl::distribute( const msg::mid_t& id_ ) {
-    switch ( id_ ) {
-    case msg::mid_t::svc_data:
-        return _data.chan;
-    case msg::mid_t::svc_order:
-        return _trade.chan;
-    default:
-        return therad_safe_pub();
-    }
+    return therad_safe_pub();
 }
 
 int ReactorImpl::pub( const void* data_, size_t length_ ) {
@@ -80,15 +73,7 @@ ReactorImpl::ReactorImpl() {
     init();
 }
 
-void ReactorImpl::init_svc() {
-    LOG_INFO( "##init svc" );
-    _data.init( REACTOR_DATA );
-    _trade.init( REACTOR_TRADE );
-}
-
 int ReactorImpl::init() {
-    init_svc();
-
     _center_ctx = std::move( zmq::context_t( 2 ) );
 
     auto mainloop = [ & ]() {
@@ -109,30 +94,6 @@ int ReactorImpl::init() {
     std::thread( mainloop ).detach();
 
     return 0;
-}
-
-ReactorImpl::Svc::Svc( const string_t& endpoint_ ) {
-    init( endpoint_ );
-}
-
-ReactorImpl::Svc::~Svc() {
-    chan.close();
-    context.close();
-}
-
-void ReactorImpl::Svc::init( const string_t& endpoint_ ) {
-    endpoint = endpoint_;
-
-    context = std::move( zmq::context_t( 1 ) );
-    chan    = std::move( zmq::socket_t( context, zmq::socket_type::pair ) );
-
-    assert( context );
-    assert( chan );
-
-    // chan.set( zmq::sockopt::sndhwm, 5);
-
-    LOG_INFO( "context=0x%lx ,sock=0x%lx, endpoint=%s", ( intptr_t )&context, ( intptr_t )&chan, endpoint_.c_str() );
-    chan.bind( endpoint.c_str() );
 }
 
 void ReactorImpl::filter_from_id( FilterToken& filter_, const msg::mid_t& id_ ) {
@@ -174,53 +135,31 @@ int ReactorImpl::sub( const mid_set_t& msg_set_, msg_handler_t h_ ) {
     };
 
     std::thread( [ = ]() {
-        zmq::socket_t chan;
-
         LOG_INFO( "create sub thread" );
+        zmq::socket_t sub( _center_ctx, ZMQ_SUB );
 
-        if ( msg_set_.size() == 1 && *msg_set_.begin() == msg::mid_t::svc_data ) {
-            LOG_INFO( "svc data sub" );
-
-            // note 从源代码可以看到，inproc属于single connection，后续的连接会被忽略
-            zmq::socket_t d = zmq::socket_t( _data.context, zmq::socket_type::pair );
-            /// d.set( zmq::sockopt::rcvhwm, 5);
-            d.connect( REACTOR_DATA );
-            chan.swap( d );
-        }
-        else if ( msg_set_.size() == 1 && *msg_set_.begin() == msg::mid_t::svc_order ) {
-            LOG_INFO( "create svc-trade sub " );
-            zmq::socket_t t = zmq::socket_t( _trade.context, zmq::socket_type::pair );
-            t.connect( REACTOR_TRADE );
-            chan.swap( t );
+        LOG_INFO( "create comm sub thread: context=0x%lx, sock=0x%lx", ( intptr_t )&_center_ctx, ( intptr_t )&sub );
+        if ( msg_set_.empty() ) {
+            sub.set( zmq::sockopt::subscribe, "" );
         }
         else {
-            zmq::socket_t sub( _center_ctx, ZMQ_SUB );
-
-            LOG_INFO( "create comm sub thread: context=0x%lx, sock=0x%lx", ( intptr_t )&_center_ctx, ( intptr_t )&sub );
-            if ( msg_set_.empty() ) {
-                sub.set( zmq::sockopt::subscribe, "" );
-            }
-            else {
-                for ( auto& id : msg_set_ ) {
-                    if ( id == msg::mid_t::svc_data || id == msg::mid_t::svc_order ) {
-                        LOG_INFO( "cant book svc_data/svc_order" );
-                        continue;
-                    }
-
-                    FilterToken filter = { 0 };
-                    filter_from_id( filter, id );
-                    sub.set( zmq::sockopt::subscribe, filter );
+            for ( auto& id : msg_set_ ) {
+                if ( id == msg::mid_t::svc_data || id == msg::mid_t::svc_order ) {
+                    LOG_INFO( "cant book svc_data/svc_order" );
+                    continue;
                 }
-            }
-            sub.connect( REACTOR_XPUB );
 
-            chan.swap( sub );
+                FilterToken filter = { 0 };
+                filter_from_id( filter, id );
+                sub.set( zmq::sockopt::subscribe, filter );
+            }
         }
+        sub.connect( REACTOR_XPUB );
 
         LOG_INFO( "into loop" );
-        loop( chan );
+        loop( sub );
         LOG_INFO( "loop finished" );
-        chan.close();
+        sub.close();
     } ).detach();
     return 0;
 }
