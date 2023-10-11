@@ -26,7 +26,6 @@ private:
     code_t     _symbol;
     period_t   _period;
     int        _curr_bar;
-    Series*    _data;
     datetime_t _curr_start;  // 当前k的起始时间
 };
 

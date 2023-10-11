@@ -11,16 +11,23 @@ message("####mod dir=${MODULE_ROOT}")
 message("####repo dir=${MODULE_ROOT}/../..")
 
 SET(SRC 
-    reactor_impl.cpp
     application.cpp
-    data.cpp
-    algo.cpp
-    clock.cpp
-    market.cpp
-    indicator.cpp
     aspect.cpp
-    ctp/ctp_md_proxy.cpp
+    canlendar.cpp
+    clock.cpp
+    context.cpp
+    data.cpp
+    indicator.cpp
+    kline.cpp
+    order_mgmt.cpp
+    proxy.cpp
+    reactor_impl.cpp
     strategy.cpp
+    trader.cpp
+    ctp/ctp_md_proxy.cpp
+    ctp/ctp_trade_proxy.cpp
+    algos/ma.cpp
+    gallery/break_through.cpp
 )
 
 add_library(${PROJECT_NAME}  ${SRC}) 

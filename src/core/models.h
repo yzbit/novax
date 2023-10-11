@@ -76,19 +76,12 @@ struct candle_t {
 
 // real time ticks
 struct quotation_t {
-    code_t  code;
-    int     ex;        //交易所
-    vol_t   volume;    // 成交仓位
-    money_t turnover;  // 成交额
-    vol_t   opi;
-
-    // int     depth;
-    // vol_t   bidvol[ PRICE_DEPTH ];
-    // vol_t   askvol[ PRICE_DEPTH ];
-    // price_t bid[ PRICE_DEPTH ];
-    // price_t ask[ PRICE_DEPTH ];
-
-    vol_t      bidvol;
+    code_t     code;
+    int        ex;        //交易所
+    vol_t      volume;    // 成交仓位
+    money_t    turnover;  // 成交额
+    vol_t      opi;
+    vol_t      bidvol;  //没有深度数据
     vol_t      askvol;
     price_t    bid;
     price_t    ask;

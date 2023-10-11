@@ -48,7 +48,7 @@ private:
     std::string time_str_file();
 
 private:
-    bool        _use_stdout       = fale;
+    bool        _use_stdout       = false;
     bool        _keep             = false;
     std::string _log_file         = "";
     int         _log_fd           = -1;
@@ -197,7 +197,7 @@ inline int Logz::lite( const char* msg_ ) {
     // else
 
     if ( _use_stdout ) {
-        fprintf( stderr, msg_ )
+        fprintf( stderr, "%s", msg_ );
     }
 
     sz = write( _log_fd, msg_, strlen( msg_ ) );
