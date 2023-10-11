@@ -22,14 +22,10 @@
 
 CUB_NS_BEGIN
 
-#define MA Ma
-#define KLINE Kline
+#define MA "Ma"
+#define KLINE "Kline"
 
 BEGIN_ALGO_REPO()
-
-// DECL_ALGO( ALGO_MA, Ma::create )
-// DECL_ALGO( ALGO_KLINE, Kline::create )
-DECL_ALGO( KLINE )
 
 END_ALGO_REPO()
 

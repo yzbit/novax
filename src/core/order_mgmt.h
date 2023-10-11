@@ -14,8 +14,6 @@
 
 CUB_NS_BEGIN
 
-struct Trader;
-
 // 接口的设计：实际交易的过程中，按照订单平仓的可能性其实蛮小的，应该还是按照合约名称+仓位 平仓的可能性更大
 // 高频交易可能下单，撤单，平仓快速发生，此时oid显然是用的
 struct OrderMgmt {
@@ -56,7 +54,6 @@ private:
     std::atomic<oid_t> _init_id = 0;
     OrderDetails       _book;
     InsPosition        _ins_position;
-    Trader*            _trader;
     std::mutex         _mutex;
 };
 

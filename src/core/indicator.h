@@ -90,6 +90,7 @@ amnt_t total_money = ACCOUNT.captical();
 auto le = ACCOUNT.ganggan();
 */
 
+#include <atomic>
 #include <unordered_map>
 
 #include "definitions.h"
@@ -111,12 +112,14 @@ struct Indicator {
     virtual void on_calc( const quotation_t& q_ ) = 0;
     virtual int  series_cnt() { return 0; };
 
-    int  prio();
-    void set_prio( int p_ );
+    int prio();
 
     Series::element_t& value( int track_ = 0, int index_ = 0 );
     Series::element_t& recent();
     void               shift();
+
+protected:
+    Indicator();
 
 protected:
     Series* add_series( int track_, int size_, Series::free_t free_ = Series::default_free() );
@@ -137,7 +140,9 @@ private:
     Aspect*       _asp;
 
     // 创建的越晚优先级越高--需要先计算，当我们创建A的时候，A可能创建B,然后B要先计算然后再计算A-这并不绝对，但是也是最简单的处理方式
-    int _prio;
+    int _prio = 0;
+
+    static std::atomic<int> _global_prio;
 };
 
 CUB_NS_END

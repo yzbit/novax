@@ -8,7 +8,6 @@
 CUB_NS_BEGIN
 
 OrderMgmt::OrderMgmt() {
-    _trader = Trader::create();
 }
 
 oid_t OrderMgmt::oid() {
@@ -20,7 +19,7 @@ oid_t OrderMgmt::sellshort( const oattr_t& attr_, price_t sl_, price_t tp_, cons
     ord->from_attr( attr_ );
     ord->id = oid();
 
-    auto rc = _trader->put( *ord.get() );
+    auto rc = TRADER.put( *ord.get() );
 
     if ( rc != 0 )
         return 0;
@@ -33,11 +32,11 @@ oid_t OrderMgmt::sellshort( const oattr_t& attr_, price_t sl_, price_t tp_, cons
 oid_t OrderMgmt::buylong( const oattr_t& attr_, price_t sl_, price_t tp_, const text_t& remark_ = "open buy" ) {
     order_t o = { 0 };
     o.from_attr( attr_ );
-    return 0 == _trader->put( o ) ? o.id : 0;
+    return 0 == TRADER.put( o ) ? o.id : 0;
 }
 
 int OrderMgmt::cancel( oid_t id_ ) {
-    return _trader->cancel( id_ );
+    return TRADER.cancel( id_ );
 }
 
 order_t* OrderMgmt::get( oid_t id_ ) {
@@ -58,7 +57,7 @@ void OrderMgmt::update( oid_t id_, ostatus_t status_ ) {
     if ( !o ) return;
 
     LOG_INFO( "unexpected status %d", status_ );
-    assert( status_ != ostatus_t::dealt );
+    CUB_ASSERT( status_ != ostatus_t::dealt );
 
     if ( ostatus_t::cancelled == status_ ) {
         delete o;
@@ -67,7 +66,7 @@ void OrderMgmt::update( oid_t id_, ostatus_t status_ ) {
 }
 
 position_t* OrderMgmt::position( const code_t& code_, bool long_, bool new_ ) {
-    assert( sel_ == LONG_POSITION || sel_ == SHORT_POSITION );
+    CUB_ASSERT( sel_ == LONG_POSITION || sel_ == SHORT_POSITION );
 
     auto itr_p = _ins_position.find( code_ );
     if ( itr_p == _ins_position.end() ) {
@@ -182,7 +181,7 @@ void OrderMgmt::update( const order_t& o_ ) {
     if ( !o ) return;
 
     // todo  最后返回的rtntrade重复的吗，会不会导致数据重算,--如果直接成交了，是不是就没有没有rtnorder，只有一个rtntrade'?不确定需要做测试
-    assert( ostatus_t::dealt == o_.status );
+    CUB_ASSERT( ostatus_t::dealt == o_.status );
 
     // o的订单已经成交了o_, 主要的作用是更新持仓
     // o_不仅仅是更新了o，可能还是更新了其他的仓位的，比如平仓的时候
@@ -206,7 +205,7 @@ rb2410 short    2
 todo 总仓位是 2，那么此时关闭的是什么，关闭净仓? 使用参数决定,我们目前只支持单腿
 */
 int OrderMgmt::close( odir_t dir_, const oattr_t& a_ ) {
-    assert( dir_ == odir_t::sell || dir_ == odir_t::cover );
+    CUB_ASSERT( dir_ == odir_t::sell || dir_ == odir_t::cover );
 
     if ( a_.qty == 0 ) {
         LOG_INFO( "close [%s] with qty=0, and will close all avaiable", a_.symbol );
@@ -230,7 +229,7 @@ int OrderMgmt::close( odir_t dir_, const oattr_t& a_ ) {
     order.id  = oid();
     order.dir = dir_;
 
-    if ( _trader->put( order ) != 0 ) {
+    if ( TRADER.put( order ) != 0 ) {
         LOG_INFO( "close position failed, dir=%d ,sym=%s, qty=%d ,price=%ld ,mode=%d", dir_, a_.symbol, a_.qty, order.price, order.mode );
         return -1;
     }

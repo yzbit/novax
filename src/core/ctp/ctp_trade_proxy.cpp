@@ -38,7 +38,7 @@ int CtpTrader::start() {
 int CtpTrader::stop() {
     LOG_INFO( "LqTradeSvc,ReleaseSpi@释放ctp交易网关\n" );
 
-    // ctp开发手册中建议的顺序，但是即便如此，如果连续的release，依然会导致程序死机
+//ctp 手册建议: 
     _api->RegisterSpi( nullptr );
     _api->Release();
 
@@ -255,7 +255,7 @@ int CtpTrader::put( const order_t& o_ ) {
 }
 
 int CtpTrader::assign_ref( oid_t id_ ) {
-    assert( id_ );
+    CUB_ASSERT( id_ );
 
     if ( _orders.find( id_ ) != _orders.end() ) {
         LOG_INFO( "band order id" );
@@ -283,7 +283,7 @@ int CtpTrader::assign_ref( oid_t id_ ) {
     }
 
     if ( carry ) {
-        assert( i == j );
+        CUB_ASSERT( i == j );
         _ss.init_ref[ i ] = '1';
     }
 

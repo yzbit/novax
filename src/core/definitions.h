@@ -17,6 +17,8 @@
 
 CUB_NS_BEGIN
 
+#define CUB_ASSERT assert
+
 using id_t     = uint32_t;
 using price_t  = double;
 using vol_t    = int;  // todo double ctp都是整数仓位;
@@ -184,7 +186,7 @@ inline period_t::period_t( const type_t& t_, int r_ )
     : t( t_ )
     , rep( r_ ) {
 
-    assert( ( uint32_t )( *this ) <= 1 * 365 * 24 * 3600 );
+    CUB_ASSERT( ( uint32_t )( *this ) <= 1 * 365 * 24 * 3600 );
 }
 
 // 转成秒--时间粒度不仅仅要和绝对时间有关系还和分割边界有关系，比如1天显然不能按照绝对秒数来算，应该按照收盘时间和开盘时间来算，每周则只能基于小时来算,分钟其实会出现跨天的状况,可以按照秒来算，同时按照自然阅读来分
@@ -219,19 +221,19 @@ inline T& array_t<T>::operator[]( int index_ ) {
 
 template <typename T>
 inline T& array_t<T>::get( int index_ ) {
-    assert( ( uint32_t )index_ < _size );
+    CUB_ASSERT( ( uint32_t )index_ < _size );
     return element( index_ );
 }
 
 template <typename T>
 inline void array_t<T>::set( const T& t_, int index_ ) {
-    assert( ( uint32_t )index_ < _size );
+    CUB_ASSERT( ( uint32_t )index_ < _size );
     element[ index_ ] = t_;
 }
 
 template <typename T>
 inline void array_t<T>::set( const T&& t_, int index_ ) {
-    assert( ( uint32_t )index_ < _size );
+    CUB_ASSERT( ( uint32_t )index_ < _size );
     element[ index_ ] = t_;
 }
 

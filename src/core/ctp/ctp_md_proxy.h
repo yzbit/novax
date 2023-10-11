@@ -18,14 +18,14 @@ struct CtpExMd : Data, CThostFtdcMdSpi {
 
     CtpExMd();
 
+protected:
+    int start() override;
+    int stop() override;
     int subscribue( const code_t& code_ ) override;
     int unsubscribue( const code_t& code_ ) override;
 
 private:
     int login();
-
-private:
-private:
     int read_settings();
     int sub();
     int unsub();

@@ -9,12 +9,14 @@
 CUB_NS_BEGIN
 
 struct Kline : Indicator {
-    Kline( const code_t& code_, const period_t& p_, int series_count_ );
     static Kline* create( const arg_pack_t& arg_ );
 
     void      on_init() override;
     void      on_calc( const quotation_t& q_ ) override;
     candle_t& bar( int index_ = 0 );
+
+private:
+    Kline( const code_t& code_, const period_t& p_, int series_count_ );
 
 private:
     bool is_new_bar( const quotation_t& q_ );

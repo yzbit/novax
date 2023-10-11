@@ -7,6 +7,7 @@
 #include "../definitions.h"
 #include "../models.h"
 #include "../trader.h"
+#include "comm.h"
 /*最近对ctp的流程有了更多的认识。
 
 两类指令的流程:新订单和撤单操作，都是分成两大步骤，第一步是把订单交给ctp系统，他返回一个响应，
@@ -43,6 +44,34 @@ namespace ctp {
 struct CtpTrader : Trader, CThostFtdcTraderSpi {
     CtpTrader() = default;
 
+protected:
+    int start() override;
+    int stop() override;
+    int put( const order_t& o_ ) override;
+    int cancel( oid_t o_ ) override;
+
+private:
+    int login();
+    int logout();
+    int auth();
+    int teardown();
+    int qry_settlement();
+    int confirm_settlement();
+    int qry_fund();
+    int qry_marginrate();
+    int qry_commission();
+    int qry_position();
+
+private:
+    int    assign_ref( oid_t id_ );
+    oid_t  id_of_ref( const TThostFtdcOrderRefType& ref_ );
+    odir_t cvt_direction( const TThostFtdcDirectionType& di_, const TThostFtdcCombOffsetFlagType& comb_ );
+    odir_t cvt_direction( const TThostFtdcDirectionType& di_, const TThostFtdcOffsetFlagType& comb_ );
+
+private:
+    CThostFtdcTraderApi* _api;
+
+private:
     struct session_t {
         TThostFtdcFrontIDType   front;
         TThostFtdcSessionIDType sess;
@@ -69,33 +98,8 @@ struct CtpTrader : Trader, CThostFtdcTraderSpi {
         bool is_ref_valid();
     };
 
-    int start() override;
-    int stop() override;
-    int put( const order_t& o_ ) override;
-    int cancel( oid_t o_ ) override;
-
-private:
-    int login();
-    int logout();
-    int auth();
-    int teardown();
-    int qry_settlement();
-    int confirm_settlement();
-    int qry_fund();
-    int qry_marginrate();
-    int qry_commission();
-    int qry_position();
-
-private:
-    void   session_changed( const session_t& s_ );
-    int    assign_ref( oid_t id_ );
-    int    update_order_ids( order_ids_t& ids_ );
-    oid_t  id_of_ref( const TThostFtdcOrderRefType& ref_ );
-    odir_t cvt_direction( const TThostFtdcDirectionType& di_, const TThostFtdcCombOffsetFlagType& comb_ );
-    odir_t cvt_direction( const TThostFtdcDirectionType& di_, const TThostFtdcOffsetFlagType& comb_ );
-
-private:
-    CThostFtdcTraderApi* _api;
+    void session_changed( const session_t& s_ );
+    int  update_order_ids( order_ids_t& ids_ );
 
 private:
     using pending_t = std::unordered_map<oid_t, order_ids_t>;

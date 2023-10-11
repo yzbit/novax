@@ -12,7 +12,8 @@
             "list": "cpp",
             "unordered_map": "cpp",
             "vector": "cpp",
-            "optional": "cpp"
+            "optional": "cpp",
+            "string": "cpp"
         }
     }
 }

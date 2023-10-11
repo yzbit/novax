@@ -95,7 +95,7 @@ private:
                     _pool._jobs.pop_front();
                 }
 
-                assert( true == static_cast<bool>( fn ) );
+                CUB_ASSERT( true == static_cast<bool>( fn ) );
                 fn();
             }  // for
         }

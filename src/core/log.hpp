@@ -40,6 +40,7 @@ struct Logz {
     int  fmt( const char* fmt_, ... );
     int  archive( const char* file_ );
     void flush();
+    void set_stdout( bool enable_ = true ) { _use_stdout = enable_; }
 
 private:
     std::string time_str( bool simple_ = false );
@@ -47,6 +48,7 @@ private:
     std::string time_str_file();
 
 private:
+    bool        _use_stdout       = fale;
     bool        _keep             = false;
     std::string _log_file         = "";
     int         _log_fd           = -1;
@@ -87,6 +89,9 @@ CUB_NS_END
     LOGZ.init( _name_, _rotate_, true )
 
 #define LOG_TRACE LOGZ.fmt
+
+#define LOG_DISABLE_STDOUT() LOGZ.set_stdout( true )
+#define LOG_ENABLE_STDOUT() LOGZ.set_stdout( false )
 
 // #define LOGZ_AR(_file_) sr_utility::lgz_archive(_file_)
 
@@ -190,6 +195,10 @@ inline int Logz::lite( const char* msg_ ) {
     // if ( sz >= 2 && msg_[ sz - 1 ] == '\n' && msg_[ sz - 2 ] == '\n' )
     //    sz = write( _log_fd, msg_, strlen( msg_ ) - 1 );
     // else
+
+    if ( _use_stdout ) {
+        fprintf( stderr, msg_ )
+    }
 
     sz = write( _log_fd, msg_, strlen( msg_ ) );
 

@@ -1,13 +1,13 @@
 
 #include "trader.h"
 
-#include "ctp/ctp_trade_proxy.h"
+#include "proxy.h"
 
 CUB_NS_BEGIN
 
 Trader& Trader::instance() {
-    static ctp::CtpTrader _ctp;
-    return _ctp;
+    static Trader* t = ProxyFactory::create_trader( 0 );
+    return *t;
 }
 
 CUB_NS_END
