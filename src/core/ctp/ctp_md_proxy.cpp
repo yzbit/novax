@@ -50,6 +50,7 @@ int CtpExMd::unsubscribue( const code_t& code_ ) {
 int CtpExMd::sub() {
     if ( _sub_symbols.empty() ) return 0;
 
+
     auto arr = set2arr( _sub_symbols );
     return _api->SubscribeMarketData( arr.get(), _sub_symbols.size() );
 }

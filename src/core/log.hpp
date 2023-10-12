@@ -103,11 +103,6 @@ CUB_NS_END
 
 CUB_NS_BEGIN
 
-// todo
-#ifdef CPP_FS
-namespace fs = std::filesystem;
-#endif
-
 inline std::string Logz::time_str( bool simple_ ) {
     auto now = std::chrono::system_clock::now();
     // 通过不同精度获取相差的毫秒数
@@ -258,15 +253,6 @@ inline int Logz::init( const char* log_file_, int rotate_, bool keep_ ) {
 
     printf( "--lgz--init-%s, rotate=%d\n", _log_file.c_str(), _rotate_threshold );
 
-#ifdef CPP_FS
-    auto f = fs::path( _log_file );
-    if ( !fs::exists( f.parent_path() ) ) {
-        fs::create_directories( f.parent_path() );
-    }
-
-    fs::remove( f );
-
-#else
     auto path = ::strdup( _log_file.c_str() );
     auto dir  = dirname( path );
 
@@ -283,7 +269,6 @@ inline int Logz::init( const char* log_file_, int rotate_, bool keep_ ) {
     _log_fd          = open( real.c_str(), O_CREAT | O_RDWR, 0666 );
 
     lseek( _log_fd, 0, SEEK_END );
-#endif
 
     std::thread( [ & ]() {
         for ( ;; ) {
