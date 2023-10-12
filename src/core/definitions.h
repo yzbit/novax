@@ -123,6 +123,14 @@ private:
 
 #define THREAD_DETACHED( _func_ ) std::thread( _func_ ).detach()
 #define THREAD_JOINED( _func_ ) std::thread( _func_ ).join()
+#define THREAD_SPAWN( _func_, _thread_ ) \
+    do {                                 \
+        std::thread _t( _func_ );        \
+        if ( _thread_ )                  \
+            _thread_->swap( _t );        \
+        else                             \
+            _t.detach();                 \
+    } while ( 0 )
 
 struct arg_t {
     std::any value;

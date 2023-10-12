@@ -8,17 +8,14 @@
 #include "models.h"
 #include "msg.h"
 #include "ns.h"
+#include "ring_buffer.h"
 #include "task_queue.h"
 
 CUB_NS_BEGIN
-class Indicator;
-class Market;
-class Aspect;
+struct Quant;
 
 struct Data {
-    static Data& instance();
-
-    Data();
+    Data( Quant* q_ );
     virtual ~Data();
 
     virtual int start()                            = 0;
@@ -30,7 +27,13 @@ private:
     void update( const quotation_t& tick_ );
 
 private:
-    TaskQueue* _jobs = nullptr;
+    void process();
+
+private:
+    TaskQueue*                _jobs = nullptr;
+    RingBuff<quotation_t, 30> _cache;
+    std::list<Aspect*>        _aspects;
+    Quant*                    _q;
 };
 
 CUB_NS_END

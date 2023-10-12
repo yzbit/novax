@@ -182,7 +182,7 @@ inline void Series::append( const element_t& t_ ) {
 inline int Series::size() {
     return _end >= _begin
                ? _end - _begin
-               : _end + _total - _begin;  //-减少处罚运算
+               : _end + _total - _begin;  //-减少除法运算
 }
 
 inline void Series::for_each( std::function<bool( element_t& e_ )> op_ ) {

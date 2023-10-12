@@ -50,7 +50,6 @@ int CtpExMd::unsubscribue( const code_t& code_ ) {
 int CtpExMd::sub() {
     if ( _sub_symbols.empty() ) return 0;
 
-
     auto arr = set2arr( _sub_symbols );
     return _api->SubscribeMarketData( arr.get(), _sub_symbols.size() );
 }
@@ -62,7 +61,7 @@ int CtpExMd::unsub() {
     return _api->UnSubscribeMarketData( arr.get(), _unsub_symbols.size() );
 }
 
-std::unique_ptr<char* []> CtpExMd::set2arr( std::set<code_t>& s ) {
+std::unique_ptr<char*[]> CtpExMd::set2arr( std::set<code_t>& s ) {
     auto arr = std::make_unique<char*[]>( _sub_symbols.size() );
     int  n   = 0;
 
@@ -262,7 +261,7 @@ void CtpExMd::OnRtnDepthMarketData( CThostFtdcDepthMarketDataField* f ) {
     r->open        = f->OpenPrice;
     r->close       = f->ClosePrice;
 
-    REACTOR.pub( r );
+    update( r );
 
     /*
     鉴于夜盘交易时间非常混乱，我们不使用服务器时间（日期），和常用的交易软件时间划分类似
