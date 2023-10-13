@@ -1,6 +1,6 @@
 #include "break_through.h"
 
-void BreakTh::on_init( Context& c ) {
+void BreakTh::on_init( Context* c ) {
     if ( c.aspect()->load( _code, { period_t::type_t::hour, 2 }, 30 ) > 0 ) {
         LOG_INFO( "load code failed: code=%s,period={%d %d}, count=%d", _code, ( int )period_t::type_t::hour, 2, 30 );
         return;
@@ -12,8 +12,11 @@ void BreakTh::on_init( Context& c ) {
     }
 }
 
+void BraekTh::on_instant( const quotation_t& ) {
+}
+
 //不在刚开盘的时候交易
-void BreakTh::on_refresh( Context& c ) {
+void BreakTh::on_invoke( Context* c ) {
     auto t = c.time_since_open();
     auto t = c.time_since( open_time() );
 

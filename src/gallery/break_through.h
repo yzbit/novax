@@ -9,8 +9,9 @@ struct BreakTh : Strategy {
     BreakTh( const code_t& code_ )
         : _code( code_ ) {}
 
-    void on_refresh( Context& c );
-    void on_init( Context& c );
+    void on_invoke( Context* c ) override;
+    void on_init( Context* c ) override;
+    void on_instant( const quotation_t& ) override;
 
 private:
     code_t     _code;

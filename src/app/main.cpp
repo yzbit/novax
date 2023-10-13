@@ -1,8 +1,11 @@
 
 #include <definitions.h>
+#include <quant.h>
 #include <stdio.h>
+#include <strategy.h>
 
-#include "application.h"
+#include "../gallery/break_through.h"
+
 /*
    1）初始化reactor进行进行初始--其实没必要
    2）设置日志
@@ -12,10 +15,10 @@
 */
 
 int main() {
-    cub::App* q = new cub::App();
-        
+    cub::Quant* q = new cub::Quant::create();
 
-    q->init();
+    cub::Strategy* s = new BreakTh();
+    // q->init();
 
-    return q->exec();
+    return q->execute( s );
 }
