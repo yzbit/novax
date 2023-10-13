@@ -11,7 +11,7 @@ struct Trader {
     Trader( QuantImpl* q_ );
 
     struct Delegator {
-        virtual ~Delegator();
+        virtual ~Delegator() {}
         virtual int start()                  = 0;
         virtual int stop()                   = 0;
         virtual int put( const order_t& o_ ) = 0;

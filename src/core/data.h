@@ -17,7 +17,7 @@ struct Aspect;
 
 struct Data {
     struct Delegator {
-        virtual ~Delegator();
+        virtual ~Delegator(){}
         virtual int start()                            = 0;
         virtual int stop()                             = 0;
         virtual int subscribe( const code_t& code_ )   = 0;
