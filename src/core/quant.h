@@ -8,41 +8,18 @@
 
 CUB_NS_BEGIN
 
+//todo
 // 如果允许运行多个quant实例,其他的就不能是单体类
 // 时钟可以是全局的
-struct Data;
-struct Context;
-struct Trader;
-struct Strategy;
-
 struct Quant {
-    Quant();
+    static Quant* create();
 
     virtual ~Quant() {}
-    int init();
-    int execute( Strategy* s_ );
-
-    //--不想让最终用户知道这些信息，只想在data，trader中共享彼此
-    Data*    d();
-    Trader*  t();
-    Strategy s();
+    virtual int init()                  = 0;
+    virtual int execute( Strategy* s_ ) = 0;
 
 private:
-    void quote( const quotation_t& q_ );
-    void update( const order_t& o_ );
-
-private:
-    void ontick();
-
-private:
-    Data*     _d;
-    Trader*   _t;
-    Strategy* _s;
-    Context*  _c;
-
-private:
-    bool  _working;
-    Timer _timer;
+    Quant();
 };
 
 CUB_NS_END

@@ -20,8 +20,8 @@ struct OrderMgmt {
     static OrderMgmt& instance();
     OrderMgmt();
 
-    oid_t sellshort( const oattr_t& attr_, price_t sl_, price_t tp_, const text_t& remark = "open short" );
-    oid_t buylong( const oattr_t& attr_, price_t sl_, price_t tp_, const text_t& remark_ = "open buy" );
+    oid_t sellshort( const oattr_t& attr_, price_t sl_ = 0, price_t tp_ = 0, const text_t& remark = "open short" );
+    oid_t buylong( const oattr_t& attr_, price_t sl_ = 0, price_t tp_ = 0, const text_t& remark_ = "open buy" );
 
     int sell( const oattr_t& a_ = { "", 0, 0, otype_t::market } );
     int buy( const oattr_t& a_ = { "", 0, 0, otype_t::market } );

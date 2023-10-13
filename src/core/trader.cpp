@@ -5,9 +5,29 @@
 
 CUB_NS_BEGIN
 
-Trader& Trader::instance() {
-    static Trader* t = ProxyFactory::create_trader( 0 );
-    return *t;
+int Trader::start() {
+    return _d->start();
+}
+
+int Trader::stop() {
+    return _d->stop();
+}
+
+Trader::~Trader() {
+    delete _d;
+}
+
+Trader::Trader( QuantImpl* q_ )
+    : _q( q_ )
+    , _d( nullptr ) {
+}
+
+int Trader::put( const order_t& o_ ) {
+    return _d->put( o_ );
+}
+
+int Trader::cancel( oid_t o_ ) {
+    return _d->cancel( o_ );
 }
 
 CUB_NS_END

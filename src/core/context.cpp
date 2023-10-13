@@ -1,46 +1,49 @@
 #include <list>
 
-#include "context.h"
-
 #include "aspect.h"
+#include "context_impl.h"
 #include "data.h"
 #include "log.hpp"
 #include "order_mgmt.h"
+#include "quant_impl.h"
 
 CUB_NS_BEGIN
 
+ContextImpl::ContextImpl( QuantImpl* q_ )
+    : _q( q_ ) {
+    _def_asp = new Aspect();
+    _q->data()->attach( _def_asp );
+}
+
 std::list<Aspect*> _aspects;
 
-Aspect* Context::aspect( const code_t& symbol_, const period_t& period_, int count_ ) {
-    Aspect* a = new Aspect( symbol_, period_, count_ ) {}
-
-    _aspects.push_back( a );
-    return a;
+Aspect* ContextImpl::aspect() {
+    return _def_asp;
 }
 
-int Context::load( const string_t& strategy_name_, const arg_pack_t& arg_ ) {
-    CUB_ASSERT( 0 );  // todo
-    return 0;
+Context* Context::create( QuantImpl* q_ ) {
+    return new ContextImpl( q_ );
 }
 
-int Context::load( std::unique_ptr<Strategy> a_ ) {
-    BIND_STRATEGY( a_ );
+Aspect* ContextImpl::add_aspect( const code_t& symbol_, const period_t& period_, int count_ ) {
+    return _q->data()->attach( symbol_, period_, count_ );
 }
 
 //------市价下单------
-int Context::pshort( const code_t& c_, vol_t qty_, price_t price_, otype_t mode_ ) {
+int ContextImpl::pshort( const code_t& c_, vol_t qty_, price_t price_, otype_t mode_ ) {
+    return _q->mgmt()->sellshort( { c_, qty_, price_, mode_ } );
 }
 
-int Context::plong( const code_t& c_, vol_t qty_, price_t price_, otype_t mode_ ) {
+int ContextImpl::plong( const code_t& c_, vol_t qty_, price_t price_, otype_t mode_ ) {
+    return _q->mgmt()->buylong( { c_, qty_, price_, mode_ } );
 }
 
-int Context::cshort( const code_t& c_, vol_t qty_, price_t price_, otype_t mode_ ) {
+int ContextImpl::cshort( const code_t& c_, vol_t qty_, price_t price_, otype_t mode_ ) {
+    return _q->mgmt()->buy( { c_, qty_, price_, mode_ } );
 }
 
-int Context::clong( const code_t& c_, vol_t qty_, price_t price_, otype_t mode_ ) {
-}
-
-int Context::close( const code_t& c_, vol_t qty_, price_t price_, otype_t mode_ ) {
+int ContextImpl::clong( const code_t& c_, vol_t qty_, price_t price_, otype_t mode_ ) {
+    return _q->mgmt()->sell( { c_, qty_, price_, mode_ } );
 }
 
 vol_t Context::position() {  //已成交持仓

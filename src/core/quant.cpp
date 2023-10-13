@@ -3,19 +3,19 @@
 #include <stdexcept>
 #include <unistd.h>
 
-#include "quant.h"
-
 #include "canlendar.h"
 #include "data.h"
 #include "log.hpp"
 #include "proxy.h"
+#include "quant_impl.h"
 #include "strategy.h"
 #include "timer.h"
 #include "trader.h"
 
 CUB_NS_BEGIN
 
-static void wall_clock() {
+Quant* Quant::create() {
+    return new Quant();
 }
 
 // dci
@@ -42,18 +42,18 @@ private:
     std::list<Aspect*> _aps;
 };
 
-int Quant::init() {
+int QuantImpl::init() {
+
     Context0* ctx = new Context0();
     ctx->init();
 
     _d = ProxyFactory::create_data( 0 );
     _t = ProxyFactory::create_trader( 0 );
-
     return 0;
 }
 
 //--处理输入,命令等
-int Quant::execute( Strategy* s_ ) {
+int QuantImpl::execute( Strategy* s_ ) {
     _s = s_;
 
     _s->on_init( _c );
@@ -70,18 +70,16 @@ int Quant::execute( Strategy* s_ ) {
     return 0;
 }
 
-void Quant::quote( const quotation_t& q_ ) {
+void QuantImpl::quote( const quotation_t& q_ ) {
     _s->on_instant( q_ );
-
-    
 
     _s->on_invoke( _c );
 }
 
-void Quant::update( const order_t& o_ ) {
+void QuantImpl::update( const order_t& o_ ) {
 }
 
-void Quant::ontick() {
+void QuantImpl::ontick() {
     if ( !CANLEN.is_trading_day() ) {
         _working = false;
         return;
@@ -96,8 +94,8 @@ void Quant::ontick() {
 
         if ( diff >= 0 && diff < 5 * 60 ) {
             LOG_INFO( "market open" );
-            DATA.start();
-            TRADER.start();
+            _d->start();
+            _t->start();
 
             _working = true;
         }
@@ -108,8 +106,9 @@ void Quant::ontick() {
                     - d.end.hour * 3600 + d.end.minute * 60;
 
         if ( diff > 5 * 60 ) {
-            DATA.stop();
-            TRADER.stop();
+            _d->stop();
+            _t->stop();
+
             _working = true;
         }
     }

@@ -5,8 +5,8 @@
 
 CUB_NS_BEGIN
 
-Data* ProxyFactory::create_data( int type_ ) {
-    return new ctp::CtpExMd();
+Data::Delegator* ProxyFactory::create_data( Data* d_, int type_ ) {
+    return new ctp::CtpExMd( d_ );
 }
 
 Trader* ProxyFactory::create_trader( int type_ ) {

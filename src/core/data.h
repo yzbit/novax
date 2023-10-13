@@ -13,27 +13,38 @@
 
 CUB_NS_BEGIN
 struct Quant;
+struct Aspect;
 
 struct Data {
-    Data( Quant* q_ );
-    virtual ~Data();
+    struct Delegator {
+        virtual ~Delegator();
+        virtual int start()                            = 0;
+        virtual int stop()                             = 0;
+        virtual int subscribe( const code_t& code_ )   = 0;
+        virtual int unsubscribe( const code_t& code_ ) = 0;
+    };
 
-    virtual int start()                            = 0;
-    virtual int stop()                             = 0;
-    virtual int subscribe( const code_t& code_ )   = 0;
-    virtual int unsubscribe( const code_t& code_ ) = 0;
+    Data( QuantImpl* q_ );
+    ~Data();
 
-private:
     void update( const quotation_t& tick_ );
+
+    int     start();
+    int     stop();
+    int     subscribe( const code_t& code_ );
+    int     unsubscribe( const code_t& code_ );
+    Aspect* attach( const code_t& symbol_, const period_t& period_, int count_ );
+    int     attach( Aspect* a_ );
 
 private:
     void process();
 
 private:
-    TaskQueue*                _jobs = nullptr;
     RingBuff<quotation_t, 30> _cache;
     std::list<Aspect*>        _aspects;
-    Quant*                    _q;
+    Delegator*                _d    = nullptr;
+    TaskQueue*                _jobs = nullptr;
+    QuantImpl*                _q    = nullptr;
 };
 
 CUB_NS_END

@@ -7,12 +7,6 @@
 
 CUB_NS_BEGIN
 
-Aspect::Aspect( const code_t& code_, const period_t& p_, int count_ )
-    : _symbol( code_ ) {
-
-    load( code_, p_, count_ );
-}
-
 Aspect::~Aspect() {
     delete _k;
 
@@ -24,12 +18,11 @@ Aspect::~Aspect() {
 }
 
 int Aspect::load( const code_t& code_, const period_t& p_, int count_ ) {
-    if ( DATA.subscribe( code_ ) < 0 ) {
-        LOG_INFO( "subs code failed : %s", code_ );
-        return -1;
-    }
+    if ( loaded() ) return 0;
 
-    _k = Kline::create( { code_, p_, count_ } );
+    _symbol = code_;
+    _k      = Kline::create( { code_, p_, count_ } );
+
     CUB_ASSERT( _k );
 
     return 0;
@@ -43,7 +36,7 @@ void Aspect::update( const quotation_t& q_ ) {
     }
 }
 
-int Aspect::attach( Indicator* i_ ) {
+int Aspect::addi( Indicator* i_ ) {
     if ( _algos.end() == std::find( _algos.begin(), _algos.end(), i_ ) )
         _algos.push_back( i_ );
 
@@ -52,13 +45,13 @@ int Aspect::attach( Indicator* i_ ) {
     return 0;
 }
 
-Indicator* Aspect::attach( const string_t& name_, const arg_pack_t& args_ ) {
+Indicator* Aspect::addi( const string_t& name_, const arg_pack_t& args_ ) {
     auto i = Indicator::create( name_, args_, this );
 
     if ( !i ) return nullptr;
     i->on_init();
 
-    attach( i );
+    addi( i );
 
     return i;
 }

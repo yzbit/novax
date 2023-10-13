@@ -6,16 +6,28 @@
 #include "ns.h"
 
 CUB_NS_BEGIN
-
+struct QuantImpl;
 struct Trader {
-    static Trader& instance();
+    Trader( QuantImpl* q_ );
 
-    virtual ~Trader() {}
+    struct Delegator {
+        virtual ~Delegator();
+        virtual int start()                  = 0;
+        virtual int stop()                   = 0;
+        virtual int put( const order_t& o_ ) = 0;
+        virtual int cancel( oid_t o_ )       = 0;
+    };
 
-    virtual int start() { return 0; }
-    virtual int stop() { return 0; }
-    virtual int put( const order_t& o_ ) { return 0; }
-    virtual int cancel( oid_t o_ ) { return 0; };
+    ~Trader();
+
+    int start();
+    int stop();
+    int put( const order_t& o_ );
+    int cancel( oid_t o_ );
+
+private:
+    Delegator* _d;
+    QuantImpl* _q;
 };
 
 CUB_NS_END
