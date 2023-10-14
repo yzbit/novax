@@ -6,8 +6,8 @@
 CUB_NS_BEGIN
 namespace ctp {
 
-CtpTrader::CtpTrader( Trader* t_ )
-    : _t( t_ ) {}
+CtpTrader::CtpTrader( OrderMgmt* om_ )
+    : _om( om_ ) {}
 
 int CtpTrader::start() {
     LOG_INFO( "RegisterSpi@注册ctp交易网关\n" );

@@ -6,8 +6,9 @@
 
 #include "../definitions.h"
 #include "../models.h"
-#include "../trader.h"
 #include "comm.h"
+#include "order_mgmt.h"
+
 /*最近对ctp的流程有了更多的认识。
 
 两类指令的流程:新订单和撤单操作，都是分成两大步骤，第一步是把订单交给ctp系统，他返回一个响应，
@@ -41,8 +42,8 @@ sessionid orderref，ordersysid等只是为了撤单用的，如果重新登陆�
 CUB_NS_BEGIN
 namespace ctp {
 
-struct CtpTrader : Trader::Delegator, CThostFtdcTraderSpi {
-    CtpTrader( Trader* t_ );
+struct CtpTrader : OrderMgmt::Delegator, CThostFtdcTraderSpi {
+    CtpTrader( OrderMgmt* om_ );
 
 protected:
     int start() override;
@@ -77,6 +78,7 @@ private:
         TThostFtdcSessionIDType sess;
         TThostFtdcOrderRefType  init_ref;  // 因为这个字段是从右边对齐，为了处理方便，我们可以先给他一个很大的值，比如'1000000000'，这样每次只需要处理进位即可
 
+        session_t() = default;
         session_t( TThostFtdcFrontIDType f_, TThostFtdcSessionIDType s_, const TThostFtdcOrderRefType& r_ );
     };
 
@@ -110,7 +112,7 @@ private:
     req_map_t _reqs;
 
 private:
-    Trader* _t;
+    OrderMgmt* _om;
 
 private:
     void OnRtnBulletin( CThostFtdcBulletinField* pBulletin ) override;                                                                                                                     /// 交易所公告通知

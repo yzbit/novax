@@ -1,6 +1,7 @@
 #include "data.h"
 
 #include "aspect.h"
+#include "dci_role.h"
 #include "log.hpp"
 #include "proxy.h"
 #include "quant_impl.h"
@@ -9,7 +10,7 @@
 
 CUB_NS_BEGIN
 
-Data::Data( QuantImpl* q_ )
+Data::Data( DataContext* q_ )
     : _q( q_ ) {
 
     _d    = ProxyFactory::create_data( this, 0 );
@@ -77,7 +78,7 @@ void Data::process() {
 
         _jobs->shutdown();
 
-        _jobs->run( [ & ]() { _q->update( q ); } );
+        _jobs->run( [ & ]() { _r->update( q ); } );
 
         for ( auto& as : _aspects ) {
             _jobs->run( [ & ]() { as->update( q ); } );
@@ -87,7 +88,7 @@ void Data::process() {
             std::this_thread::yield();
         }
 
-        _q->invoke();
+        _r->invoke();
     }
 }
 

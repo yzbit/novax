@@ -26,8 +26,12 @@ struct ContextImpl : Context {
     candle_t& bar( int index_ = 0 ) override;
 
 private:
-    Aspect*    _def_asp;
-    QuantImpl* _q;
+    QuantImpl* _q = nullptr;
+    Data*      _d = nullptr;
+    Trader*    _t = nullptr;
+    Strategy*  _s = nullptr;
+    Context*   _c = nullptr;
+    OrderMgmt* _o = nullptr;
 };
 
 CUB_NS_END

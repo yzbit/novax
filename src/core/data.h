@@ -15,7 +15,7 @@
 
 CUB_NS_BEGIN
 struct Aspect;
-struct QuantImpl;
+struct DataContext;
 
 struct Data {
     struct Delegator {
@@ -26,7 +26,7 @@ struct Data {
         virtual int unsubscribe( const code_t& code_ ) = 0;
     };
 
-    Data( QuantImpl* q_ );
+    Data( DataContext* q_ );
     ~Data();
 
     void update( const quotation_t& tick_ );
@@ -48,7 +48,7 @@ private:
     TaskQueue*                _jobs = nullptr;
 
 private:
-    QuantImpl* _q = nullptr;
+    DataContext* _r = nullptr;
 
 private:
     std::mutex              _mutex;

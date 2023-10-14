@@ -3,41 +3,46 @@
 #include "order_mgmt.h"
 
 #include "log.hpp"
+#include "quant_impl.h"
 #include "trader.h"
 
 CUB_NS_BEGIN
 
-OrderMgmt::OrderMgmt( QuantImpl* q_ )
-    : _q( q_ ) {
+std::atomic<oid_t> OrderMgmt::_init_id = 1;
+
+OrderMgmt::OrderMgmt( MgmtContext* c_ )
+    : _c( c_ ) {
 }
 
 oid_t OrderMgmt::oid() {
     return ++_init_id;
 }
 
-oid_t OrderMgmt::sellshort( const oattr_t& attr_, price_t sl_, price_t tp_, const text_t& remark = "open short" ) {
+oid_t OrderMgmt::put( const oattr_t& attr_ ) {
     auto ord = std::make_unique<order_t>();
     ord->from_attr( attr_ );
     ord->id = oid();
 
-    auto rc = TRADER.put( *ord.get() );
+    auto rc = _c->put_order( *ord.get() );
 
     if ( rc != 0 )
         return 0;
 
-    _open.emplace( ord->id, ord.release() );
+    _book.emplace( ord->id, ord.release() );
 
     return ord->id;
 }
 
+oid_t OrderMgmt::sellshort( const oattr_t& attr_, price_t sl_, price_t tp_, const text_t& remark = "open short" ) {
+    return put( attr_ );
+}
+
 oid_t OrderMgmt::buylong( const oattr_t& attr_, price_t sl_, price_t tp_, const text_t& remark_ = "open buy" ) {
-    order_t o = { 0 };
-    o.from_attr( attr_ );
-    return 0 == TRADER.put( o ) ? o.id : 0;
+    return put( attr_ );
 }
 
 int OrderMgmt::cancel( oid_t id_ ) {
-    return TRADER.cancel( id_ );
+    return _c->del_order( id_ );
 }
 
 order_t* OrderMgmt::get( oid_t id_ ) {
@@ -66,23 +71,25 @@ void OrderMgmt::update( oid_t id_, ostatus_t status_ ) {
     }
 }
 
-position_t* OrderMgmt::position( const code_t& code_, bool long_, bool new_ ) {
-    CUB_ASSERT( sel_ == LONG_POSITION || sel_ == SHORT_POSITION );
+void OrderMgmt::create_position( const code_t& code_ ) {
+    position_t p     = { 0 };
+    p.symbol         = code_;
+    instrument_p_t p = { p, p };
 
+    _ins_position.try_emplace( code_, p );
+}
+
+position_t* OrderMgmt::position( const code_t& code_, bool long_ ) {
     auto itr_p = _ins_position.find( code_ );
+
     if ( itr_p == _ins_position.end() ) {
-        LOG_INFO( "can not find orde for code = %s,sel = %d, new=%d", code_, long_, new_ );
-
-        if ( !new_ ) return nullptr;
-
-        position_t p     = { 0 };
-        p.symbol         = code_;
-        instrument_p_t p = { p, p };
-        _ins_position.emplace( code_, p );
+        LOG_INFO( "can not find orde for code = %s,sel = %d, new=%d", code_, long_ );
+        return nullptr;
     }
 
     return &itr_p->second[ long_ ? LONG_POSITION : SHORT_POSITION ];
 }
+
 /*
 1. 国内四家交易所的平仓顺序统一规则为先开先平。
 2. 郑商所在此基础上还有先平单腿持仓，再平组合持仓。
@@ -92,8 +99,7 @@ position_t* OrderMgmt::position( const code_t& code_, bool long_, bool new_ ) {
 */
 void OrderMgmt::herge( order_t* src_, const order_t* update_ ) {
     auto p = position( src_->code,
-                       src_->dir == odir_t::sell,
-                       true );
+                       src_->dir == odir_t::sell );
 
     if ( !p ) {
         LOG_INFO( "no position for order: id=%u, symbol=%s", src_->id, src_->code );
@@ -136,7 +142,7 @@ vol_t OrderMgmt::position( const code_t& code_ ) {
 }
 
 vol_t OrderMgmt::short_position( const code_t& code_ ) {
-    if ( auto p = position( code_, false, false ); p ) {
+    if ( auto p = position( code_, false ); p ) {
         return p->qty;
     }
 
@@ -144,7 +150,7 @@ vol_t OrderMgmt::short_position( const code_t& code_ ) {
 }
 
 vol_t OrderMgmt::long_position( const code_t& code_ ) {
-    if ( auto p = position( code_, true, false ); p ) {
+    if ( auto p = position( code_, true ); p ) {
         return p->qty;
     }
 
@@ -155,8 +161,7 @@ vol_t OrderMgmt::long_position( const code_t& code_ ) {
 // 如果这样就会出现合约同时持有long和short，也就是说一个合约应该有两条记录，[0] long汇总 [1]short汇总
 void OrderMgmt::accum( order_t* src_, const order_t* update_ ) {
     auto p = position( src_->code,
-                       src_->dir == odir_t::p_long,
-                       true );
+                       src_->dir == odir_t::p_long );
 
     if ( !p ) {
         LOG_INFO( "no position for order: id=%u, symbol=%s", src_->id, src_->code );
@@ -230,7 +235,7 @@ int OrderMgmt::close( odir_t dir_, const oattr_t& a_ ) {
     order.id  = oid();
     order.dir = dir_;
 
-    if ( TRADER.put( order ) != 0 ) {
+    if ( _c->put_order( order ) != 0 ) {
         LOG_INFO( "close position failed, dir=%d ,sym=%s, qty=%d ,price=%ld ,mode=%d", dir_, a_.symbol, a_.qty, order.price, order.mode );
         return -1;
     }

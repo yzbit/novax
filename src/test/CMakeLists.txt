@@ -4,6 +4,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++17 -g")
 
 add_executable(test_rb test.ringbuff.cpp)
 add_executable(test_asp test.aspect.kline.cpp  ../core/indicator.cpp ../core/aspect.cpp ../core/kline.cpp ../core/clock.cpp )
+add_executable(test_mgmt test.omgmt.cpp ../core/order_mgmt.cpp)
 
 #add_executable(test_reactor test.pub.cpp)
 #add_executable(test_kline test.kline.cpp ../core/aspect.cpp ../core/algos/klines.cpp ../core/indicator.cpp)

@@ -1,6 +1,7 @@
 #ifndef D392EBBF_A7F9_4ED1_B8F6_BE4B2E02DA07
 #define D392EBBF_A7F9_4ED1_B8F6_BE4B2E02DA07
 
+#include "dci_role.h"
 #include "ns.h"
 #include "quant.h"
 #include "timer.h"
@@ -12,17 +13,13 @@ struct Context;
 struct Trader;
 struct Strategy;
 
-struct QuantImpl : Quant {
+struct QuantImpl : Quant, DataContext, MgmtContext {
     QuantImpl();
 
-    Trader*    trader();
-    Data*      data();
-    Strategy*  strategy();
-    OrderMgmt* mgmt();
-    Context*   ctx();
-
-    void update( const quotation_t& q_ );
-    void invoke();
+    int  put_order( const order_t& o_ ) override;
+    int  del_order( oid_t id_ ) override;
+    void update( const quotation_t& q_ ) override;
+    void invoke() override;
 
 protected:
     int init();
@@ -47,27 +44,6 @@ private:
     bool  _working = false;
     Timer _timer;
 };
-
-//--------------INLINES.----------------
-inline Data* QuantImpl::data() {
-    return _d;
-}
-
-inline Trader* QuantImpl::trader() {
-    return _t;
-}
-
-inline Strategy* QuantImpl::strategy() {
-    return _s;
-}
-
-inline OrderMgmt* QuantImpl::mgmt() {
-    return _o;
-}
-
-inline Context* QuantImpl::ctx() {
-    return _c;
-}
 
 CUB_NS_END
 

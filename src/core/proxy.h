@@ -4,11 +4,11 @@
 
 CUB_NS_BEGIN
 struct Data;
-struct Trader;
+struct OrderMgmt;
 
 struct ProxyFactory {
-    static Data::Delegator*   create_data( Data* d_, int type_ );
-    static Trader::Delegator* create_trader( Trader* t_, int type_ );
+    static Data::Delegator*      create_data( Data* d_, int type_ );
+    static OrderMgmt::Delegator* create_trader( OrderMgmt* t_, int type_ );
 };
 
 CUB_NS_END

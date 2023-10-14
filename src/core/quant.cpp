@@ -24,6 +24,14 @@ QuantImpl::QuantImpl() {
     init();
 }
 
+int QuantImpl::put_order( const order_t& o_ ) {
+    return _t->put( o_ );
+}
+
+int QuantImpl::del_order( oid_t id_ ) {
+    return _t->cancel( id_ );
+}
+
 void QuantImpl::update( const quotation_t& q_ ) {
     _c->q = q_;
     _s->on_instant( q_ );
