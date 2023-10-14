@@ -108,18 +108,16 @@ struct Indicator {
 
     virtual ~Indicator();
 
-    virtual void on_init()                        = 0;
-    virtual void on_calc( const quotation_t& q_ ) = 0;
-    virtual int  series_cnt() { return 0; };
+    virtual string_t name() { return "#indi"; }
+    virtual void     on_calc( const quotation_t& q_ ) = 0;
 
-    int prio();
-
-    Series::element_t& value( int track_ = 0, int index_ = 0 );
-    Series::element_t& recent();
+    int                tracks();
+    Series::element_t* value( int track_ = 0, int index_ = 0 );
+    Series::element_t* recent();
     void               shift();
 
 protected:
-    Indicator();
+    Indicator() {}
 
 protected:
     Series* add_series( int track_, int size_, Series::free_t free_ = Series::default_free() );
@@ -139,11 +137,13 @@ private:
     series_repo_t _series;
     Aspect*       _asp;
 
-    // 创建的越晚优先级越高--需要先计算，当我们创建A的时候，A可能创建B,然后B要先计算然后再计算A-这并不绝对，但是也是最简单的处理方式
-    int _prio = 0;
-
     static std::atomic<int> _global_prio;
 };
+
+//---inline---
+inline int Indicator::tracks() {
+    return ( int )_series.size();
+}
 
 CUB_NS_END
 

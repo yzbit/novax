@@ -12,25 +12,31 @@ struct Kline;
 struct Indicator;
 struct Aspect {
     Aspect() = default;
-
     ~Aspect();
+
     void update( const quotation_t& q_ );
+    int  load( const code_t& code_, const period_t& p_, int count_ );
 
-    int load( const code_t& code_, const period_t& p_, int count_ );
-
-    Indicator* addi( const string_t& name_, const arg_pack_t& args_ );
-    int        addi( Indicator* i_ );
-
+    Indicator*    addi( const string_t& name_, const arg_pack_t& args_ );
+    int           addi( Indicator* i_ );
     const code_t& code() const;
     Kline&        kline();
+    bool          loaded() const;
 
-    bool loaded();
+    //--
+    void debug();
 
 private:
-    std::list<Indicator*> _algos;
+    struct prii_t {
+        int        p;
+        Indicator* i;
+    };
 
-    code_t _symbol = "";
-    Kline* _k      = nullptr;
+    std::list<prii_t> _algos;
+
+    int    _ref_prio = 1;
+    code_t _symbol   = "";
+    Kline* _k        = nullptr;
 };
 
 inline Kline& Aspect::kline() {
@@ -41,7 +47,7 @@ inline const code_t& Aspect::code() const {
     return _symbol;
 }
 
-inline bool Aspect::loaded() {
+inline bool Aspect::loaded() const {
     return !_symbol.empty();
 }
 

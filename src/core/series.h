@@ -42,8 +42,8 @@ struct Series final {
     static free_t default_free();
 
     void init( std::function<void( element_t& e_ )> );
-    //指针类型会有赋值困难,默认数组是已经完整的,只shift即可
-    // void append( const element_t& t_ );
+    // 指针类型会有赋值困难,默认数组是已经完整的,只shift即可
+    //  void append( const element_t& t_ );
     void shift();
     int  size();
     void for_each( std::function<bool( element_t& e_ )> op_ );
@@ -72,6 +72,8 @@ inline Series::element_t::element_t( void* p_ )
 
 inline Series::element_t& Series::element_t::operator=( void* p_ ) {
     p = p_;
+
+    return *this;
 }
 
 inline Series::element_t::element_t( const element_t& e_ ) {

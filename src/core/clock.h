@@ -11,9 +11,11 @@ CUB_NS_BEGIN
 struct Clock {
     static Clock& of_exchange( int exid_ );
 
-    uint32_t open_shift() { _open_shift; }
+    uint32_t open_shift() { return _open_shift; }
     void     tune( const datetime_t& dt_ );  // 调整本地时间和交易所的时间
     time_t   now();
+
+    Clock();
 
 private:
     time_t   _epoch      = 0;

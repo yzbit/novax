@@ -20,6 +20,9 @@ Data::Data( QuantImpl* q_ )
 
 void Data::update( const quotation_t& tick_ ) {
     _cache.put( tick_ );
+
+    std::unique_lock<std::mutex> lock{ _mutex };
+    _cv.notify_one();
 }
 
 int Data::start() {
@@ -57,7 +60,16 @@ Aspect* Data::attach( const code_t& symbol_, const period_t& period_, int count_
 void Data::process() {
     quotation_t q = { 0 };
 
+    auto wait = [ & ]() {
+        std::unique_lock<std::mutex> lock{ _mutex };
+        _cv.wait( lock, [ & ]() {
+            return _cache.size() > 0;
+        } );
+    };
+
     for ( ;; ) {
+        wait();
+
         if ( _cache.pop( q ) < 0 ) {
             std::this_thread::yield();
             continue;

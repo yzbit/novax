@@ -1,8 +1,10 @@
 #ifndef F4D9DAEC_B9A1_48EF_8FEB_A99D60585AD3
 #define F4D9DAEC_B9A1_48EF_8FEB_A99D60585AD3
 
+#include <condition_variable>
 #include <list>
 #include <memory>
+#include <mutex>
 
 #include "definitions.h"
 #include "models.h"
@@ -12,12 +14,12 @@
 #include "task_queue.h"
 
 CUB_NS_BEGIN
-struct Quant;
 struct Aspect;
+struct QuantImpl;
 
 struct Data {
     struct Delegator {
-        virtual ~Delegator(){}
+        virtual ~Delegator() {}
         virtual int start()                            = 0;
         virtual int stop()                             = 0;
         virtual int subscribe( const code_t& code_ )   = 0;
@@ -44,7 +46,13 @@ private:
     std::list<Aspect*>        _aspects;
     Delegator*                _d    = nullptr;
     TaskQueue*                _jobs = nullptr;
-    QuantImpl*                _q    = nullptr;
+
+private:
+    QuantImpl* _q = nullptr;
+
+private:
+    std::mutex              _mutex;
+    std::condition_variable _cv;
 };
 
 CUB_NS_END

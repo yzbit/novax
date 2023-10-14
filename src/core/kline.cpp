@@ -1,7 +1,7 @@
 #include "kline.h"
 
-#include "../clock.h"
-#include "../log.hpp"
+#include "clock.h"
+#include "log.hpp"
 
 #define BAR_TRACK 0
 CUB_NS_BEGIN
@@ -11,6 +11,7 @@ Kline::Kline( const code_t& code_, const period_t& p_, int series_count_ )
     , _symbol( code_ )
     , _period( p_ )
     , _curr_bar( 0 ) {
+    init();
 }
 
 Kline* Kline::create( const arg_pack_t& arg_ ) {
@@ -19,15 +20,15 @@ Kline* Kline::create( const arg_pack_t& arg_ ) {
     return new Kline( ( string_t )arg_[ 0 ], ( const period_t )arg_[ 1 ], ( int )arg_[ 2 ] );
 }
 
-void Kline::on_init() {
+void Kline::init() {
     _data = add_series( BAR_TRACK, _count, ::free );
     _data->init( []( Series::element_t& e_ ) {
         e_.p = new candle_t();
     } );
 }
 
-candle_t& Kline::bar( int index_ = 0 ) {
-    return *( candle_t* )value( 0, index_ ).p
+candle_t& Kline::bar( int index_ ) {
+    return *( candle_t* )value( 0, index_ )->p;
 }
 
 //--period如果是天，当然是以每天的开盘价作为上一个x线的结束
@@ -76,11 +77,11 @@ TradingDay,InstrumentID,...,UpdateTime,UpdateMillisec...
 考虑到开盘价很重要，这么做可能意义不是很大
 */
 void Kline::on_calc( const quotation_t& q_ ) {
-    auto& s = recent();
+    auto r = recent();
 
     // 此时可以认为是新开盘
     if ( abs( CLOCK_OF( q_.ex ).now() - q_.time.to_unix_time() ) > 3 * 60 ) {
-        LOG_INFO( "market open ;obsolete data recieved" );
+        LOG_INFO( "market open ;obsolete data recieved: %u %u", CLOCK_OF( q_.ex ).now(), q_.time.to_unix_time() );
         return;
     }
 

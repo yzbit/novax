@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <string>
+#include <thread>
 #include <time.h>
 
 #include "ns.h"
@@ -37,7 +38,7 @@ struct code_t {
     code_t( int c_ );
     code_t() = default;
 
-    bool    empty();
+    bool    empty() const;
     code_t& operator=( const code_t& c_ );
     bool    operator==( const code_t& c_ );
     bool    operator!=( const code_t& c_ );
@@ -169,7 +170,7 @@ inline code_t::code_t( int c_ ) {
     sprintf( code, "%d", c_ );
 }
 
-inline bool code_t::empty() {
+inline bool code_t::empty() const {
     return code[ 0 ] == '\0';
 }
 
@@ -377,7 +378,7 @@ inline void datetime_t::from_ctp( const char* day_, const char* time_, int milli
     // wday = ( year % 100 + ( year % 100 ) / 4 + ( year / 100 ) / 4 - 2 * ( year / 100 ) + 26 * ( month + 1 ) / 10 + day - 1 ) % 7;
 }
 
-std::string datetime_t::to_iso() const {
+inline std::string datetime_t::to_iso() const {
     char fmt[ 64 ];
     sprintf( fmt, "%04d-%02d-%02d %02d:%02d:%02d.%03dZ", year, month, day, hour, minute, seconds, milli );
 

@@ -7,12 +7,6 @@
 
 CUB_NS_BEGIN
 
-std::atomic<int> Indicator::_global_prio = 1;
-
-Indicator::Indicator() {
-    _prio = ++_global_prio;
-}
-
 Indicator* Indicator::create( const string_t& name_, const arg_pack_t& args_, Aspect* asp_ ) {
     if ( ALGO.find( name_ ) == ALGO.end() ) {
         LOG_INFO( "cant not find indicator for %s", name_.c_str() );
@@ -24,7 +18,7 @@ Indicator* Indicator::create( const string_t& name_, const arg_pack_t& args_, As
 
         if ( i ) {
             i->set_asp( asp_ );
-            asp_->attach( i );
+            asp_->addi( i );
         }
 
         return i;
@@ -42,10 +36,6 @@ Indicator::~Indicator() {
     _series.clear();
 }
 
-int Indicator::prio() {
-    return _prio;
-}
-
 Series* Indicator::add_series( int track_, int size_, Series::free_t free_ ) {
     if ( _series.find( track_ ) != _series.end() ) {
         LOG_INFO( "series of track %d already EXISTING", track_ );
@@ -56,8 +46,10 @@ Series* Indicator::add_series( int track_, int size_, Series::free_t free_ ) {
     return _series[ track_ ];
 }
 
-Series::element_t& Indicator::value( int track_, int index_ ) {
-    return track( track_ )->at( index_ );
+Series::element_t* Indicator::value( int track_, int index_ ) {
+    auto t = track( track_ );
+
+    return t ? &( t->at( index_ ) ) : nullptr;
 }
 
 void Indicator::shift() {
@@ -66,7 +58,7 @@ void Indicator::shift() {
     }
 }
 
-Series::element_t& Indicator::recent() {
+Series::element_t* Indicator::recent() {
     return value();
 }
 

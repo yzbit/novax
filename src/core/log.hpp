@@ -29,6 +29,13 @@
 CUB_NS_BEGIN
 
 struct Logz {
+    enum class severty_t {
+        info,
+        warn,
+        error,
+        fatal
+    };
+
     static Logz& instance();
 
     int shut();
@@ -36,7 +43,7 @@ struct Logz {
     // log_file_ 包含路径
     int  init( const char* log_file_, int rotate_, bool keep_ );
     int  lite( const char* msg_ );
-    int  details( const char* file_, const char* func_, int line_, const char* fmt_, ... );
+    int  details( const char* tag_, const char* file_, const char* func_, int line_, const char* fmt_, ... );
     int  fmt( const char* fmt_, ... );
     int  archive( const char* file_ );
     void flush();
@@ -74,12 +81,13 @@ CUB_NS_END
 #define _filename_( _x_ ) strrchr( _x_, '/' ) ? strrchr( _x_, '/' ) + 1 : _x_
 #endif
 
-#define trace_intl( _fmt_, ... ) \
-    LOGZ.details( _filename_( __FILE__ ), __FUNCTION__, __LINE__, _fmt_, ##__VA_ARGS__ )
+#define trace_intl( _fmt_, ... ) LOGZ.details( nullptr, _filename_( __FILE__ ), __FUNCTION__, __LINE__, _fmt_, ##__VA_ARGS__ )
 
 #define LOG_ERROR trace_intl
 #define LOG_WARN trace_intl
 #define LOG_INFO trace_intl
+
+#define LOG_TAGGED( _tag_, _fmt_, ... ) LOGZ.details( _tag_, _filename_( __FILE__ ), __FUNCTION__, __LINE__, _fmt_, ##__VA_ARGS__ )
 
 #define LOG_FLUSH LOGZ.flush
 #define LOG_INIT( _name_, _rotate_ ) \
@@ -90,8 +98,8 @@ CUB_NS_END
 
 #define LOG_TRACE LOGZ.fmt
 
-#define LOG_DISABLE_STDOUT() LOGZ.set_stdout( true )
-#define LOG_ENABLE_STDOUT() LOGZ.set_stdout( false )
+#define LOG_DISABLE_STDOUT() LOGZ.set_stdout( false )
+#define LOG_ENABLE_STDOUT() LOGZ.set_stdout( true )
 
 // #define LOGZ_AR(_file_) sr_utility::lgz_archive(_file_)
 
@@ -206,12 +214,15 @@ inline int Logz::lite( const char* msg_ ) {
     return sz;
 }
 
-inline int Logz::details( const char* file_, const char* func_, int line_, const char* fmt_, ... ) {
+inline int Logz::details( const char* tag_, const char* file_, const char* func_, int line_, const char* fmt_, ... ) {
     char buff[ 1024 ];
     memset( buff, 0x00, sizeof( buff ) );
 
-    int n =
-        sprintf( buff, "%s [ %s:%s@%d ]", time_str().c_str(), file_, func_, line_ );
+    int n = 0;
+    if ( tag_ && strlen( tag_ ) > 0 )
+        n = sprintf( buff, "#%s, %s [ %s:%s@%d ]", tag_, time_str().c_str(), file_, func_, line_ );
+    else
+        n = sprintf( buff, "%s [ %s:%s@%d ]", time_str().c_str(), file_, func_, line_ );
 
     va_list ap;
     va_start( ap, fmt_ );
@@ -222,7 +233,6 @@ inline int Logz::details( const char* file_, const char* func_, int line_, const
         buff[ strlen( buff ) ] = '\n';
     }
 
-    // printf("%s", buff);
     return this->lite( buff );
 }
 

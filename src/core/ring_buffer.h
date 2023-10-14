@@ -9,14 +9,15 @@ CUB_NS_BEGIN
 
 template <typename T, int N>
 struct RingBuff {
-    int put( const T& t_ );
-    int pop( T& t_ );
-    T*  head();
-    int size();
+    int  put( const T& t_ );
+    int  pop( T& t_ );
+    T*   head();
+    int  size();
+    void clear();
 
 private:
-    int _rd = 0,
-        _wr = 0;
+    volatile int _rd = 0,
+                 _wr = 0;
     T _data[ N ];
 };
 
@@ -41,6 +42,10 @@ inline int RingBuff<T, N>::pop( T& t_ ) {
     _rd = ( _rd + 1 ) % N;
 
     return 0;
+}
+template <typename T, int N>
+inline void RingBuff<T, N>::clear() {
+    _rd = _wr;
 }
 
 template <typename T, int N>
