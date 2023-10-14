@@ -9,7 +9,6 @@
 
 #include "../log.hpp"
 #include "../models.h"
-#include "../msg_int.h"
 #include "../reactor.h"
 #include "comm.h"
 
@@ -18,7 +17,8 @@ namespace ctp {
 namespace js = rapidjson;
 namespace fs = std::filesystem;
 
-CtpExMd::CtpExMd() {
+CtpExMd::CtpExMd( Data* d_ )
+    : _d( d_ ) {
 }
 
 int CtpExMd::subscribue( const code_t& code_ ) {
@@ -148,6 +148,17 @@ int CtpExMd::login() {
     return 0;
 }
 
+int CtpExMd::start() {
+    if ( _running ) return 0;
+    _running = true;
+
+    return init();
+}
+
+int CtpExMd::stop() {
+    return 0;
+}
+
 int CtpExMd::init() {
     LOG_INFO( "ctp md init,flow=%s,font=%s", _settings.flow_path.c_str(), _settings.conn.frontend.c_str() );
 
@@ -164,7 +175,7 @@ int CtpExMd::init() {
         _api->Join();
     } ).detach();
 
-    return Market::init();
+    return 0;
 }
 
 // ctp overrides
@@ -261,7 +272,7 @@ void CtpExMd::OnRtnDepthMarketData( CThostFtdcDepthMarketDataField* f ) {
     r->open        = f->OpenPrice;
     r->close       = f->ClosePrice;
 
-    update( r );
+    _d->update( r );
 
     /*
     鉴于夜盘交易时间非常混乱，我们不使用服务器时间（日期），和常用的交易软件时间划分类似

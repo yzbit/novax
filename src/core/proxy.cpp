@@ -9,8 +9,8 @@ Data::Delegator* ProxyFactory::create_data( Data* d_, int type_ ) {
     return new ctp::CtpExMd( d_ );
 }
 
-Trader* ProxyFactory::create_trader( int type_ ) {
-    return new ctp::CtpTrader();
+Trader::Delegator* ProxyFactory::create_trader( Trader* t_, int type_ ) {
+    return new ctp::CtpTrader( t_ );
 }
 
 CUB_NS_END

@@ -37,6 +37,7 @@ struct code_t {
     code_t( int c_ );
     code_t() = default;
 
+    bool    empty();
     code_t& operator=( const code_t& c_ );
     bool    operator==( const code_t& c_ );
     bool    operator!=( const code_t& c_ );
@@ -166,6 +167,10 @@ inline code_t::code_t( const std::string& str_ )
 
 inline code_t::code_t( int c_ ) {
     sprintf( code, "%d", c_ );
+}
+
+inline bool code_t::empty() {
+    return code[ 0 ] == '\0';
 }
 
 inline code_t& code_t::operator=( const code_t& c_ ) {

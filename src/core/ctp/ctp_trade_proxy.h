@@ -41,8 +41,8 @@ sessionid orderref，ordersysid等只是为了撤单用的，如果重新登陆�
 CUB_NS_BEGIN
 namespace ctp {
 
-struct CtpTrader : Trader, CThostFtdcTraderSpi {
-    CtpTrader() = default;
+struct CtpTrader : Trader::Delegator, CThostFtdcTraderSpi {
+    CtpTrader( Trader* t_ );
 
 protected:
     int start() override;
@@ -108,6 +108,9 @@ private:
     pending_t _orders;
     session_t _ss;
     req_map_t _reqs;
+
+private:
+    Trader* _t;
 
 private:
     void OnRtnBulletin( CThostFtdcBulletinField* pBulletin ) override;                                                                                                                     /// 交易所公告通知

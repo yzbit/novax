@@ -1,11 +1,13 @@
 #include "ctp_trade_proxy.h"
 
 #include "../log.hpp"
-#include "../order_mgmt.h"
 #include "comm.h"
 
 CUB_NS_BEGIN
 namespace ctp {
+
+CtpTrader::CtpTrader( Trader* t_ )
+    : _t( t_ ) {}
 
 int CtpTrader::start() {
     LOG_INFO( "RegisterSpi@注册ctp交易网关\n" );
@@ -38,7 +40,7 @@ int CtpTrader::start() {
 int CtpTrader::stop() {
     LOG_INFO( "LqTradeSvc,ReleaseSpi@释放ctp交易网关\n" );
 
-//ctp 手册建议: 
+    // ctp 手册建议:
     _api->RegisterSpi( nullptr );
     _api->Release();
 

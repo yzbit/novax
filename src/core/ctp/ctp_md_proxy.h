@@ -15,14 +15,13 @@ CUB_NS_BEGIN
 
 namespace ctp {
 struct CtpExMd : Data::Delegator, CThostFtdcMdSpi {
-
     CtpExMd( Data* d_ );
 
 protected:
     int start() override;
     int stop() override;
-    int subscribue( const code_t& code_ ) override;
-    int unsubscribue( const code_t& code_ ) override;
+    int subscribe( const code_t& code_ ) override;
+    int unsubscribe( const code_t& code_ ) override;
 
 private:
     int login();
@@ -59,7 +58,12 @@ private:
     bool             _is_svc_online = false;
     Clock            _clock[ ( int )( extype_t::Count ) ];
     std::mutex       _sub_mtx;
-    Data*            _d;
+
+private:
+    bool _running = false;
+
+private:
+    Data* _d;
 
 private:
     static id_t session_id();

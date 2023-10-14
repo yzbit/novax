@@ -26,8 +26,8 @@ struct Trader {
     int cancel( oid_t o_ );
 
 private:
-    Delegator* _d;
-    QuantImpl* _q;
+    Delegator* _d = nullptr;
+    QuantImpl* _q = nullptr;
 };
 
 CUB_NS_END

@@ -3,6 +3,7 @@
 
 #include "ns.h"
 #include "quant.h"
+#include "timer.h"
 
 CUB_NS_BEGIN
 struct OrderMgmt;
@@ -12,13 +13,20 @@ struct Trader;
 struct Strategy;
 
 struct QuantImpl : Quant {
-    int init() override;
-    int execute( Strategy* s_ ) override;
+    QuantImpl();
 
     Trader*    trader();
     Data*      data();
     Strategy*  strategy();
     OrderMgmt* mgmt();
+    Context*   ctx();
+
+    void update( const quotation_t& q_ );
+    void invoke();
+
+protected:
+    int init();
+    int execute( Strategy* s_ ) override;
 
 private:
     void quote( const quotation_t& q_ );
@@ -28,14 +36,15 @@ private:
     void ontick();
 
 private:
-    Data*      _d;
-    Trader*    _t;
-    Strategy*  _s;
-    Context*   _c;
-    OrderMgmt* _o;
+    Data*      _d = nullptr;
+    Trader*    _t = nullptr;
+    Strategy*  _s = nullptr;
+    Context*   _c = nullptr;
+    OrderMgmt* _o = nullptr;
 
 private:
-    bool  _working;
+    bool  _running = true;
+    bool  _working = false;
     Timer _timer;
 };
 
@@ -54,6 +63,10 @@ inline Strategy* QuantImpl::strategy() {
 
 inline OrderMgmt* QuantImpl::mgmt() {
     return _o;
+}
+
+inline Context* QuantImpl::ctx() {
+    return _c;
 }
 
 CUB_NS_END

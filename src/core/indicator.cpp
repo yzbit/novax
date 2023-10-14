@@ -12,8 +12,8 @@ std::atomic<int> Indicator::_global_prio = 1;
 Indicator::Indicator() {
     _prio = ++_global_prio;
 }
-Indicator* Indicator::create( const string_t& name_, const arg_pack_t& args_, Aspect* asp_ ) {
 
+Indicator* Indicator::create( const string_t& name_, const arg_pack_t& args_, Aspect* asp_ ) {
     if ( ALGO.find( name_ ) == ALGO.end() ) {
         LOG_INFO( "cant not find indicator for %s", name_.c_str() );
         return nullptr;

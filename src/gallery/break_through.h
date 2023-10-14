@@ -1,7 +1,7 @@
 #ifndef BB30CC9E_0827_4895_93A9_D7B8DC7EA5FB
 #define BB30CC9E_0827_4895_93A9_D7B8DC7EA5FB
-#include "../ns.h"
-#include "../strategy.h"
+#include <ns.h>
+#include <strategy.h>
 
 USE_CUB_NS
 

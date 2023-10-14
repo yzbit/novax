@@ -18,8 +18,8 @@ Trader::~Trader() {
 }
 
 Trader::Trader( QuantImpl* q_ )
-    : _q( q_ )
-    , _d( nullptr ) {
+    : _q( q_ ) {
+    _d = ProxyFactory::create_trader( this, 0 );
 }
 
 int Trader::put( const order_t& o_ ) {

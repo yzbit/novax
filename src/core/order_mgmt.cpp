@@ -7,7 +7,8 @@
 
 CUB_NS_BEGIN
 
-OrderMgmt::OrderMgmt() {
+OrderMgmt::OrderMgmt( QuantImpl* q_ )
+    : _q( q_ ) {
 }
 
 oid_t OrderMgmt::oid() {

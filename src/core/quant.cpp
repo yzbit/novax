@@ -4,8 +4,10 @@
 #include <unistd.h>
 
 #include "canlendar.h"
+#include "context_impl.h"
 #include "data.h"
 #include "log.hpp"
+#include "order_mgmt.h"
 #include "proxy.h"
 #include "quant_impl.h"
 #include "strategy.h"
@@ -15,40 +17,28 @@
 CUB_NS_BEGIN
 
 Quant* Quant::create() {
-    return new Quant();
+    return new QuantImpl();
 }
 
-// dci
-// domain context interaction
-//
-// 不同的用户场景需要的context/role是不一样的,数据可以是推，也可以是拉
-//--context主要是给strategy用的，
-// 计算的时候也需要的，但是需要的context内容1不一样，也就是role不一样--从dci模式的角度去思考
-// algo 需要知道aspect，抑或其他的aspect，并不需要context，一个algo只可能基于一个aspect创建，它没必要访问其他的aspect，想看到多个aspect那就再strategy中新增一个函数好了
-// strategy需要知道一些下单接口，需要知道所有的aspect，这些东西聚合起来可以叫context
-// aspect中可以包含q，相当于model（q）转成了不同的role：aspect/context
-// data是直接调用aspect？显然他不需要，他需要把quoation转给自己的context或者quant，然后有这个人来调用，因为他知道所有的aspect---这个东西是啥，叫什么名字
+QuantImpl::QuantImpl() {
+    init();
+}
 
-struct Context0 : Context {
-    void init() {
-    }
+void QuantImpl::update( const quotation_t& q_ ) {
+    _c->q = q_;
+    _s->on_instant( q_ );
+}
 
-private:
-    Strategy*  _s;  // s 需要context->o
-    Trader*    _t;
-    Data*      _d;  // d 需要去调用_s;
-    OrderMgmt* _o;  // o 需要调用t
-
-    std::list<Aspect*> _aps;
-};
+void QuantImpl::invoke() {
+    _s->on_invoke( _c );
+}
 
 int QuantImpl::init() {
+    ContextImpl* ctx = new ContextImpl( this );
+    _d               = new Data( this );
+    _t               = new Trader( this );
+    _o               = new OrderMgmt( this );
 
-    Context0* ctx = new Context0();
-    ctx->init();
-
-    _d = ProxyFactory::create_data( 0 );
-    _t = ProxyFactory::create_trader( 0 );
     return 0;
 }
 
@@ -63,9 +53,11 @@ int QuantImpl::execute( Strategy* s_ ) {
         [ & ]( cub::timer_id ) { this->ontick(); },
         std::chrono::seconds( 1 ) );
 
-    for ( ;; ) {
+    while ( _running ) {
         ::sleep( 1 );
     }
+
+    delete this;
 
     return 0;
 }

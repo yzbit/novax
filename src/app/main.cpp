@@ -15,10 +15,9 @@
 */
 
 int main() {
-    cub::Quant* q = new cub::Quant::create();
+    cub::Quant* q = cub::Quant::create();
 
-    cub::Strategy* s = new BreakTh();
-    // q->init();
+    cub::Strategy* s = new BreakTh( "rb2410" );
 
     return q->execute( s );
 }

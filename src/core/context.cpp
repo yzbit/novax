@@ -29,7 +29,6 @@ Aspect* ContextImpl::add_aspect( const code_t& symbol_, const period_t& period_,
     return _q->data()->attach( symbol_, period_, count_ );
 }
 
-//------市价下单------
 int ContextImpl::pshort( const code_t& c_, vol_t qty_, price_t price_, otype_t mode_ ) {
     return _q->mgmt()->sellshort( { c_, qty_, price_, mode_ } );
 }

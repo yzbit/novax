@@ -12,7 +12,9 @@ CUB_NS_BEGIN
 Data::Data( QuantImpl* q_ )
     : _q( q_ ) {
 
+    _d    = ProxyFactory::create_data( this, 0 );
     _jobs = TaskQueue::create( 4 );
+
     THREAD_DETACHED( [ & ]() { this->process(); } );
 }
 
@@ -53,7 +55,7 @@ Aspect* Data::attach( const code_t& symbol_, const period_t& period_, int count_
 }
 
 void Data::process() {
-    quotation_t q;
+    quotation_t q = { 0 };
 
     for ( ;; ) {
         if ( _cache.pop( q ) < 0 ) {
@@ -63,7 +65,7 @@ void Data::process() {
 
         _jobs->shutdown();
 
-        _jobs->run( [ & ]() { _q->strategy()->on_instant( q ); } );
+        _jobs->run( [ & ]() { _q->update( q ); } );
 
         for ( auto& as : _aspects ) {
             _jobs->run( [ & ]() { as->update( q ); } );
@@ -73,7 +75,7 @@ void Data::process() {
             std::this_thread::yield();
         }
 
-        _q->strategy()->on_invoke( 0 );
+        _q->invoke();
     }
 }
 

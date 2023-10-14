@@ -8,7 +8,7 @@ struct Trader;
 
 struct ProxyFactory {
     static Data::Delegator*   create_data( Data* d_, int type_ );
-    static Trader::Delegator* create_trader( Trader*, t_, int type_ );
+    static Trader::Delegator* create_trader( Trader* t_, int type_ );
 };
 
 CUB_NS_END
