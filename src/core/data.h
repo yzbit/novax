@@ -57,6 +57,4 @@ private:
 
 CUB_NS_END
 
-#define DATA cub::Data::instance()
-
 #endif /* F4D9DAEC_B9A1_48EF_8FEB_A99D60585AD3 */

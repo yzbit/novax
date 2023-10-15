@@ -6,6 +6,7 @@
 #include <unordered_map>
 
 #include "../definitions.h"
+#include "../log.hpp"
 #include "../ns.h"
 
 //--! 一个req要么
@@ -83,11 +84,6 @@ inline int req_id() {
 
 using req_map_t = std::unordered_map<act_t, int>;
 
-inline void cvt_datetime( datetime_t&                   dt,
-                          const TThostFtdcDateType&     ctp_day_,
-                          const TThostFtdcTimeType&     ctp_time_,
-                          const TThostFtdcMillisecType& ctp_milli_ );
-
 inline int cvt_ex( const TThostFtdcExchangeIDType& exid_ ) {
     LOG_INFO( "ex id=%s", exid_ );
     // gcc -o2的memcpm是非常快的,常用的交易所放在前面
@@ -97,9 +93,9 @@ inline int cvt_ex( const TThostFtdcExchangeIDType& exid_ ) {
         return ( int )extype_t::DCE;
     else if ( memcmp( exid_, EX_CZCE, 4 ) == 0 )
         return ( int )extype_t::CZCE;
-    else if ( memcmp( exid, EX_INE, 3 ) == 0 )
+    else if ( memcmp( exid_, EX_INE, 3 ) == 0 )
         return ( int )extype_t::INE;
-    else if ( memcmp( exid, EX_GFEX, 4 ) == 0 )
+    else if ( memcmp( exid_, EX_GFEX, 4 ) == 0 )
         return ( int )extype_t::GFEX;
 
     LOG_INFO( "cannot reg ex" );

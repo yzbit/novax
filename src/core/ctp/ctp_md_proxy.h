@@ -8,6 +8,7 @@
 #include "../data.h"
 #include "../definitions.h"
 #include "../ns.h"
+#include "comm.h"
 
 #define CTP_MD_SETTING_FILE "ctp_md.json"
 
@@ -24,6 +25,7 @@ protected:
     int unsubscribe( const code_t& code_ ) override;
 
 private:
+    int init();
     int login();
     int read_settings();
     int sub();

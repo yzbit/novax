@@ -1,10 +1,20 @@
 cmake_minimum_required(VERSION 3.18)
 project(all_test VERSION 1.0.0 LANGUAGES CXX)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++17 -g")
+set(LIBPATH ${CMAKE_CURRENT_SOURCE_DIR}/../../lib)
+#message("libpath=" ${LIBPATH})
+include_directories(${LIBPATH})
+link_directories(${LIBPATH}/ctp)
 
 add_executable(test_rb test.ringbuff.cpp)
 add_executable(test_asp test.aspect.kline.cpp  ../core/indicator.cpp ../core/aspect.cpp ../core/kline.cpp ../core/clock.cpp )
-add_executable(test_mgmt test.omgmt.cpp ../core/order_mgmt.cpp)
+add_executable(test_data test.data.cpp ../core/data.cpp ../core/ctp/ctp_md_proxy.cpp  ../core/aspect.cpp ../core/clock.cpp ../core/indicator.cpp ../core/aspect.cpp ../core/kline.cpp)
+
+target_link_libraries(test_data
+PRIVATE
+thostmduserapi_se.so
+)
+#add_executable(test_mgmt test.omgmt.cpp ../core/order_mgmt.cpp)
 
 #add_executable(test_reactor test.pub.cpp)
 #add_executable(test_kline test.kline.cpp ../core/aspect.cpp ../core/algos/klines.cpp ../core/indicator.cpp)

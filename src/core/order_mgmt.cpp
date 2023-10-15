@@ -2,11 +2,14 @@
 
 #include "order_mgmt.h"
 
+#include "dci_role.h"
 #include "log.hpp"
-#include "quant_impl.h"
-#include "trader.h"
+#include "proxy.h"
 
 CUB_NS_BEGIN
+OrderMgmt::Delegator* ProxyFactory::create_trader( OrderMgmt* om_, int type_ ) {
+    return new ctp::CtpTrader( om_ );
+}
 
 std::atomic<oid_t> OrderMgmt::_init_id = 1;
 

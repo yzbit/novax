@@ -1,6 +1,7 @@
 #include "data.h"
 
 #include "aspect.h"
+#include "ctp/ctp_md_proxy.h"
 #include "dci_role.h"
 #include "log.hpp"
 #include "proxy.h"
@@ -10,8 +11,12 @@
 
 CUB_NS_BEGIN
 
+Data::Delegator* ProxyFactory::create_data( Data* d_, int type_ ) {
+    return new ctp::CtpExMd( d_ );
+}
+
 Data::Data( DataContext* q_ )
-    : _q( q_ ) {
+    : _r( q_ ) {
 
     _d    = ProxyFactory::create_data( this, 0 );
     _jobs = TaskQueue::create( 4 );

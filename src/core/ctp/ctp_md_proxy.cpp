@@ -21,7 +21,7 @@ CtpExMd::CtpExMd( Data* d_ )
     : _d( d_ ) {
 }
 
-int CtpExMd::subscribue( const code_t& code_ ) {
+int CtpExMd::subscribe( const code_t& code_ ) {
     std::unique_lock<std::mutex> lock{ _sub_mtx };
 
     _sub_symbols.insert( code_ );
@@ -33,7 +33,7 @@ int CtpExMd::subscribue( const code_t& code_ ) {
     return 0;
 }
 
-int CtpExMd::unsubscribue( const code_t& code_ ) {
+int CtpExMd::unsubscribe( const code_t& code_ ) {
     std::unique_lock<std::mutex> lock{ _sub_mtx };
 
     if ( _sub_symbols.count( code_ ) == 0 ) return 0;
@@ -83,8 +83,6 @@ int CtpExMd::unsub( code_t& code_ ) {
 }
 
 int CtpExMd::read_settings() {
-    _settings = { 0 };
-
     std::ifstream json( CTP_MD_SETTING_FILE, std::ios::in );
 
     if ( !json.is_open() ) {
@@ -111,11 +109,11 @@ int CtpExMd::read_settings() {
             continue;
         }
 
-        _settings.flow_path      = p.HasMember( "flow_path" ) ? p.GetString() : ".";
-        _settings.conn.broker    = p.HasMember( "broker" ) ? p.GetString() : "uknown";
-        _settings.conn.password  = p.HasMember( "password" ) ? p.GetString() : "";
-        _settings.conn.user_name = p.HasMember( "user_name" ) ? p.GetString() : "";
-        _settings.conn.frontend  = p.HasMember( "frontend" ) ? p.GetString() : "";
+        _settings.flow_path  = p.HasMember( "flow_path" ) ? p.GetString() : ".";
+        _settings.i.broker   = p.HasMember( "broker" ) ? p.GetString() : "uknown";
+        _settings.i.password = p.HasMember( "password" ) ? p.GetString() : "";
+        _settings.i.name     = p.HasMember( "user_name" ) ? p.GetString() : "";
+        _settings.frontend.push_back( p.HasMember( "frontend" ) ? p.GetString() : "" );
         break;
     }
     return 0;
@@ -129,9 +127,9 @@ id_t CtpExMd::session_id() {
 int CtpExMd::login() {
     CThostFtdcReqUserLoginField login_req = { 0 };
 
-    CTP_COPY_SAFE( login_req.BrokerID, _settings.conn.broker.c_str() );
-    CTP_COPY_SAFE( login_req.UserID, _settings.conn.user_name.c_str() );
-    CTP_COPY_SAFE( login_req.Password, _settings.conn.password.c_str() );
+    CTP_COPY_SAFE( login_req.BrokerID, _settings.i.broker.c_str() );
+    CTP_COPY_SAFE( login_req.UserID, _settings.i.name.c_str() );
+    CTP_COPY_SAFE( login_req.Password, _settings.i.password.c_str() );
 
     auto session = session_id();
 
@@ -160,7 +158,7 @@ int CtpExMd::stop() {
 }
 
 int CtpExMd::init() {
-    LOG_INFO( "ctp md init,flow=%s,font=%s", _settings.flow_path.c_str(), _settings.conn.frontend.c_str() );
+    LOG_INFO( "ctp md init,flow=%s,font=%s", _settings.flow_path.c_str(), _settings.frontend[ 0 ].c_str() );
 
     if ( read_settings() < 0 ) {
         LOG_INFO( "#ERR,read ctp setings failed" );
@@ -170,7 +168,9 @@ int CtpExMd::init() {
     std::thread( [ & ]() {
         _api = CThostFtdcMdApi::CreateFtdcMdApi( _settings.flow_path.c_str(), false );  // true: udp mode
         _api->RegisterSpi( this );
-        _api->RegisterFront( const_cast<char*>( _settings.conn.frontend.c_str() ) );
+
+        // todo
+        _api->RegisterFront( const_cast<char*>( _settings.frontend[ 0 ].c_str() ) );
         _api->Init();
         _api->Join();
     } ).detach();
@@ -244,35 +244,26 @@ void CtpExMd::OnRspUserLogout( CThostFtdcUserLogoutField* pUserLogout, CThostFtd
     _is_svc_online = false;
 }
 
-void CtpExMd::cvt_datetime( datetime_t&                                                       dt_,
-                            const TThostFtdcDateType&                                         ctp_day_,
-                            const TThostFtdcTimeType& ctp_time_ const TThostFtdcMillisecType& ctp_milli_ ) {
-    dt_.from_ctp( ctp_day_, ctp_time_, ctp_milli_ );
-}
-
 void CtpExMd::OnRtnDepthMarketData( CThostFtdcDepthMarketDataField* f ) {
-    msg::QuotationFrame r;
+    quotation_t q;
+    q.time.from_ctp( f->TradingDay, f->UpdateTime, f->UpdateMillisec );
+    q.ex       = cvt_ex( f->ExchangeID );
+    q.last     = f->LastPrice;
+    q.volume   = f->Volume;
+    q.code     = f->InstrumentID;
+    q.opi      = f->OpenInterest;
+    q.ask      = f->AskPrice1;
+    q.askvol   = f->AskVolume1;
+    q.bid      = f->BidPrice1;
+    q.bidvol   = f->BidVolume1;
+    q.highest  = f->HighestPrice;
+    q.lowest   = f->LowestPrice;
+    q.avgprice = f->AveragePrice;
+    q.turnover = f->Turnover;
+    q.open     = f->OpenPrice;
+    q.close    = f->ClosePrice;
 
-    cvt_datetime( r->time, f->TradingDay, f->UpdateTime, f->UpdateMillisec );  // todo use ActionDay?
-    r->ex = cvt_ex( f->ExchangeID );
-
-    r->last        = f->LastPrice;
-    r->volume      = f->Volume;
-    r->code        = f->InstrumentID;
-    r->opi         = f->OpenInterest;
-    r->depth       = 1;
-    r->ask[ 0 ]    = f->AskPrice1;
-    r->askvol[ 0 ] = f->AskVolume1;
-    r->bid[ 0 ]    = f->BidPrice1;
-    r->bidvol[ 0 ] = f->BidVolume1;
-    r->highest     = f->HighestPrice;
-    r->lowest      = f->LowestPrice;
-    r->avgprice    = f->AveragePrice;
-    r->turnover    = f->Turnover;
-    r->open        = f->OpenPrice;
-    r->close       = f->ClosePrice;
-
-    _d->update( r );
+    _d->update( q );
 
     /*
     鉴于夜盘交易时间非常混乱，我们不使用服务器时间（日期），和常用的交易软件时间划分类似

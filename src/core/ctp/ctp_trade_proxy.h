@@ -6,8 +6,9 @@
 
 #include "../definitions.h"
 #include "../models.h"
+#include "../ns.h"
+#include "../order_mgmt.h"
 #include "comm.h"
-#include "order_mgmt.h"
 
 /*最近对ctp的流程有了更多的认识。
 
@@ -36,8 +37,6 @@ THOST_FTDC_OST_AllTraded 、 THOST_FTDC_OST_Canceled 、 THOST_FTDC_OST_NoTradeN
 
 sessionid orderref，ordersysid等只是为了撤单用的，如果重新登陆，那么如何去查询
 */
-
-#include "ns.h"
 
 CUB_NS_BEGIN
 namespace ctp {
@@ -85,7 +84,7 @@ private:
     struct ex_oid_t {
         TThostFtdcExchangeIDType ex;
         TThostFtdcOrderSysIDType oid;
-
+        ex_oid_t();
         ex_oid_t( const TThostFtdcExchangeIDType& ex_, const TThostFtdcOrderSysIDType& oid_ );
     };
 
@@ -94,7 +93,7 @@ private:
         ex_oid_t               eoid;
         TThostFtdcOrderRefType ref;
 
-        order_ids_t( oid_t id_, const ex_oid_t& ex_oid_, TThostFtdcOrderRefType& ref_ );
+        order_ids_t( oid_t id_, const ex_oid_t& ex_oid_, const TThostFtdcOrderRefType& ref_ );
         bool is_exoid_valid();
         bool is_id_valid();
         bool is_ref_valid();
@@ -150,12 +149,17 @@ inline CtpTrader::session_t::session_t( TThostFtdcFrontIDType f_, TThostFtdcSess
     memcpy( init_ref, r_, sizeof( init_ref ) );
 }
 
+inline CtpTrader::ex_oid_t::ex_oid_t() {
+    memset( ex, 0x00, sizeof( ex ) );
+    memset( oid, 0x00, sizeof( oid ) );
+}
+
 inline CtpTrader::ex_oid_t::ex_oid_t( const TThostFtdcExchangeIDType& ex_, const TThostFtdcOrderSysIDType& oid_ ) {
     memcpy( ex, ex_, sizeof( ex ) );
     memcpy( oid, oid_, sizeof( oid ) );
 }
 
-inline CtpTrader::order_ids_t::order_ids_t( oid_t id_, const ex_oid_t& ex_oid_, TThostFtdcOrderRefType& ref_ ) {
+inline CtpTrader::order_ids_t::order_ids_t( oid_t id_, const ex_oid_t& ex_oid_, const TThostFtdcOrderRefType& ref_ ) {
     id = id_;
     memcpy( &eoid, &ex_oid_, sizeof( eoid ) );
     memcpy( ref, ref_, sizeof( ref ) );
