@@ -8,7 +8,10 @@
 #include <thread>
 #include <vector>
 
+#include "log.hpp"
 #include "ns.h"
+
+#define DBG_TRACE fprintf
 
 CUB_NS_BEGIN
 struct TaskQueue {
@@ -24,6 +27,7 @@ struct TaskQueue {
         } );
     }
 
+    virtual void drain()                         = 0;
     virtual bool busy()                          = 0;
     virtual void run( std::function<void()> fn ) = 0;
     virtual void shutdown()                      = 0;
@@ -46,13 +50,23 @@ struct ThreadPool : public TaskQueue {
         {
             std::unique_lock<std::mutex> lock( _mutex );
             _jobs.push_back( std::move( fn ) );
+
+            LOG_TAGGED( "taskq", "[0x%x] add jobs ,current=%d", ( intptr_t )this, ( int )_jobs.size() );
         }
 
         _cond.notify_one();
     }
 
+    virtual void drain() {
+        std::unique_lock<std::mutex> lock( _mutex );
+        _jobs.clear();
+
+        DBG_TRACE( stderr, "current idle workers=%d", _idles );
+    }
+
     void shutdown() override {
         {
+            LOG_TAGGED( "taskq", "[0x%x] shutdown", ( intptr_t )this );
             std::unique_lock<std::mutex> lock( _mutex );
             _shutdown = true;
         }
@@ -79,18 +93,20 @@ private:
                 std::function<void()> fn;
 
                 {
+                    DBG_TRACE( stderr, "### spawn task jobs\n" );
                     std::unique_lock<std::mutex> lock( _pool._mutex );
                     ++_pool._idles;
 
-                    _pool._cond.wait(
-                        lock, [ & ] { return !_pool._jobs.empty() || _pool._shutdown; } );
+                    _pool._cond.wait( lock, [ & ] { return !_pool._jobs.empty() || _pool._shutdown; } );
 
+                    DBG_TRACE( stderr, "###--wait release\n" );
                     if ( _pool._shutdown && _pool._jobs.empty() ) {
                         break;
                     }
 
                     --_pool._idles;
 
+                    LOG_TAGGED( "taskq", "[0x%x] pick one task to run, backlogs=%d", ( intptr_t )this, ( int )_pool._jobs.size() );
                     fn = std::move( _pool._jobs.front() );
                     _pool._jobs.pop_front();
                 }

@@ -2,6 +2,8 @@
 
 #include "clock.h"
 
+#include "log.hpp"
+
 CUB_NS_BEGIN
 
 Clock::Clock()
@@ -11,6 +13,8 @@ Clock::Clock()
 void Clock::tune( const datetime_t& dt_ ) {
     _epoch = time( 0 );
     _drift = dt_.to_unix_time() - _epoch;
+
+    LOG_TAGGED( "clock", "ex clock drift %u", _drift );
 }
 
 time_t Clock::now() {

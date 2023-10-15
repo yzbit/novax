@@ -81,7 +81,7 @@ void Data::process() {
             continue;
         }
 
-        _jobs->shutdown();
+        _jobs->drain();
 
         _jobs->run( [ & ]() { _r->update( q ); } );
 

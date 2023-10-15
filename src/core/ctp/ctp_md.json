@@ -2,13 +2,23 @@
     "common": {},
     "proxies": [
         {
-            "eanbled": true,
-            "flow_path": ".",
+            "enabled": false,
+            "flow_path": "",
             "name": "ctp-yongan",
-            "frontend": "tcp:xxxx",
-            "user_name": "yaozinan",
-            "passwordd": "888",
-            "broker": "yongan",
+            "frontend": "tcp://180.169.124.109:41213",
+            "user_name": "202101141",
+            "passwordd": "176599",
+            "broker": "20000",
+            "description": "ctp fu"
+        },
+        {
+            "enabled": true,
+            "flow_path": "",
+            "name": "ctp-simulation",
+            "frontend": "tcp://180.168.146.187:10010",
+            "user_name": "111974",
+            "passwordd": "yaozinan",
+            "broker": "9999",
             "description": "ctp fu"
         }
     ]

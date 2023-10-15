@@ -24,11 +24,19 @@ CtpExMd::CtpExMd( Data* d_ )
 int CtpExMd::subscribe( const code_t& code_ ) {
     std::unique_lock<std::mutex> lock{ _sub_mtx };
 
+    LOG_TAGGED( "ctp",
+                "subscribe svc=%d, code=%s, pending sub=%d pending_unsub=%d",
+                _is_svc_online,
+                ( const char* )code_,
+                ( int )_sub_symbols.size(),
+                ( int )_unsub_symbols.size() );
+
     _sub_symbols.insert( code_ );
     _unsub_symbols.erase( code_ );
 
-    if ( _is_svc_online )
+    if ( _is_svc_online ) {
         sub( const_cast<code_t&>( code_ ) );
+    }
 
     return 0;
 }
@@ -36,13 +44,21 @@ int CtpExMd::subscribe( const code_t& code_ ) {
 int CtpExMd::unsubscribe( const code_t& code_ ) {
     std::unique_lock<std::mutex> lock{ _sub_mtx };
 
+    LOG_TAGGED( "ctp",
+                "UNsubscribe svc=%d, code=%s, pending sub=%d pending_unsub=%d",
+                _is_svc_online,
+                ( const char* )code_,
+                ( int )_sub_symbols.size(),
+                ( int )_unsub_symbols.size() );
+
     if ( _sub_symbols.count( code_ ) == 0 ) return 0;
 
     _sub_symbols.erase( code_ );
     _unsub_symbols.insert( code_ );
 
-    if ( _is_svc_online )
+    if ( _is_svc_online ) {
         unsub( const_cast<code_t&>( code_ ) );
+    }
 
     return 0;
 }
@@ -83,6 +99,8 @@ int CtpExMd::unsub( code_t& code_ ) {
 }
 
 int CtpExMd::read_settings() {
+    LOG_TAGGED( "ctp", "read settings from %s", CTP_MD_SETTING_FILE );
+
     std::ifstream json( CTP_MD_SETTING_FILE, std::ios::in );
 
     if ( !json.is_open() ) {
@@ -105,17 +123,27 @@ int CtpExMd::read_settings() {
     auto proxies = d[ "proxies" ].GetArray();
     //! 找到第一个enable的就结束
     for ( auto& p : proxies ) {
-        if ( p.HasMember( "enabled" ) || ( p.HasMember( "enabled" ) && !d.GetBool() ) ) {
+        if ( !p.HasMember( "enabled" ) || ( p.HasMember( "enabled" ) && !p[ "enabled" ].GetBool() ) ) {
             continue;
         }
 
-        _settings.flow_path  = p.HasMember( "flow_path" ) ? p.GetString() : ".";
-        _settings.i.broker   = p.HasMember( "broker" ) ? p.GetString() : "uknown";
-        _settings.i.password = p.HasMember( "password" ) ? p.GetString() : "";
-        _settings.i.name     = p.HasMember( "user_name" ) ? p.GetString() : "";
-        _settings.frontend.push_back( p.HasMember( "frontend" ) ? p.GetString() : "" );
+        _settings.flow_path  = p.HasMember( "flow_path" ) ? p[ "flow_path" ].GetString() : ".";
+        _settings.i.broker   = p.HasMember( "broker" ) ? p[ "broker" ].GetString() : "uknown";
+        _settings.i.password = p.HasMember( "password" ) ? p[ "password" ].GetString() : "";
+        _settings.i.name     = p.HasMember( "user_name" ) ? p[ "user_name" ].GetString() : "";
+        _settings.frontend.push_back( p.HasMember( "frontend" ) ? p[ "frontend" ].GetString() : "" );
         break;
     }
+
+    // dump
+    LOG_TAGGED( "ctp",
+                "settings:flow_path=%s,broker=%s, user=%s, pwd=%s, front=%s",
+                _settings.flow_path.c_str(),
+                _settings.i.broker.c_str(),
+                _settings.i.name.c_str(),
+                _settings.i.password.c_str(),
+                _settings.frontend[ 0 ].c_str() );
+
     return 0;
 }
 
@@ -147,6 +175,7 @@ int CtpExMd::login() {
 }
 
 int CtpExMd::start() {
+    LOG_TAGGED( "ctp", "start to run ,state=%d", _running );
     if ( _running ) return 0;
     _running = true;
 
@@ -154,25 +183,32 @@ int CtpExMd::start() {
 }
 
 int CtpExMd::stop() {
+    LOG_TAGGED( "ctp", "stop running ,[do NOTHING] state=%d", _running );
     return 0;
 }
 
 int CtpExMd::init() {
-    LOG_INFO( "ctp md init,flow=%s,font=%s", _settings.flow_path.c_str(), _settings.frontend[ 0 ].c_str() );
+    LOG_TAGGED( "ctp", "init begin" );
 
     if ( read_settings() < 0 ) {
         LOG_INFO( "#ERR,read ctp setings failed" );
         return -1;
     }
 
+    LOG_INFO( "ctp md init,flow=%s,font=%s", _settings.flow_path.c_str(), _settings.frontend[ 0 ].c_str() );
     std::thread( [ & ]() {
         _api = CThostFtdcMdApi::CreateFtdcMdApi( _settings.flow_path.c_str(), false );  // true: udp mode
         _api->RegisterSpi( this );
 
-        // todo
-        _api->RegisterFront( const_cast<char*>( _settings.frontend[ 0 ].c_str() ) );
+        for ( auto& f : _settings.frontend ) {
+            _api->RegisterFront( const_cast<char*>( f.c_str() ) );
+        }
+
         _api->Init();
-        _api->Join();
+
+        LOG_INFO( "spawn md user" );
+        auto rc = _api->Join();
+        LOG_TAGGED( "ctp", "md api exit with code=%d", rc );
     } ).detach();
 
     return 0;
@@ -180,7 +216,7 @@ int CtpExMd::init() {
 
 // ctp overrides
 void CtpExMd::OnFrontConnected() {
-    LOG_INFO( "ctp ex md connected" );
+    LOG_INFO( "ctp ex md connected ,begin to login" );
     login();
 }
 
@@ -210,25 +246,40 @@ void CtpExMd::OnRspUserLogin( CThostFtdcRspUserLoginField* pRspUserLogin, CThost
 
     datetime_t dt = { 0 };
 
+    LOG_TAGGED( "ctp", "tune clock of SHFE" );
     dt.from_ctp( pRspUserLogin->TradingDay, pRspUserLogin->SHFETime, 0 );
     CLOCK_OF( ( int )extype_t::SHFE ).tune( dt );
 
+    LOG_TAGGED( "ctp", "tune clock of DCE" );
     dt.from_ctp( pRspUserLogin->TradingDay, pRspUserLogin->DCETime, 0 );
     CLOCK_OF( ( int )extype_t::DCE ).tune( dt );
 
     dt.from_ctp( pRspUserLogin->TradingDay, pRspUserLogin->CZCETime, 0 );
     CLOCK_OF( ( int )extype_t::CZCE ).tune( dt );
 
+    LOG_TAGGED( "ctp", "tune clock of FFEX" );
     dt.from_ctp( pRspUserLogin->TradingDay, pRspUserLogin->FFEXTime, 0 );
     CLOCK_OF( ( int )extype_t::FFEX ).tune( dt );
 
+    LOG_TAGGED( "ctp", "tune clock of INE" );
     dt.from_ctp( pRspUserLogin->TradingDay, pRspUserLogin->INETime, 0 );
     CLOCK_OF( ( int )extype_t::INE ).tune( dt );
 
+    LOG_TAGGED( "ctp", "tune clock of GFEX" );
     dt.from_ctp( pRspUserLogin->TradingDay, pRspUserLogin->GFEXTime, 0 );
     CLOCK_OF( ( int )extype_t::GFEX ).tune( dt );
 
     {
+        LOG_TAGGED( "ctp", "login ok , process subcribtion" );
+        for ( auto& c : _sub_symbols ) {
+            LOG_INFO( "=> %s", ( const char* )c );
+        }
+
+        LOG_INFO( "unsubcribtion" );
+        for ( auto& c : _unsub_symbols ) {
+            LOG_INFO( "=> %s", ( const char* )c );
+        }
+
         std::unique_lock<std::mutex> lock{ _sub_mtx };
         unsub();
         sub();

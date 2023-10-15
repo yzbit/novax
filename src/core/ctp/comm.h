@@ -38,7 +38,7 @@ struct investor_t {
 
 struct setting_t {
     std::vector<string_t> frontend;
-    string_t              flow_path;
+    string_t              flow_path; /* 根据ctp手册，默认值“”表示当前目录*/
     investor_t            i;
     cert_t                c;
 };
