@@ -69,25 +69,28 @@ int CtpExMd::sub() {
     if ( _sub_symbols.empty() ) return 0;
 
     auto arr = set2arr( _sub_symbols );
+
     return _api->SubscribeMarketData( arr.get(), _sub_symbols.size() );
 }
 
 int CtpExMd::unsub() {
+    return 0;
     if ( _sub_symbols.empty() ) return 0;
 
     auto arr = set2arr( _sub_symbols );
     return _api->UnSubscribeMarketData( arr.get(), _unsub_symbols.size() );
 }
 
-std::unique_ptr<char* []> CtpExMd::set2arr( std::set<code_t>& s ) {
+std::unique_ptr<char*[]> CtpExMd::set2arr( std::set<code_t>& s ) {
     auto arr = std::make_unique<char*[]>( _sub_symbols.size() );
     int  n   = 0;
 
-    for ( auto& s : _unsub_symbols ) {
-        arr[ n++ ] = const_cast<code_t&>( s );
+    for ( auto& s : s ) {
+        arr[ n++ ] = const_cast<char*>( ( const char* )( s ) );
+        // fprintf( stderr, "#### %s\n", arr[ n - 1 ] );
     }
 
-    return arr;
+    return std::move( arr );
 }
 
 int CtpExMd::sub( code_t& code_ ) {
@@ -351,6 +354,10 @@ void CtpExMd::OnRspSubMarketData( CThostFtdcSpecificInstrumentField* pSpecificIn
 }
 
 void CtpExMd::OnRspUnSubMarketData( CThostFtdcSpecificInstrumentField* pSpecificInstrument, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) {
+    if ( !pSpecificInstrument ) {
+        return;
+    }
+
     LOG_ERROR_AND_RET( pRspInfo, nRequestID, bIsLast );
 
     dumpHex( ( const uint8_t* )( pSpecificInstrument->InstrumentID ), sizeof( pSpecificInstrument->InstrumentID ), sizeof( pSpecificInstrument->InstrumentID ) );

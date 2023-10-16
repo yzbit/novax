@@ -27,8 +27,8 @@ int main() {
     d->start();
     d->stop();
 
-    d->subscribe( "rb2410" );
-    d->unsubscribe( "rb2410" );
+    d->subscribe( "rb2401" );
+    //d->unsubscribe( "rb2410" );
 
     d->update( q );
 
