@@ -2,7 +2,9 @@ cmake_minimum_required(VERSION 3.18)
 project(all_test VERSION 1.0.0 LANGUAGES CXX)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++17 -g")
 set(LIBPATH ${CMAKE_CURRENT_SOURCE_DIR}/../../lib)
-#message("libpath=" ${LIBPATH})
+
+message("libpath=" ${LIBPATH})
+
 include_directories(${LIBPATH})
 link_directories(${LIBPATH}/ctp)
 
@@ -14,6 +16,7 @@ target_link_libraries(test_data
 PRIVATE
 thostmduserapi_se.so
 )
+
 #add_executable(test_mgmt test.omgmt.cpp ../core/order_mgmt.cpp)
 
 #add_executable(test_reactor test.pub.cpp)
