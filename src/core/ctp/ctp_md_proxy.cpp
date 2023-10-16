@@ -11,6 +11,8 @@
 #include "../models.h"
 #include "../reactor.h"
 #include "comm.h"
+// todo debug
+#include "../utils.hpp"
 
 CUB_NS_BEGIN
 namespace ctp {
@@ -344,13 +346,15 @@ void CtpExMd::OnRspError( CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool
 void CtpExMd::OnRspSubMarketData( CThostFtdcSpecificInstrumentField* pSpecificInstrument, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) {
     LOG_ERROR_AND_RET( pRspInfo, nRequestID, bIsLast );
 
+    dumpHex( ( const uint8_t* )( pSpecificInstrument->InstrumentID ), sizeof( pSpecificInstrument->InstrumentID ), sizeof( pSpecificInstrument->InstrumentID ) );
     LOG_INFO( "subscribe return: %s", pSpecificInstrument->InstrumentID );
 }
 
 void CtpExMd::OnRspUnSubMarketData( CThostFtdcSpecificInstrumentField* pSpecificInstrument, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) {
     LOG_ERROR_AND_RET( pRspInfo, nRequestID, bIsLast );
 
-    LOG_INFO( "subscribe return: %s", pSpecificInstrument->InstrumentID );
+    dumpHex( ( const uint8_t* )( pSpecificInstrument->InstrumentID ), sizeof( pSpecificInstrument->InstrumentID ), sizeof( pSpecificInstrument->InstrumentID ) );
+    LOG_INFO( "un subscribe return: %s", pSpecificInstrument->InstrumentID );
 }
 
 void CtpExMd::OnRspSubForQuoteRsp( CThostFtdcSpecificInstrumentField* pSpecificInstrument, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) {

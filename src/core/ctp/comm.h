@@ -13,12 +13,12 @@
 CUB_NS_BEGIN
 
 namespace ctp {
-#define LOG_ERROR_AND_RET( _rsp_, _req_, _lst_ )                                                                            \
-    do {                                                                                                                    \
-        if ( pRspInfo->ErrorID != 0 ) {                                                                                     \
-            LOG_INFO( "usr logout error: code=%d msg=%s, req=%d, last=%d", _rsp_->ErrorID, _rsp_->ErrorMsg, _req_, _lst_ ); \
-            return;                                                                                                         \
-        }                                                                                                                   \
+#define LOG_ERROR_AND_RET( _rsp_, _req_, _lst_ )                                                                     \
+    do {                                                                                                             \
+        if ( pRspInfo->ErrorID != 0 ) {                                                                              \
+            LOG_INFO( "ctp error: code=%d msg=%s, req=%d, last=%d", _rsp_->ErrorID, _rsp_->ErrorMsg, _req_, _lst_ ); \
+            return;                                                                                                  \
+        }                                                                                                            \
     } while ( 0 )
 
 #define CTP_COPY_SAFE( _field_, _str_ ) memcpy( _field_, _str_, std::min( ( int )strlen( _str_ ), ( int )sizeof( _field_ ) - 1 ) )

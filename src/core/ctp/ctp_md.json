@@ -15,7 +15,7 @@
             "enabled": true,
             "flow_path": "",
             "name": "ctp-simulation",
-            "frontend": "tcp://180.168.146.187:10131",
+            "frontend": "tcp://180.168.146.187:10211",
             "user_name": "111974",
             "password": "yaozinan90!",
             "broker": "9999",
