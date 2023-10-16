@@ -77,7 +77,7 @@ int CtpExMd::unsub() {
     return _api->UnSubscribeMarketData( arr.get(), _unsub_symbols.size() );
 }
 
-std::unique_ptr<char*[]> CtpExMd::set2arr( std::set<code_t>& s ) {
+std::unique_ptr<char* []> CtpExMd::set2arr( std::set<code_t>& s ) {
     auto arr = std::make_unique<char*[]>( _sub_symbols.size() );
     int  n   = 0;
 
@@ -296,6 +296,7 @@ void CtpExMd::OnRspUserLogout( CThostFtdcUserLogoutField* pUserLogout, CThostFtd
 }
 
 void CtpExMd::OnRtnDepthMarketData( CThostFtdcDepthMarketDataField* f ) {
+    fprintf( stderr, "r quote\n" );
     quotation_t q;
     q.time.from_ctp( f->TradingDay, f->UpdateTime, f->UpdateMillisec );
     q.ex       = cvt_ex( f->ExchangeID );
