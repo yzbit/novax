@@ -251,6 +251,7 @@ void CtpExMd::OnRspUserLogin( CThostFtdcRspUserLoginField* pRspUserLogin, CThost
 
     datetime_t dt = { 0 };
 
+    //-模拟盘返回的时间都是空白，可能需要根据返回的tick数据进行时间的校准
     LOG_TAGGED( "ctp", "tune clock of SHFE" );
     dt.from_ctp( pRspUserLogin->TradingDay, pRspUserLogin->SHFETime, 0 );
     CLOCK_OF( ( int )extype_t::SHFE ).tune( dt );
@@ -301,10 +302,10 @@ void CtpExMd::OnRspUserLogout( CThostFtdcUserLogoutField* pUserLogout, CThostFtd
 }
 
 void CtpExMd::OnRtnDepthMarketData( CThostFtdcDepthMarketDataField* f ) {
-    fprintf( stderr, "r quote\n" );
+    // fprintf( stderr, "r quote\n" );
     quotation_t q;
     q.time.from_ctp( f->TradingDay, f->UpdateTime, f->UpdateMillisec );
-    q.ex       = cvt_ex( f->ExchangeID );
+    q.ex       = cvt_ex( f->ExchangeID );  // 模拟盘是[\0]
     q.last     = f->LastPrice;
     q.volume   = f->Volume;
     q.code     = f->InstrumentID;
@@ -318,9 +319,30 @@ void CtpExMd::OnRtnDepthMarketData( CThostFtdcDepthMarketDataField* f ) {
     q.avgprice = f->AveragePrice;
     q.turnover = f->Turnover;
     q.open     = f->OpenPrice;
-    q.close    = f->ClosePrice;
+    q.close    = q.last;  //->ClosePrice;  // 今收盘价格，盘中是一个错误的值，不太有意义  PreClosePrice 昨收盘
 
     _d->update( q );
+
+    fprintf( stderr,
+             "\tdate=%s time=%s ms=%u ex=%d\n\tlast=%.0lf vol=%d code=%s opi=%u \n\task=%.0lf askv=%u bid=%.0lf bidv=%u higest=%.0lf lowest=%.0lf \n\tavg=%.0lf turnover=%.0lf open=%.0lf close=%d\n",
+             f->TradingDay,
+             f->UpdateTime,
+             f->UpdateMillisec,
+             q.ex,
+             q.last,
+             q.volume,
+             ( const char* )q.code,
+             q.opi,
+             q.ask,
+             q.askvol,
+             q.bid,
+             q.bidvol,
+             q.highest,
+             q.lowest,
+             q.avgprice,
+             q.turnover,
+             q.open,
+             ( int )q.close );
 
     /*
     鉴于夜盘交易时间非常混乱，我们不使用服务器时间（日期），和常用的交易软件时间划分类似

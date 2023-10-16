@@ -11,7 +11,8 @@
 #include "log.hpp"
 #include "ns.h"
 
-#define DBG_TRACE fprintf
+// #define DBG_TRACE fprintf
+#define DBG_TRACE( ... )
 
 CUB_NS_BEGIN
 struct TaskQueue {
@@ -51,7 +52,7 @@ struct ThreadPool : public TaskQueue {
             std::unique_lock<std::mutex> lock( _mutex );
             _jobs.push_back( std::move( fn ) );
 
-            LOG_TAGGED( "taskq", "[0x%x] add jobs ,current=%d", ( intptr_t )this, ( int )_jobs.size() );
+            // LOG_TAGGED( "taskq", "[0x%x] add jobs ,current=%d", ( intptr_t )this, ( int )_jobs.size() );
         }
 
         _cond.notify_one();
@@ -79,7 +80,7 @@ struct ThreadPool : public TaskQueue {
     }
 
     bool busy() override {
-        fprintf( stderr, "idles=%d\n", _idles );
+        DBG_TRACE( stderr, "idles=%d\n", _idles );
         return _idles != ( int )_threads.size() && !_shutdown;
     }
 
@@ -93,20 +94,20 @@ private:
                 std::function<void()> fn;
 
                 {
-                    DBG_TRACE( stderr, "### spawn task jobs\n" );
+                    // DBG_TRACE( stderr, "### spawn task jobs\n" );
                     std::unique_lock<std::mutex> lock( _pool._mutex );
                     ++_pool._idles;
 
                     _pool._cond.wait( lock, [ & ] { return !_pool._jobs.empty() || _pool._shutdown; } );
 
-                    DBG_TRACE( stderr, "###--wait release\n" );
+                    // DBG_TRACE( stderr, "###--wait release\n" );
                     if ( _pool._shutdown && _pool._jobs.empty() ) {
                         break;
                     }
 
                     --_pool._idles;
 
-                    LOG_TAGGED( "taskq", "[0x%x] pick one task to run, backlogs=%d", ( intptr_t )this, ( int )_pool._jobs.size() );
+                    // LOG_TAGGED( "taskq", "[0x%x] pick one task to run, backlogs=%d", ( intptr_t )this, ( int )_pool._jobs.size() );
                     fn = std::move( _pool._jobs.front() );
                     _pool._jobs.pop_front();
                 }

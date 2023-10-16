@@ -85,7 +85,7 @@ inline int req_id() {
 using req_map_t = std::unordered_map<act_t, int>;
 
 inline int cvt_ex( const TThostFtdcExchangeIDType& exid_ ) {
-    LOG_INFO( "ex id=%s", exid_ );
+    //LOG_INFO( "ex id=%s", exid_ );
     // gcc -o2的memcpm是非常快的,常用的交易所放在前面
     if ( memcmp( exid_, EX_SHFE, 4 ) == 0 )
         return ( int )extype_t::SHFE;
