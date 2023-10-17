@@ -66,14 +66,13 @@ int CtpTrader::qry_commission() {
                                                                      : -1;
 }
 
+void CtpTrader::session_changed( const session_t& s_ ) {
+    // todo
+    assert( 0 );
+}
+
 int CtpTrader::qry_position() {
     return 0;
-}
-
-int CtpTrader::init() {
-}
-
-int CtpTrader::teardown() {
 }
 
 int CtpTrader::cancel( oid_t o_ ) {
@@ -86,18 +85,18 @@ int CtpTrader::cancel( oid_t o_ ) {
     如果单子还在CTP就要用FrontID+SessionID+OrderRef撤，因为送到exchange前还没有OrderSysID.
     如果单子已经送到Exchange,那既可以用 FrontID+SessionID+OrderRef撤，也可以用ExchangeID+OrderSysID撤。
     */
-    auto oids = _orders.find( o_ );
+    auto oids = _id_map.find( o_ );
 
-    if ( oids == _orders.end() ) {
+    if ( oids == _id_map.end() ) {
         LOG_INFO( "xModifyOrder@试图删除一个不存在订单ID,%d\n", o_ );
         return -1;
     }
 
-    if ( oids->second.is_exoid_valid() ) {
-        memcpy( field.OrderSysID, oids->second.eoid.sys_oid, sizeof( field.OrderSysID ) );
+    if ( oids->second.eoid.is_valid() ) {
+        memcpy( field.OrderSysID, oids->second.eoid.oid, sizeof( field.OrderSysID ) );
         memcpy( field.ExchangeID, oids->second.eoid.ex, sizeof( field.ExchangeID ) );
     }
-    else if ( oids->second.is_ref_valid() ) {
+    else if ( IS_VALID_REF( oids->second.ref ) ) {
         memcpy( field.OrderRef, oids->second.ref, sizeof( field.OrderRef ) );
         field.FrontID   = _ss.front;
         field.SessionID = _ss.sess;
@@ -144,7 +143,7 @@ int CtpTrader::put( const order_t& o_ ) {
         return -1;
     }
 
-    memcpy( field.OrderRef, _orders[ o_.id ].ref, sizeof( field.OrderRef ) );
+    memcpy( field.OrderRef, _id_map[ o_.id ].ref, sizeof( field.OrderRef ) );
 
     field.MinVolume           = 0;                               /// 最小成交量: 1-fak--!!
     field.ContingentCondition = THOST_FTDC_CC_Immediately;       /// 触发条件: 立即
@@ -259,10 +258,12 @@ int CtpTrader::put( const order_t& o_ ) {
 int CtpTrader::assign_ref( oid_t id_ ) {
     CUB_ASSERT( id_ );
 
-    if ( _orders.find( id_ ) != _orders.end() ) {
+    if ( _id_map.find( id_ ) != _id_map.end() ) {
         LOG_INFO( "band order id" );
         return -1;
     }
+
+    order_ids_t ids;
 
     int i = sizeof( TThostFtdcOrderRefType ) - 1;
     int j = 0;
@@ -289,7 +290,9 @@ int CtpTrader::assign_ref( oid_t id_ ) {
         _ss.init_ref[ i ] = '1';
     }
 
-    _orders.emplace( id_, { id_, {}, _ss.init_ref } );
+    ids.set_ref( _ss.init_ref );
+    ids.id = id_;
+    _id_map.emplace( id_, ids );
 
     return 0;
 }
@@ -389,7 +392,8 @@ void CtpTrader::OnRspUserLogin( CThostFtdcRspUserLoginField* pRspUserLogin, CTho
     }
 
     session_changed( { pRspUserLogin->FrontID, pRspUserLogin->SessionID, pRspUserLogin->MaxOrderRef } );
-    tune_clock();  // todo
+    // todo
+    // tune_clock();  // todo
 
     qry_settlement();
 }
@@ -437,13 +441,13 @@ fak fok好像不会到这里来；这两种模式会直接撤单，并且返回s
 // 而被交易所拒单后只会回调 OnRtnOrder
 void CtpTrader::OnRspOrderInsert( CThostFtdcInputOrderField* f_, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) {
     LOG_INFO( "订单被ctp前置拒绝,req=%d, id=%d, msg=%s", nRequestID, pRspInfo->ErrorID, pRspInfo->ErrorMsg );
-    auto id = id_of_ref( f_->OrderRef );
+    auto id = id_of( f_->OrderRef );
     if ( !IS_VALID_ID( id ) ) {
         LOG_INFO( "can not reg order ref: %s", f_->OrderRef );
         return;
     }
 
-    OMGMT.update( id, ostatus_t::cancelled );
+    _om->update( id, ostatus_t::cancelled );
 }
 
 // 报单操作请求响应，当执行ReqOrderAction后有字段填写不对之类的CTP报错则通过此接口返回
@@ -451,80 +455,28 @@ void CtpTrader::OnRspOrderAction( CThostFtdcInputOrderActionField* pInputOrderAc
     LOG_INFO( "撤单被ctp前置拒绝,req=%d, id=%d, msg=%s", nRequestID, pRspInfo->ErrorID, pRspInfo->ErrorMsg );
 }
 
-oid_t CtpTrader::id_of_ref( const TThostFtdcOrderRefType& ref_ ) {
-    auto itr = std::find( _orders.begin(), _orders.end(), []( auto& pair_ ) {
-        return 0 == memcmp( ids_.ref, pair_->second.ref ) == 0;
+oid_t CtpTrader::id_of( const TThostFtdcOrderRefType& ref_ ) {
+    auto itr = std::find_if( _id_map.begin(), _id_map.end(), [ & ]( auto& pair_ ) {
+        return 0 == memcmp( ref_, pair_.second.ref, sizeof( ref_ ) ) == 0;
     } );
 
-    return itr == _orders.end() ? 0 : itr->second.id;
+    return itr == _id_map.end() ? 0 : itr->second.id;
 }
 
-int CtpTrader::update_order_ids( order_ids_t& ids_ ) {
-    auto align_id = []( order_ids_t& old_, order_ids_t& new_ ) {
-        if ( new_.is_id_valid() )
-            old_.id = new_.id;
-        else
-            new_.id = old_.id;
-    };
+oid_t CtpTrader::id_of( const ex_oid_t& eoid_ ) {
+    auto itr = std::find_if( _id_map.begin(), _id_map.end(), [ & ]( auto& pair_ ) {
+        return eoid_ == pair_.second.eoid;
+    } );
 
-    auto align_ref = []( order_ids_t& old_, order_ids_t& new_ ) {
-        if ( new_.is_ref_valid() )
-            memcpy( old_.ref, new_.ref, sizeof( new_.ref ) );
-        else
-            memcpy( new_.ref, &old_.ref, sizeof( new_.ref ) );
-    };
+    return itr == _id_map.end() ? 0 : itr->second.id;
+}
 
-    auto align_exoid = []( order_ids_t& old_, order_ids_t& new_ ) {
-        if ( new_.is_exoid_valid() )
-            memcpy( &old_.eoid, &new_.eoid, sizeof( new_.eoid ) );
-        else
-            memcpy( &new_.eoid, &old_.eoid, sizeof( old_.eoid ) );
-    };
+oid_t CtpTrader::id_of( const ex_oid_t& exoid_, const TThostFtdcOrderRefType& ref_ ) {
+    if ( IS_VALID_ID( ref_ ) )
+        return id_of( ref_ );
 
-    if ( ids_.is_id_valid() ) {
-        auto itr = _orders.find( ids_.id );
-        if ( itr == _orders.end() ) {
-            LOG_INFO( "not reg id" );
-            return -1;
-        }
-
-        order_ids_t& ids = _orders[ ids_.id ];
-
-        align_ref( ids, ids_ );
-        align_exoid( ids, ids_ );
-    }
-    else if ( ids_.is_ref_valid() ) {
-        auto itr = std::find( _orders.begin(), _orders.end(), []( auto& pair_ ) {
-            return 0 == memcmp( ids_.ref, pair_->second.ref ) == 0;
-        } );
-
-        if ( itr == _orders.end() ) {
-            LOG_INFO( "not reg id" );
-            return -1;
-        }
-
-        order_ids_t& ids = itr->second;
-        align_id( ids, ids_ );
-        align_exoid( ids, ids_ );
-    }
-    else if ( ids_.is_exoid_valid() ) {
-        auto itr = std::find( _orders.begin(), _orders.end(), []( auto& pair_ ) {
-            return 0 == memcmp( ids_.ref, pair_->second.ref ) == 0;
-        } );
-
-        if ( itr == _orders.end() ) {
-            LOG_INFO( "not reg id" );
-            return -1;
-        }
-
-        order_ids_t& ids = itr->second;
-        align_id( ids, ids_ );
-        align_ref( ids, ids_ );
-    }
-    else {
-        LOG_INFO( "bad ids: id =%u {ex=%s sysid=%s}, {ref=%s}", ids_.id, ids_.eoid.ex, ids_.eoid.oid, ids_.ref );
-        return -1;
-    }
+    else if ( exoid_.is_valid() )
+        return id_of( exoid_ );
 
     return 0;
 }
@@ -583,10 +535,9 @@ odir_t CtpTrader::cvt_direction( const TThostFtdcDirectionType& di_, const TThos
 void CtpTrader::OnRtnOrder( CThostFtdcOrderField* f_ ) {
     LOG_INFO( "[ctp] OnOrderRtn[1]@front=%d sess=%d ref=%s exid=%s sysid=%s\n", f_->FrontID, f_->SessionID, f_->OrderRef, f_->ExchangeID, f_->OrderSysID );
 
-    order_ids_t ids = { 0, { f_->ExchangeID, f_->OrderSysID }, f_->OrderRef };
-
-    if ( update_order_ids( ids ) < 0 ) {
-        LOG_INFO( "cannot reg order id" );
+    auto oid = id_of( { f_->ExchangeID, f_->OrderSysID }, f_->OrderRef ) == 0;
+    if ( !IS_VALID_ID( oid ) ) {
+        LOG_INFO( "cannot reg order id ex= %s syso=%d ref=%s", f_->ExchangeID, f_->OrderSysID, f_->OrderRef );
         return;
     }
 
@@ -616,18 +567,18 @@ void CtpTrader::OnRtnOrder( CThostFtdcOrderField* f_ ) {
     case THOST_FTDC_OST_NoTradeNotQueueing:  // 还未发往交易所是不是最终状态?
     case THOST_FTDC_OST_Touched:
     case THOST_FTDC_OST_Unknown:  // 收到保单后第一次返回，表示ctp接受订单，通过ctp的风控检查
-        return OMGMT.update( ids.id, ostatus_t::pending );
+        return _om->update( oid, ostatus_t::pending );
 
     case THOST_FTDC_OST_PartTradedQueueing:       // 还会有成交--我们会同步过程不能在这里结束
     case THOST_FTDC_OST_AllTraded:                // ctpman-最终状态（1）
     case THOST_FTDC_OST_PartTradedNotQueueing: {  // todo 最终状态（2）已经不在队列中--剩余部分已经撤单---订单已完成标志?---
         order_t o = { 0 };
 
-        o.id     = ids.id;
+        o.id     = oid;
         o.qty    = f_->VolumeTraded;  // o.qty准备返回结果//f->VolumeTotal，这是剩余数量
         o.remark = f_->StatusMsg;
 
-        cvt_datetime( o.datetime, f_->InsertDate, f_->InsertTime, 0 );  // inserttime 是ctp本地时间或者交易所时间（返回后）
+        o.datetime.from_ctp( f_->InsertDate, f_->InsertTime, 0 );  // inserttime 是ctp本地时间或者交易所时间（返回后）
         o.code = f_->InstrumentID;
 
         o.status = ostatus_t::dealt;  // note! OrderSubmitStatus：CTP内部使用，普通投资者可以忽略
@@ -640,11 +591,11 @@ void CtpTrader::OnRtnOrder( CThostFtdcOrderField* f_ ) {
 
         o.price = f_->LimitPrice;
 
-        return OMGMT.update( o );
+        return _om->update( o );
     } break;
 
     case THOST_FTDC_OST_Canceled:  // 最终状态（4），当ordersubmitstatus为thost_ftdc_accepts时是主动撤单
-        return OMGMT.update( ids.id, ostatus_t::cancelled );
+        return _om->update( oid, ostatus_t::cancelled );
     }
 }
 
@@ -656,7 +607,7 @@ void CtpTrader::OnRtnOrder( CThostFtdcOrderField* f_ ) {
     有极小的概率会出现在平仓指令到达 CTP 交易核心时该报单的状态仍未更新，就会导致无法平仓。
 ----------------------------------------------------------------------------*/
 void CtpTrader::OnRtnTrade( CThostFtdcTradeField* f_ ) {
-    auto id = id_of_ref( f_->OrderRef );
+    auto id = id_of( f_->OrderRef );
 
     if ( !IS_VALID_ID( id ) ) {
         LOG_INFO( "rtn trade, cannot reg order id" );
@@ -665,7 +616,7 @@ void CtpTrader::OnRtnTrade( CThostFtdcTradeField* f_ ) {
 
     order_t o = { 0 };
     o.id      = id;
-    cvt_datetime( o.datetime, f_->TradeDate, f_->TradeTime );
+    o.datetime.from_ctp( f_->TradeDate, f_->TradeTime, 0 );
     o.qty   = f_->Volume;
     o.code  = f_->InstrumentID;
     o.price = f_->Price;
@@ -675,19 +626,20 @@ void CtpTrader::OnRtnTrade( CThostFtdcTradeField* f_ ) {
         LOG_INFO( "bad order direction'" );
     }
 
-    OMGMT.update( id, ostatus_t::finished );
+    _om->update( id, ostatus_t::finished );
 }
 
 void CtpTrader::OnErrRtnOrderInsert( CThostFtdcInputOrderField* f_, CThostFtdcRspInfoField* pRspInfo ) {
     LOG_INFO( "INSERT ERROR,errid=%d msg=%s", pRspInfo->ErrorID, pRspInfo->ErrorMsg );
 
-    auto id = id_of_ref( f_->OrderRef );
+    auto id = id_of( f_->OrderRef );
+
     if ( !IS_VALID_ID( id ) ) {
         LOG_INFO( "errrtn insert, cannot reg order id" );
         return;
     }
 
-    OMGMT.update( id, ostatus_t::error );
+    _om->update( id, ostatus_t::error );
 }
 
 // 删除失败对现有的订单没有任何影响(no update)，但是要通知算法

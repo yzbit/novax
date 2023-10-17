@@ -39,6 +39,9 @@ sessionid orderref，ordersysid等只是为了撤单用的，如果重新登陆�
 */
 
 CUB_NS_BEGIN
+#define IS_VALID_REF( _ref_ ) ( _ref_[ sizeof( _ref_ ) - 1 ] != '\0' )
+#define IS_EQUAL_REF( _a_, _b_ ) ( 0 == memcmp( _a_, _b_, sizeof _a_ ) )
+
 namespace ctp {
 
 struct CtpTrader : OrderMgmt::Delegator, CThostFtdcTraderSpi {
@@ -64,7 +67,7 @@ private:
 
 private:
     int    assign_ref( oid_t id_ );
-    oid_t  id_of_ref( const TThostFtdcOrderRefType& ref_ );
+    oid_t  id_of( const TThostFtdcOrderRefType& ref_ );
     odir_t cvt_direction( const TThostFtdcDirectionType& di_, const TThostFtdcCombOffsetFlagType& comb_ );
     odir_t cvt_direction( const TThostFtdcDirectionType& di_, const TThostFtdcOffsetFlagType& comb_ );
 
@@ -84,29 +87,34 @@ private:
     struct ex_oid_t {
         TThostFtdcExchangeIDType ex;
         TThostFtdcOrderSysIDType oid;
+
         ex_oid_t();
         ex_oid_t( const TThostFtdcExchangeIDType& ex_, const TThostFtdcOrderSysIDType& oid_ );
+
+        bool is_valid() const;
+        bool operator==( const ex_oid_t& eoid_ ) const;
     };
+
+    oid_t id_of( const ex_oid_t& eoid_ );
 
     struct order_ids_t {
         oid_t                  id;
         ex_oid_t               eoid;
         TThostFtdcOrderRefType ref;
 
+        void set_ref( const TThostFtdcOrderRefType& ref_ );
+        order_ids_t() = default;
         order_ids_t( oid_t id_, const ex_oid_t& ex_oid_, const TThostFtdcOrderRefType& ref_ );
-        bool is_exoid_valid();
-        bool is_id_valid();
-        bool is_ref_valid();
     };
 
-    void session_changed( const session_t& s_ );
-    int  update_order_ids( order_ids_t& ids_ );
+    void  session_changed( const session_t& s_ );
+    oid_t id_of( const ex_oid_t& exoid_, const TThostFtdcOrderRefType& ref_ );
 
 private:
-    using pending_t = std::unordered_map<oid_t, order_ids_t>;
+    using IdMap = std::unordered_map<oid_t, order_ids_t>;
 
     setting_t _settings;
-    pending_t _orders;
+    IdMap     _id_map;
     session_t _ss;
     req_map_t _reqs;
 
@@ -154,9 +162,17 @@ inline CtpTrader::ex_oid_t::ex_oid_t() {
     memset( oid, 0x00, sizeof( oid ) );
 }
 
+inline bool CtpTrader::ex_oid_t::is_valid() const {
+    return ex[ 0 ] != '\0' && oid[ 0 ] != '\0';
+}
+
 inline CtpTrader::ex_oid_t::ex_oid_t( const TThostFtdcExchangeIDType& ex_, const TThostFtdcOrderSysIDType& oid_ ) {
     memcpy( ex, ex_, sizeof( ex ) );
     memcpy( oid, oid_, sizeof( oid ) );
+}
+
+inline bool CtpTrader::ex_oid_t::operator==( const ex_oid_t& eoid_ ) const {
+    return eoid_.oid == oid && memcmp( eoid_.ex, ex, sizeof( ex ) );
 }
 
 inline CtpTrader::order_ids_t::order_ids_t( oid_t id_, const ex_oid_t& ex_oid_, const TThostFtdcOrderRefType& ref_ ) {
@@ -165,18 +181,9 @@ inline CtpTrader::order_ids_t::order_ids_t( oid_t id_, const ex_oid_t& ex_oid_, 
     memcpy( ref, ref_, sizeof( ref ) );
 }
 
-inline bool CtpTrader::order_ids_t::is_exoid_valid() {
-    return eoid.ex[ 0 ] != '\0';
+inline void CtpTrader::order_ids_t::set_ref( const TThostFtdcOrderRefType& ref_ ) {
+    memcpy( ref, ref_, sizeof( ref ) );
 }
-
-inline bool CtpTrader::order_ids_t::is_id_valid() {
-    return IS_VALID_ID( id );
-}
-
-inline bool CtpTrader::order_ids_t::is_ref_valid() {
-    return ref[ sizeof ref - 1 ] != '\0';  // 靠右对齐
-}
-
 }  // namespace ctp
 
 CUB_NS_END

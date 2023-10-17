@@ -8,13 +8,22 @@ message("libpath=" ${LIBPATH})
 include_directories(${LIBPATH})
 link_directories(${LIBPATH}/ctp)
 
-add_executable(test_rb test.ringbuff.cpp)
-add_executable(test_asp test.aspect.kline.cpp  ../core/indicator.cpp ../core/aspect.cpp ../core/kline.cpp ../core/clock.cpp )
-add_executable(test_data test.data.cpp ../core/data.cpp ../core/ctp/ctp_md_proxy.cpp  ../core/aspect.cpp ../core/clock.cpp ../core/indicator.cpp ../core/aspect.cpp ../core/kline.cpp)
+#add_executable(test_rb test.ringbuff.cpp)
+#add_executable(test_asp test.aspect.kline.cpp  ../core/indicator.cpp ../core/aspect.cpp ../core/kline.cpp ../core/clock.cpp )
+#add_executable(test_data test.data.cpp ../core/data.cpp ../core/ctp/ctp_md_proxy.cpp  ../core/aspect.cpp ../core/clock.cpp ../core/indicator.cpp ../core/aspect.cpp ../core/kline.cpp)
 
+add_executable(test_om test.omgmt.cpp ../core/order_mgmt.cpp ../core/ctp/ctp_trade_proxy.cpp)
+
+#[[
 target_link_libraries(test_data
 PRIVATE
 thostmduserapi_se.so
+)
+]]
+
+target_link_libraries(test_om
+PRIVATE
+libthosttraderapi_se.so
 )
 
 #add_executable(test_mgmt test.omgmt.cpp ../core/order_mgmt.cpp)

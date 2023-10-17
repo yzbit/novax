@@ -2,6 +2,7 @@
 
 #include "order_mgmt.h"
 
+#include "ctp/ctp_trade_proxy.h"
 #include "dci_role.h"
 #include "log.hpp"
 #include "proxy.h"
@@ -28,23 +29,28 @@ oid_t OrderMgmt::put( const oattr_t& attr_ ) {
 
     auto rc = _c->put_order( *ord.get() );
 
+    LOG_TAGGED( "om", "put order fail:%d %s %v %.1lf", rc, ( const char* )attr_.symbol, attr_.qty, attr_.price );
     if ( rc != 0 )
         return 0;
 
     _book.emplace( ord->id, ord.release() );
+    LOG_TAGGED( "om", "total roders=%d", ( int )_book.size() );
 
     return ord->id;
 }
 
-oid_t OrderMgmt::sellshort( const oattr_t& attr_, price_t sl_, price_t tp_, const text_t& remark = "open short" ) {
+oid_t OrderMgmt::sellshort( const oattr_t& attr_, price_t sl_, price_t tp_, const text_t& remark ) {
+    LOG_TAGGED( "om", "sellshort" );
     return put( attr_ );
 }
 
-oid_t OrderMgmt::buylong( const oattr_t& attr_, price_t sl_, price_t tp_, const text_t& remark_ = "open buy" ) {
+oid_t OrderMgmt::buylong( const oattr_t& attr_, price_t sl_, price_t tp_, const text_t& remark_ ) {
+    LOG_TAGGED( "om", "buylong" );
     return put( attr_ );
 }
 
 int OrderMgmt::cancel( oid_t id_ ) {
+    LOG_TAGGED( "om", "del order" );
     return _c->del_order( id_ );
 }
 
@@ -75,11 +81,11 @@ void OrderMgmt::update( oid_t id_, ostatus_t status_ ) {
 }
 
 void OrderMgmt::create_position( const code_t& code_ ) {
-    position_t p     = { 0 };
-    p.symbol         = code_;
-    instrument_p_t p = { p, p };
+    position_t p{ 0 };
+    p.symbol             = code_;
+    instrument_p_t ins_p = { p, p };
 
-    _ins_position.try_emplace( code_, p );
+    _ins_position.try_emplace( code_, ins_p );
 }
 
 position_t* OrderMgmt::position( const code_t& code_, bool long_ ) {
@@ -200,11 +206,11 @@ void OrderMgmt::update( const order_t& o_ ) {
         accum( o, &o_ );
 }
 
-int OrderMgmt::sell( const oattr_t& a_ = { "", 0, 0, otype_t::market } ) {
+int OrderMgmt::sell( const oattr_t& a_ ) {
     return close( odir_t::sell, a_ );
 }
 
-int OrderMgmt::buy( const oattr_t& a_ = { "", 0, 0, otype_t::market } ) {
+int OrderMgmt::buy( const oattr_t& a_ ) {
     return close( odir_t::cover, a_ );
 }
 /*如下的仓位如何关闭：
@@ -243,7 +249,7 @@ int OrderMgmt::close( odir_t dir_, const oattr_t& a_ ) {
         return -1;
     }
 
-    _book.emplace( order.code, order );
+    //_book.emplace( order.code, order );
 
     return 0;
 }
