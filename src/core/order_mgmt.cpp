@@ -14,12 +14,26 @@ OrderMgmt::Delegator* ProxyFactory::create_trader( OrderMgmt* om_, int type_ ) {
 
 std::atomic<oid_t> OrderMgmt::_init_id = 1;
 
+OrderMgmt()::~OrderMgmt() {
+    delete _c;
+    delete _d;
+}
+
 OrderMgmt::OrderMgmt( MgmtContext* c_ )
     : _c( c_ ) {
+    _d = ProxyFactory::create_trader( this, 0 );
 }
 
 oid_t OrderMgmt::oid() {
     return ++_init_id;
+}
+
+void OrderMgmt::start() {
+    _d->start();
+}
+
+void OrderMgmt::stop() {
+    _d->stop();
 }
 
 oid_t OrderMgmt::put( const oattr_t& attr_ ) {
@@ -27,7 +41,7 @@ oid_t OrderMgmt::put( const oattr_t& attr_ ) {
     ord->from_attr( attr_ );
     ord->id = oid();
 
-    auto rc = _c->put_order( *ord.get() );
+    auto rc = _d->put( *ord.get() );
 
     LOG_TAGGED( "om", "put order fail:%d %s %v %.1lf", rc, ( const char* )attr_.symbol, attr_.qty, attr_.price );
     if ( rc != 0 )
@@ -51,7 +65,7 @@ oid_t OrderMgmt::buylong( const oattr_t& attr_, price_t sl_, price_t tp_, const 
 
 int OrderMgmt::cancel( oid_t id_ ) {
     LOG_TAGGED( "om", "del order" );
-    return _c->del_order( id_ );
+    return _d->cancel( id_ );
 }
 
 order_t* OrderMgmt::get( oid_t id_ ) {
@@ -244,7 +258,7 @@ int OrderMgmt::close( odir_t dir_, const oattr_t& a_ ) {
     order.id  = oid();
     order.dir = dir_;
 
-    if ( _c->put_order( order ) != 0 ) {
+    if ( _d->put( order ) != 0 ) {
         LOG_INFO( "close position failed, dir=%d ,sym=%s, qty=%d ,price=%ld ,mode=%d", dir_, a_.symbol, a_.qty, order.price, order.mode );
         return -1;
     }

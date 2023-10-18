@@ -26,7 +26,11 @@ struct OrderMgmt {
         virtual int cancel( oid_t o_ )       = 0;
     };
 
+    ~OrderMgmt();
     OrderMgmt( MgmtContext* c_ );
+
+    void start();
+    void stop();
 
     oid_t sellshort( const oattr_t& attr_, price_t sl_ = 0, price_t tp_ = 0, const text_t& remark = "open short" );
     oid_t buylong( const oattr_t& attr_, price_t sl_ = 0, price_t tp_ = 0, const text_t& remark_ = "open buy" );

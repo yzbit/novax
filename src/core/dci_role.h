@@ -12,8 +12,6 @@ struct DataContext {
 };
 
 struct MgmtContext {
-    virtual int put_order( const order_t& o_ ) = 0;
-    virtual int del_order( oid_t id_ )         = 0;
 };
 
 CUB_NS_END

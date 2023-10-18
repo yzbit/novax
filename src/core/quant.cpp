@@ -44,7 +44,6 @@ void QuantImpl::invoke() {
 int QuantImpl::init() {
     ContextImpl* ctx = new ContextImpl( this );
     _d               = new Data( this );
-    _t               = new Trader( this );
     _o               = new OrderMgmt( this );
 
     return 0;

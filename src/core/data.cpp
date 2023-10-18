@@ -99,6 +99,7 @@ void Data::process() {
 
 Data::~Data() {
     delete _d;
+    delete _r;
 
     _jobs->shutdown();
     delete _jobs;

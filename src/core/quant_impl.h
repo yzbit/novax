@@ -10,7 +10,6 @@
 CUB_NS_BEGIN
 struct OrderMgmt;
 struct Data;
-struct Trader;
 struct Strategy;
 
 struct QuantImpl : Quant, DataContext, MgmtContext, Context {
@@ -54,7 +53,6 @@ private:
 
 private:
     Data*      _d = nullptr;
-    Trader*    _t = nullptr;
     Strategy*  _s = nullptr;
     Context*   _c = nullptr;
     OrderMgmt* _o = nullptr;
