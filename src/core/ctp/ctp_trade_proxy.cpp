@@ -10,6 +10,12 @@ CtpTrader::CtpTrader( OrderMgmt* om_ )
     : _om( om_ ) {}
 
 int CtpTrader::start() {
+
+    if ( _settings.load( CTP_TRADE_SETTING_FILE ) < 0 ) {
+        LOG_TAGGED( "ctp", "load config failed: %s", CTP_TRADE_SETTING_FILE );
+        return -1;
+    }
+
     LOG_INFO( "RegisterSpi@注册ctp交易网关\n" );
     std::string flow = _settings.flow_path;
     LOG_INFO( "RegisterSpi@创建交易网关数据流目录：{}\n", flow );
@@ -354,10 +360,14 @@ int CtpTrader::qry_settlement() {
 
     /*! 不能带有日期参数，否则会失败*/
     // strcpy(settleInfoReq.TradingDay, m_tradingDay);
+    auto req = req_id();
 
-    _reqs[ act_t::qry_settle ] = req_id();
+    if ( _api->ReqQrySettlementInfo( &field, req ) ) {
+        LOG_TAGGED( "ctp", "qry settlement info failed" );
+        return -1;
+    }
 
-    return 0 != _api->ReqQrySettlementInfo( &field, _reqs[ act_t::qry_settle ] ) ? 0 : -1;
+    return 0 == _sync_call.wait( req, 2000 ) ? confirm_settlement() : -1;
 }
 
 int CtpTrader::confirm_settlement() {
@@ -394,8 +404,9 @@ void CtpTrader::OnRspUserLogin( CThostFtdcRspUserLoginField* pRspUserLogin, CTho
     session_changed( { pRspUserLogin->FrontID, pRspUserLogin->SessionID, pRspUserLogin->MaxOrderRef } );
     // todo
     // tune_clock();  // todo
-
-    qry_settlement();
+    if ( qry_settlement() < 0 ) {
+        LOG_TAGGED( "ctp", "qry settlement failed" );
+    }
 }
 
 void CtpTrader::OnRspError( CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) {
@@ -420,11 +431,9 @@ void CtpTrader::OnRspSettlementInfoConfirm( CThostFtdcSettlementInfoConfirmField
 }
 
 void CtpTrader::OnRspQrySettlementInfo( CThostFtdcSettlementInfoField* pSettlementInfo, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) {
-    LOG_INFO( "settlement received" );
+    LOG_INFO( "settlement received, req=%d last=%d", nRequestID, bIsLast );
 
-    if ( bIsLast && nRequestID == _reqs[ act_t::qry_settle ] ) {
-        confirm_settlement();
-    }
+    _sync_call.update( nRequestID, pSettlementInfo, sizeof( CThostFtdcSettlementInfoField ), bIsLast );
 }
 // ctp文档：
 // 报单录入请求响应，当执行ReqOrderInsert后有字段填写不对之类的CTP报错则通过此接口返回

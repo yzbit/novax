@@ -1,4 +1,3 @@
-<<<<<<< Updated upstream
 #include "../core/dci_role.h"
 #include "../core/definitions.h"
 #include "../core/models.h"
@@ -7,27 +6,26 @@
 
 namespace cub {
 struct XContext : cub::MgmtContext {
-    int put_order( const order_t& o_ ) override {
+    int put_order( const order_t& o_ ) {
         return 0;
     }
 
-    int del_order( oid_t id_ ) override {
+    int del_order( oid_t id_ ) {
         return 0;
     }
 };
 }  // namespace cub
 
-
 int main() {
     auto om = new cub::OrderMgmt( new cub::XContext() );
 
-    om->start();
-    om->sellshort();
-    om->buylong();
+    // om->start();
+    // om->sellshort();
+    // om->buylong();
 
-    om->position();
+    // om->position();
 
-    om->start();
+    // om->start();
 
     return 0;
 }

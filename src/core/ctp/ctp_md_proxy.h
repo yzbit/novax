@@ -28,7 +28,6 @@ protected:
 private:
     int init();
     int login();
-    int read_settings();
     int sub();
     int unsub();
     int sub( code_t& code_ );

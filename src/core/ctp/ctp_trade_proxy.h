@@ -39,6 +39,9 @@ sessionid orderref，ordersysid等只是为了撤单用的，如果重新登陆�
 */
 
 CUB_NS_BEGIN
+
+#define CTP_TRADE_SETTING_FILE "/home/data/code/cub/src/core/ctp/ctp_trade.json"
+
 #define IS_VALID_REF( _ref_ ) ( _ref_[ sizeof( _ref_ ) - 1 ] != '\0' )
 #define IS_EQUAL_REF( _a_, _b_ ) ( 0 == memcmp( _a_, _b_, sizeof _a_ ) )
 
@@ -57,7 +60,6 @@ private:
     int login();
     int logout();
     int auth();
-    int teardown();
     int qry_settlement();
     int confirm_settlement();
     int qry_fund();
@@ -117,6 +119,7 @@ private:
     IdMap     _id_map;
     session_t _ss;
     req_map_t _reqs;
+    Synchrony _sync_call;
 
 private:
     OrderMgmt* _om;

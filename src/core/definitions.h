@@ -5,6 +5,7 @@
 #include <any>
 #include <array>
 #include <assert.h>
+#include <chrono>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -29,6 +30,10 @@ using string_t = std::string;
 using money_t  = double;
 
 #define IS_VALID_ID( _id_ ) ( 0 != ( _id_ ) )
+
+inline uint64_t now_ms() {
+    return std::chrono::duration_cast<std::chrono::milliseconds>( std::chrono::steady_clock::now().time_since_epoch() ).count();
+}
 
 struct code_t {
     static constexpr int kMaxCodeLength = 16;

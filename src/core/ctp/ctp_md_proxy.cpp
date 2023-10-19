@@ -1,9 +1,4 @@
 #include <filesystem>
-#include <fstream>
-#include <rapidjson/document.h>
-#include <rapidjson/stringbuffer.h>
-#include <rapidjson/writer.h>
-#include <sstream>
 
 #include "ctp_md_proxy.h"
 
@@ -16,7 +11,6 @@
 
 CUB_NS_BEGIN
 namespace ctp {
-namespace js = rapidjson;
 namespace fs = std::filesystem;
 
 CtpExMd::CtpExMd( Data* d_ )
@@ -81,7 +75,7 @@ int CtpExMd::unsub() {
     return _api->UnSubscribeMarketData( arr.get(), _unsub_symbols.size() );
 }
 
-std::unique_ptr<char*[]> CtpExMd::set2arr( std::set<code_t>& s ) {
+std::unique_ptr<char* []> CtpExMd::set2arr( std::set<code_t>& s ) {
     auto arr = std::make_unique<char*[]>( _sub_symbols.size() );
     int  n   = 0;
 
@@ -101,55 +95,6 @@ int CtpExMd::sub( code_t& code_ ) {
 int CtpExMd::unsub( code_t& code_ ) {
     char* c = code_;
     return _api->UnSubscribeMarketData( &c, 1 );
-}
-
-int CtpExMd::read_settings() {
-    LOG_TAGGED( "ctp", "read settings from %s", CTP_MD_SETTING_FILE );
-
-    std::ifstream json( CTP_MD_SETTING_FILE, std::ios::in );
-
-    if ( !json.is_open() ) {
-        LOG_INFO( "open setting failed %s", CTP_MD_SETTING_FILE );
-        return -1;
-    }
-
-    std::stringstream json_stream;
-    json_stream << json.rdbuf();
-    std::string setting_str = json_stream.str();
-
-    js::Document d;
-    d.Parse( setting_str.data() );
-
-    if ( !d.HasMember( "proxies" ) || !d[ "proxies" ].IsArray() ) {
-        LOG_INFO( "setting foramt error ,'proxies' node is not array" );
-        return -2;
-    }
-
-    auto proxies = d[ "proxies" ].GetArray();
-    //! 找到第一个enable的就结束
-    for ( auto& p : proxies ) {
-        if ( !p.HasMember( "enabled" ) || ( p.HasMember( "enabled" ) && !p[ "enabled" ].GetBool() ) ) {
-            continue;
-        }
-
-        _settings.flow_path  = p.HasMember( "flow_path" ) ? p[ "flow_path" ].GetString() : ".";
-        _settings.i.broker   = p.HasMember( "broker" ) ? p[ "broker" ].GetString() : "uknown";
-        _settings.i.password = p.HasMember( "password" ) ? p[ "password" ].GetString() : "";
-        _settings.i.name     = p.HasMember( "user_name" ) ? p[ "user_name" ].GetString() : "";
-        _settings.frontend.push_back( p.HasMember( "frontend" ) ? p[ "frontend" ].GetString() : "" );
-        break;
-    }
-
-    // dump
-    LOG_TAGGED( "ctp",
-                "settings:flow_path=%s,broker=%s, user=%s, pwd=%s, front=%s",
-                _settings.flow_path.c_str(),
-                _settings.i.broker.c_str(),
-                _settings.i.name.c_str(),
-                _settings.i.password.c_str(),
-                _settings.frontend[ 0 ].c_str() );
-
-    return 0;
 }
 
 id_t CtpExMd::session_id() {
@@ -195,7 +140,7 @@ int CtpExMd::stop() {
 int CtpExMd::init() {
     LOG_TAGGED( "ctp", "init begin" );
 
-    if ( read_settings() < 0 ) {
+    if ( _settings.load( CTP_MD_SETTING_FILE ) < 0 ) {
         LOG_INFO( "#ERR,read ctp setings failed" );
         return -1;
     }

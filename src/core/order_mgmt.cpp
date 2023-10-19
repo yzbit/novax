@@ -14,7 +14,7 @@ OrderMgmt::Delegator* ProxyFactory::create_trader( OrderMgmt* om_, int type_ ) {
 
 std::atomic<oid_t> OrderMgmt::_init_id = 1;
 
-OrderMgmt()::~OrderMgmt() {
+OrderMgmt::~OrderMgmt() {
     delete _c;
     delete _d;
 }

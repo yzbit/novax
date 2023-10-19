@@ -2,7 +2,17 @@
 #define B43732C7_EA9D_4138_8023_E0627CD66A48
 #include <algorithm>
 #include <atomic>
+#include <condition_variable>
+#include <fstream>
+#include <functional>
+#include <list>
 #include <math.h>
+#include <memory>
+#include <mutex>
+#include <rapidjson/document.h>
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/writer.h>
+#include <sstream>
 #include <unordered_map>
 
 #include "../definitions.h"
@@ -13,6 +23,8 @@
 CUB_NS_BEGIN
 
 namespace ctp {
+namespace js = rapidjson;
+
 #define LOG_ERROR_AND_RET( _rsp_, _req_, _lst_ )                                                                     \
     do {                                                                                                             \
         if ( pRspInfo->ErrorID != 0 ) {                                                                              \
@@ -22,6 +34,26 @@ namespace ctp {
     } while ( 0 )
 
 #define CTP_COPY_SAFE( _field_, _str_ ) memcpy( _field_, _str_, std::min( ( int )strlen( _str_ ), ( int )sizeof( _field_ ) - 1 ) )
+
+struct Synchrony {
+    struct entry_t {
+        volatile bool    finish = false;
+        std::list<void*> segments;
+    };
+
+    int wait(
+        int      cv_var_,
+        uint32_t timeout_ms_ = ~0u,
+        std::function<int( void* )>[]( void* p ) { return 0; } );
+
+    int update( int cv_var_, void* data_, , size_t size_, bool finish_ );
+
+private:
+    std::mutex              _mutex;
+    std::condition_variable _cv;
+
+    std::unordered_map<int, entry_t> _data;
+};
 
 struct cert_t {
     string_t auth;
@@ -41,6 +73,8 @@ struct setting_t {
     string_t              flow_path; /* 根据ctp手册，默认值“”表示当前目录*/
     investor_t            i;
     cert_t                c;
+
+    int load( const char* file_ );
 };
 
 #define EX_SHFE "SHFE"
@@ -85,8 +119,8 @@ inline int req_id() {
 using req_map_t = std::unordered_map<act_t, int>;
 
 inline int cvt_ex( const TThostFtdcExchangeIDType& exid_ ) {
-    //LOG_INFO( "ex id=%s", exid_ );
-    // gcc -o2的memcpm是非常快的,常用的交易所放在前面
+    // LOG_INFO( "ex id=%s", exid_ );
+    //  gcc -o2的memcpm是非常快的,常用的交易所放在前面
     if ( memcmp( exid_, EX_SHFE, 4 ) == 0 )
         return ( int )extype_t::SHFE;
     else if ( memcmp( exid_, EX_DCE, 3 ) == 0 )
@@ -101,6 +135,119 @@ inline int cvt_ex( const TThostFtdcExchangeIDType& exid_ ) {
     LOG_INFO( "cannot reg ex" );
     return -1;
 }
+
+inline int setting_t::load( const char* file_ ) {
+    std::ifstream json( file_, std::ios::in );
+
+    if ( !json.is_open() ) {
+        LOG_INFO( "open setting failed %s", file_ );
+        return -1;
+    }
+
+    std::stringstream json_stream;
+    json_stream << json.rdbuf();
+    std::string setting_str = json_stream.str();
+
+    js::Document d;
+    d.Parse( setting_str.data() );
+
+    if ( !d.HasMember( "proxies" ) || !d[ "proxies" ].IsArray() ) {
+        LOG_INFO( "setting foramt error ,'proxies' node is not array" );
+        return -2;
+    }
+
+    auto proxies = d[ "proxies" ].GetArray();
+    //! 找到第一个enable的就结束
+    for ( auto& p : proxies ) {
+        if ( !p.HasMember( "enabled" ) || ( p.HasMember( "enabled" ) && !p[ "enabled" ].GetBool() ) ) {
+            continue;
+        }
+
+        flow_path  = p.HasMember( "flow_path" ) ? p[ "flow_path" ].GetString() : ".";
+        i.broker   = p.HasMember( "broker" ) ? p[ "broker" ].GetString() : "uknown";
+        i.password = p.HasMember( "password" ) ? p[ "password" ].GetString() : "";
+        i.name     = p.HasMember( "user_name" ) ? p[ "user_name" ].GetString() : "";
+        frontend.push_back( p.HasMember( "frontend" ) ? p[ "frontend" ].GetString() : "" );
+
+        if ( p.HasMember( "authorization" ) && p[ "authorization" ].IsObject() ) {
+            auto& a = p[ "authorization" ];
+            c.appid = a.HasMember( "appid" ) ? a[ "appid" ].GetString() : "";
+            c.auth  = a.HasMember( "auth_code" ) ? a[ "auth_code" ].GetString() : "";
+            c.token = a.HasMember( "token" ) ? a[ "token" ].GetString() : "";
+        }
+
+        break;
+    }
+
+    // dump
+    LOG_TAGGED( "ctp",
+                "settings:flow_path=%s,broker=%s, user=%s, pwd=%s, front=%s",
+                flow_path.c_str(),
+                i.broker.c_str(),
+                i.name.c_str(),
+                i.password.c_str(),
+                frontend[ 0 ].c_str() );
+
+    LOG_TAGGED( "ctp",
+                "auth: appid=%s,authcode=%s, token=%s",
+                c.appid.c_str(),
+                c.auth.c_str(),
+                c.token.c_str() );
+
+    return 0;
+}
+
+int Synchrony::wait( int cv_var_, uint32_t timeout_ms_, td::function<int( void* )> pred_ ) {
+    std::unique_lock<std::mutex> lock{ _mutex };
+    _data.emplace( cv_var_, entry_t() );
+
+    auto& e = _data[ cv_var_ ];
+
+    for ( ;; ) {
+        uint32_t last_tp = now_ms();
+
+        if ( std::cv_status::timeout == cv.wait_for( lock, timeout_ms_, [ & ]() { e.segments.size() > 0; } ) ) {
+            lock.lock();
+            _data.erase( cv_var_ );
+            return -1;
+        }
+
+        for ( auto& p : e.segments ) {
+            // todo,提前返回
+            [[maybe_unused]] auto rc = pred_( p );
+
+            delete[] p;
+        }
+
+        uint elapsed = now_ms() - last_tp;
+
+        if ( !e.finish && timeout_ms_ > elapsed ) {
+            timeout_ms_ -= elapsed;
+            continue;
+        }
+
+        _data.erase( cv_var_ );
+
+        return e.finish ? 0 : -1;
+    }
+
+    return 0;
+}
+
+int Synchrony::update( int cv_var_, void* data_, , size_t size_, bool finish_ ) {
+    if ( !data_ || size_ == 0 ) return 0;
+
+    std::unique_lock<std::mutex> lock{ _mutex };
+
+    if ( _data.find( cv_var_ ) == _data.end() ) return -1;
+
+    char* data = new char[ size_ ]( 0 );
+    memcpy( data, data_, size_ );
+    _data[ cv_var_ ].segments.push_back( data );
+    _data[ cv_var_ ].finish = finish_;
+
+    _cv.notify_one();
+
 }  // namespace ctp
 CUB_NS_END
 #endif /* B43732C7_EA9D_4138_8023_E0627CD66A48 */
