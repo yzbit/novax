@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 #include "../core/dci_role.h"
 #include "../core/definitions.h"
 #include "../core/models.h"
@@ -15,6 +16,7 @@ struct XContext : cub::MgmtContext {
     }
 };
 }  // namespace cub
+
 
 int main() {
     auto om = new cub::OrderMgmt( new cub::XContext() );
