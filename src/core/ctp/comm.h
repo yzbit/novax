@@ -35,6 +35,55 @@ namespace js = rapidjson;
 
 #define CTP_COPY_SAFE( _field_, _str_ ) memcpy( _field_, _str_, std::min( ( int )strlen( _str_ ), ( int )sizeof( _field_ ) - 1 ) )
 
+struct synchrony_t {
+    struct entry_t {
+        volatile bool    finish = false;
+        std::list<void*> segments;
+    };
+
+    std::mutex                       mutex;
+    std::condition_variable          cv;
+    std::unordered_map<int, entry_t> data;
+};
+
+#define DECL_SYNC_CALL_OBJECT\
+private:\
+synchrony_t __synchrony;
+
+#define SYNC_INFINITY ( ~0u )
+
+#define SYNC_CALL_WAIT( _id_, _req_, _timeout_ms_, _callback_ )                                                           \
+    do {                                                                                                                  \
+        std::unique_lock<std::mutex> __lock{ __synchrony.mutex };                                                         \
+        if ( _req_ ) return -1;                                                                                           \
+        __synchrony.data.emplace( _id_, synchrony_t::entry_t() );                                                         \
+                                                                                                                          \
+        auto& e = __synchrony.data[ _id_ ];                                                                               \
+        if ( std::cv_status::timeout == __synchrony.cv.wait_for( __lock, _timeout_ms_, [ & ]() { return e.finish; } ) ) { \
+            __lock.lock();                                                                                                \
+            __synchrony.data.erase( __id__ );                                                                             \
+            return -1;                                                                                                    \
+        }                                                                                                                 \
+        for ( auto& p : e.segments ) {                                                                                    \
+            _callback_( p );                                                                                              \
+            delete[] p;                                                                                                   \
+        }                                                                                                                 \
+        __synchrony.data.erase( _id_ );                                                                                   \
+    } while ( 0 )
+
+#define SYNC_CALL_UPDATE( _id_, _data_, _size_, _finish_ )                   \
+    do {                                                                     \
+        if ( !_data_ || _size_ == 0 ) break;                                 \
+        std::unique_lock<std::mutex> __lock{ __synchrony.mutex };            \
+        if ( __synchrony.data.find( id_ ) == __synchrony.data.end() ) break; \
+        char* data = new char[ size_ ]( 0 );                                 \
+        memcpy( data, _data_, _size_ );                                      \
+        __synchrony.data[ _id_ ].segments.push_back( data );                 \
+        __synchrony.data[ _id__ ].finish = _finish_;                         \
+                                                                             \
+        if ( finish_ ) __synchrony.cv.notify_one();                          \
+    } while ( 0 )
+
 struct Synchrony {
     struct entry_t {
         volatile bool    finish = false;
@@ -206,7 +255,7 @@ int Synchrony::wait( int cv_var_, uint32_t timeout_ms_, td::function<int( void* 
     for ( ;; ) {
         uint32_t last_tp = now_ms();
 
-        if ( std::cv_status::timeout == cv.wait_for( lock, timeout_ms_, [ & ]() { e.segments.size() > 0; } ) ) {
+        if ( std::cv_status::timeout == _cv.wait_for( lock, timeout_ms_, [ & ]() { e.segments.size() > 0; } ) ) {
             lock.lock();
             _data.erase( cv_var_ );
             return -1;
@@ -218,6 +267,8 @@ int Synchrony::wait( int cv_var_, uint32_t timeout_ms_, td::function<int( void* 
 
             delete[] p;
         }
+
+        e.segments.clear();
 
         uint elapsed = now_ms() - last_tp;
 
@@ -246,7 +297,7 @@ int Synchrony::update( int cv_var_, void* data_, , size_t size_, bool finish_ ) 
     _data[ cv_var_ ].segments.push_back( data );
     _data[ cv_var_ ].finish = finish_;
 
-    _cv.notify_one();
+    if ( finish_ ) _cv.notify_one();
 
 }  // namespace ctp
 CUB_NS_END

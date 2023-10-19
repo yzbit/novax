@@ -362,12 +362,11 @@ int CtpTrader::qry_settlement() {
     // strcpy(settleInfoReq.TradingDay, m_tradingDay);
     auto req = req_id();
 
-    if ( _api->ReqQrySettlementInfo( &field, req ) ) {
-        LOG_TAGGED( "ctp", "qry settlement info failed" );
-        return -1;
-    }
+    SYNC_CALL_WAIT( req, _api->ReqQrySettlementInfo( &field, req ), 2000, []( void* ) {
+        // todo
+    } );
 
-    return 0 == _sync_call.wait( req, 2000 ) ? confirm_settlement() : -1;
+    return confirm_settlement();
 }
 
 int CtpTrader::confirm_settlement() {
@@ -433,7 +432,7 @@ void CtpTrader::OnRspSettlementInfoConfirm( CThostFtdcSettlementInfoConfirmField
 void CtpTrader::OnRspQrySettlementInfo( CThostFtdcSettlementInfoField* pSettlementInfo, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) {
     LOG_INFO( "settlement received, req=%d last=%d", nRequestID, bIsLast );
 
-    _sync_call.update( nRequestID, pSettlementInfo, sizeof( CThostFtdcSettlementInfoField ), bIsLast );
+    SYNC_CALL_UPDATE( nRequestID, pSettlementInfo, sizeof( CThostFtdcSettlementInfoField ), bIsLast );
 }
 // ctp文档：
 // 报单录入请求响应，当执行ReqOrderInsert后有字段填写不对之类的CTP报错则通过此接口返回

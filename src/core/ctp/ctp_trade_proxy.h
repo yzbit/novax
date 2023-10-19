@@ -121,6 +121,7 @@ private:
     req_map_t _reqs;
     Synchrony _sync_call;
 
+    DECL_SYNC_OBJECT
 private:
     OrderMgmt* _om;
 
