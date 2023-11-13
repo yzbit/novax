@@ -35,15 +35,18 @@ namespace js = rapidjson;
 
 #define CTP_COPY_SAFE( _field_, _str_ ) memcpy( _field_, _str_, std::min( ( int )strlen( _str_ ), ( int )sizeof( _field_ ) - 1 ) )
 
-struct synchrony_t {
+class Synchrony {
     struct entry_t {
         volatile bool    finish = false;
         std::list<void*> segments;
     };
 
-    std::mutex                       mutex;
-    std::condition_variable          cv;
-    std::unordered_map<int, entry_t> data;
+    static Synchrony& get();
+
+private:
+    std::mutex                       _mutex;
+    std::condition_variable          _cv;
+    std::unordered_map<int, entry_t> _data;
 };
 
 #define DECL_SYNC_CALL_OBJECT\
