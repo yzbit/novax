@@ -360,98 +360,80 @@ int CtpTrader::qry_settlement() {
 
     /*! 不能带有日期参数，否则会失败*/
     // strcpy(settleInfoReq.TradingDay, m_tradingDay);
+    auto req = req_id();
+    auto rc  = CTP_SYNC.wait( req, 2000, _api, &CThostFtdcTraderApi::ReqQrySettlementInfo, &field, req );
 
-    auto         req = req_id();
-    sync_object* so  = nullptr;
-    {
-        std::unique_lock<std::mutex> lock{ repo.mutex };
-        so = add_to_repo( req );
+    if ( rc.size() > 0 ) {
+        return confirm_settlement();
     }
 
-    std::unique_lock<std::mutex> lock{ so->mutex };
-   if( std::cv_status::timeout == so->cv.wait_for( lock, timeout, [ & ]() {
-        return so->finished; } ){
-   }
-   else{
-        call_back( so->segments );
-   }
-
-   {
-        std::unique_lock<std::mutex> lock{ repo.mutex };
-        repo_from_repo( req );
-   }
-
-    SYNC_CALL_WAIT( req, _api->ReqQrySettlementInfo( &field, req ), 2000, []( void* ) {
-        // todo
-    } );
-
-    return confirm_settlement();
+    return -1;
 }
 
 int CtpTrader::confirm_settlement() {
-   CThostFtdcSettlementInfoConfirmField field = { 0 };
+    CThostFtdcSettlementInfoConfirmField field = { 0 };
 
-   CTP_COPY_SAFE( field.BrokerID, _settings.i.broker.c_str() );
-   CTP_COPY_SAFE( field.InvestorID, _settings.i.id.c_str() );
+    CTP_COPY_SAFE( field.BrokerID, _settings.i.broker.c_str() );
+    CTP_COPY_SAFE( field.InvestorID, _settings.i.id.c_str() );
 
-   return _api->ReqSettlementInfoConfirm( &field, req_id() ) != 0 ? 0 : -1;
+    return _api->ReqSettlementInfoConfirm( &field, req_id() ) != 0 ? 0 : -1;
 }
 
 void CtpTrader::OnRspAuthenticate( CThostFtdcRspAuthenticateField* pRspAuthenticateField, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) {
-   LOG_INFO( "OnRspAuthenticate\n" );
-   if ( nRequestID != _reqs[ act_t::auth ] ) {
-       LOG_INFO( "bad auth code .ign" );
-       return;
-   }
+    LOG_INFO( "OnRspAuthenticate\n" );
+    if ( nRequestID != _reqs[ act_t::auth ] ) {
+        LOG_INFO( "bad auth code .ign" );
+        return;
+    }
 
-   if ( pRspInfo != NULL && pRspInfo->ErrorID == 0 ) {
-       LOG_INFO( "认证成功,ErrorID={:x}, ErrMsg={}\n\n", pRspInfo->ErrorID, pRspInfo->ErrorMsg );
-       login();
-   }
-   else {
-       LOG_INFO( "认证失败,ErrorID={:x}, ErrMsg={}\n\n", pRspInfo->ErrorID, pRspInfo->ErrorMsg );
-   }
+    if ( pRspInfo != NULL && pRspInfo->ErrorID == 0 ) {
+        LOG_INFO( "认证成功,ErrorID={:x}, ErrMsg={}\n\n", pRspInfo->ErrorID, pRspInfo->ErrorMsg );
+        login();
+    }
+    else {
+        LOG_INFO( "认证失败,ErrorID={:x}, ErrMsg={}\n\n", pRspInfo->ErrorID, pRspInfo->ErrorMsg );
+    }
 }
 
 void CtpTrader::OnRspUserLogin( CThostFtdcRspUserLoginField* pRspUserLogin, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) {
-   if ( nRequestID != _reqs[ act_t::login ] ) {
-       LOG_INFO( "bad login request .ing" );
-       return;
-   }
+    if ( nRequestID != _reqs[ act_t::login ] ) {
+        LOG_INFO( "bad login request .ing" );
+        return;
+    }
 
-   session_changed( { pRspUserLogin->FrontID, pRspUserLogin->SessionID, pRspUserLogin->MaxOrderRef } );
-   // todo
-   // tune_clock();  // todo
-   if ( qry_settlement() < 0 ) {
-       LOG_TAGGED( "ctp", "qry settlement failed" );
-   }
+    session_changed( { pRspUserLogin->FrontID, pRspUserLogin->SessionID, pRspUserLogin->MaxOrderRef } );
+    // todo
+    // tune_clock();  // todo
+    if ( qry_settlement() < 0 ) {
+        LOG_TAGGED( "ctp", "qry settlement failed" );
+    }
 }
 
 void CtpTrader::OnRspError( CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) {
-   LOG_INFO( "rsp error: id=%d msg=%s", pRspInfo->ErrorID, pRspInfo->ErrorMsg );
+    LOG_INFO( "rsp error: id=%d msg=%s", pRspInfo->ErrorID, pRspInfo->ErrorMsg );
 }
 
 void CtpTrader::OnFrontDisconnected( int nReason ) {
-   LOG_INFO( "front disconnted:reason=%d", nReason );
+    LOG_INFO( "front disconnted:reason=%d", nReason );
 }
 
 void CtpTrader::OnHeartBeatWarning( int nTimeLapse ) {
 }
 
 void CtpTrader::OnRspUserLogout( CThostFtdcUserLogoutField* pUserLogout, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) {
-   LOG_ERROR_AND_RET( pRspInfo, nRequestID, bIsLast );
+    LOG_ERROR_AND_RET( pRspInfo, nRequestID, bIsLast );
 
-   LOG_INFO( "user logout %s", pUserLogout->UserID );
+    LOG_INFO( "user logout %s", pUserLogout->UserID );
 }
 
 void CtpTrader::OnRspSettlementInfoConfirm( CThostFtdcSettlementInfoConfirmField* f, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) {
-   LOG_INFO( "投资者结算结果确认成功,确认日期：%s %s", f->ConfirmDate, f->ConfirmTime );
+    LOG_INFO( "投资者结算结果确认成功,确认日期：%s %s", f->ConfirmDate, f->ConfirmTime );
 }
 
 void CtpTrader::OnRspQrySettlementInfo( CThostFtdcSettlementInfoField* pSettlementInfo, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) {
-   LOG_INFO( "settlement received, req=%d last=%d", nRequestID, bIsLast );
+    LOG_INFO( "settlement received, req=%d last=%d", nRequestID, bIsLast );
 
-   SYNC_CALL_UPDATE( nRequestID, pSettlementInfo, sizeof( CThostFtdcSettlementInfoField ), bIsLast );
+    SYNC_CALL_UPDATE( nRequestID, pSettlementInfo, sizeof( CThostFtdcSettlementInfoField ), bIsLast );
 }
 // ctp文档：
 // 报单录入请求响应，当执行ReqOrderInsert后有字段填写不对之类的CTP报错则通过此接口返回
@@ -467,45 +449,45 @@ fak fok好像不会到这里来；这两种模式会直接撤单，并且返回s
 // OnRspOrderInsert是当前报单者收到的回调，OnErrRtnOrderInsert是该客户名下所有的链接都会收到的回调。
 // 而被交易所拒单后只会回调 OnRtnOrder
 void CtpTrader::OnRspOrderInsert( CThostFtdcInputOrderField* f_, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) {
-   LOG_INFO( "订单被ctp前置拒绝,req=%d, id=%d, msg=%s", nRequestID, pRspInfo->ErrorID, pRspInfo->ErrorMsg );
-   auto id = id_of( f_->OrderRef );
-   if ( !IS_VALID_ID( id ) ) {
-       LOG_INFO( "can not reg order ref: %s", f_->OrderRef );
-       return;
-   }
+    LOG_INFO( "订单被ctp前置拒绝,req=%d, id=%d, msg=%s", nRequestID, pRspInfo->ErrorID, pRspInfo->ErrorMsg );
+    auto id = id_of( f_->OrderRef );
+    if ( !IS_VALID_ID( id ) ) {
+        LOG_INFO( "can not reg order ref: %s", f_->OrderRef );
+        return;
+    }
 
-   _om->update( id, ostatus_t::cancelled );
+    _om->update( id, ostatus_t::cancelled );
 }
 
 // 报单操作请求响应，当执行ReqOrderAction后有字段填写不对之类的CTP报错则通过此接口返回
 void CtpTrader::OnRspOrderAction( CThostFtdcInputOrderActionField* pInputOrderAction, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) {
-   LOG_INFO( "撤单被ctp前置拒绝,req=%d, id=%d, msg=%s", nRequestID, pRspInfo->ErrorID, pRspInfo->ErrorMsg );
+    LOG_INFO( "撤单被ctp前置拒绝,req=%d, id=%d, msg=%s", nRequestID, pRspInfo->ErrorID, pRspInfo->ErrorMsg );
 }
 
 oid_t CtpTrader::id_of( const TThostFtdcOrderRefType& ref_ ) {
-   auto itr = std::find_if( _id_map.begin(), _id_map.end(), [ & ]( auto& pair_ ) {
-       return 0 == memcmp( ref_, pair_.second.ref, sizeof( ref_ ) ) == 0;
-   } );
+    auto itr = std::find_if( _id_map.begin(), _id_map.end(), [ & ]( auto& pair_ ) {
+        return 0 == memcmp( ref_, pair_.second.ref, sizeof( ref_ ) ) == 0;
+    } );
 
-   return itr == _id_map.end() ? 0 : itr->second.id;
+    return itr == _id_map.end() ? 0 : itr->second.id;
 }
 
 oid_t CtpTrader::id_of( const ex_oid_t& eoid_ ) {
-   auto itr = std::find_if( _id_map.begin(), _id_map.end(), [ & ]( auto& pair_ ) {
-       return eoid_ == pair_.second.eoid;
-   } );
+    auto itr = std::find_if( _id_map.begin(), _id_map.end(), [ & ]( auto& pair_ ) {
+        return eoid_ == pair_.second.eoid;
+    } );
 
-   return itr == _id_map.end() ? 0 : itr->second.id;
+    return itr == _id_map.end() ? 0 : itr->second.id;
 }
 
 oid_t CtpTrader::id_of( const ex_oid_t& exoid_, const TThostFtdcOrderRefType& ref_ ) {
-   if ( IS_VALID_ID( ref_ ) )
-       return id_of( ref_ );
+    if ( IS_VALID_ID( ref_ ) )
+        return id_of( ref_ );
 
-   else if ( exoid_.is_valid() )
-       return id_of( exoid_ );
+    else if ( exoid_.is_valid() )
+        return id_of( exoid_ );
 
-   return 0;
+    return 0;
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -532,98 +514,98 @@ oid_t CtpTrader::id_of( const ex_oid_t& exoid_, const TThostFtdcOrderRefType& re
 
 // TThostFtdcCombOffsetFlagType 为多腿组合订单，单腿只用[0]
 odir_t CtpTrader::cvt_direction( const TThostFtdcDirectionType& di_, const TThostFtdcCombOffsetFlagType& comb_ ) {
-   if ( di_ == THOST_FTDC_D_Buy && comb_[ 0 ] == '0' )
-       return odir_t::p_long;
-   else if ( di_ == THOST_FTDC_D_Buy && comb_[ 0 ] == '1' )
-       return odir_t::cover;
-   else if ( di_ == THOST_FTDC_D_Sell && comb_[ 0 ] == '0' )
-       return odir_t::p_short;
-   else if ( di_ == THOST_FTDC_D_Sell && comb_[ 0 ] == '1' )
-       return odir_t::sell;
-   else
-       return odir_t::none;
+    if ( di_ == THOST_FTDC_D_Buy && comb_[ 0 ] == '0' )
+        return odir_t::p_long;
+    else if ( di_ == THOST_FTDC_D_Buy && comb_[ 0 ] == '1' )
+        return odir_t::cover;
+    else if ( di_ == THOST_FTDC_D_Sell && comb_[ 0 ] == '0' )
+        return odir_t::p_short;
+    else if ( di_ == THOST_FTDC_D_Sell && comb_[ 0 ] == '1' )
+        return odir_t::sell;
+    else
+        return odir_t::none;
 }
 
 odir_t CtpTrader::cvt_direction( const TThostFtdcDirectionType& di_, const TThostFtdcOffsetFlagType& comb_ ) {
-   bool open = comb_ == THOST_FTDC_OF_Open;
+    bool open = comb_ == THOST_FTDC_OF_Open;
 
-   if ( di_ == THOST_FTDC_D_Buy && open )
-       return odir_t::p_long;
-   else if ( di_ == THOST_FTDC_D_Buy && !open )
-       return odir_t::cover;
-   else if ( di_ == THOST_FTDC_D_Sell && open )
-       return odir_t::p_short;
-   else if ( di_ == THOST_FTDC_D_Sell && !open )
-       return odir_t::sell;
-   else
-       return odir_t::none;
+    if ( di_ == THOST_FTDC_D_Buy && open )
+        return odir_t::p_long;
+    else if ( di_ == THOST_FTDC_D_Buy && !open )
+        return odir_t::cover;
+    else if ( di_ == THOST_FTDC_D_Sell && open )
+        return odir_t::p_short;
+    else if ( di_ == THOST_FTDC_D_Sell && !open )
+        return odir_t::sell;
+    else
+        return odir_t::none;
 }
 
 void CtpTrader::OnRtnOrder( CThostFtdcOrderField* f_ ) {
-   LOG_INFO( "[ctp] OnOrderRtn[1]@front=%d sess=%d ref=%s exid=%s sysid=%s\n", f_->FrontID, f_->SessionID, f_->OrderRef, f_->ExchangeID, f_->OrderSysID );
+    LOG_INFO( "[ctp] OnOrderRtn[1]@front=%d sess=%d ref=%s exid=%s sysid=%s\n", f_->FrontID, f_->SessionID, f_->OrderRef, f_->ExchangeID, f_->OrderSysID );
 
-   auto oid = id_of( { f_->ExchangeID, f_->OrderSysID }, f_->OrderRef ) == 0;
-   if ( !IS_VALID_ID( oid ) ) {
-       LOG_INFO( "cannot reg order id ex= %s syso=%d ref=%s", f_->ExchangeID, f_->OrderSysID, f_->OrderRef );
-       return;
-   }
+    auto oid = id_of( { f_->ExchangeID, f_->OrderSysID }, f_->OrderRef ) == 0;
+    if ( !IS_VALID_ID( oid ) ) {
+        LOG_INFO( "cannot reg order id ex= %s syso=%d ref=%s", f_->ExchangeID, f_->OrderSysID, f_->OrderRef );
+        return;
+    }
 
-   LOG_INFO( "RTN status: code=%s {front=%d sess=%d ref=%s} \n{exid=%s sysid=%s}, \n{sum status=%d, status=%d ,day=%s time=%s}, \n{limitprice=%lf voltraded=%d vaolremain=%d}",
-             f_->InstrumentID,
-             f_->FrontID,
-             f_->SessionID,
-             f_->OrderRef,
-             f_->ExchangeID,
-             f_->OrderSysID,
-             f_->OrderSubmitStatus,
-             f_->OrderStatus,
-             f_->InsertDate,
-             f_->InsertTime,
-             f_->LimitPrice,
-             f_->VolumeTraded,
-             f_->VolumeTotal );
+    LOG_INFO( "RTN status: code=%s {front=%d sess=%d ref=%s} \n{exid=%s sysid=%s}, \n{sum status=%d, status=%d ,day=%s time=%s}, \n{limitprice=%lf voltraded=%d vaolremain=%d}",
+              f_->InstrumentID,
+              f_->FrontID,
+              f_->SessionID,
+              f_->OrderRef,
+              f_->ExchangeID,
+              f_->OrderSysID,
+              f_->OrderSubmitStatus,
+              f_->OrderStatus,
+              f_->InsertDate,
+              f_->InsertTime,
+              f_->LimitPrice,
+              f_->VolumeTraded,
+              f_->VolumeTotal );
 
-   // 说明，单子的终止状态包括 0(全部成交)，2(部分成交)， 5(全部主动撤单，或为系统判断为废单)
-   // 思考：单子的状态是单线程推送，时间先后顺序应该有保障的！
-   // https://www.cnblogs.com/leijiangtao/p/5379133.html
+    // 说明，单子的终止状态包括 0(全部成交)，2(部分成交)， 5(全部主动撤单，或为系统判断为废单)
+    // 思考：单子的状态是单线程推送，时间先后顺序应该有保障的！
+    // https://www.cnblogs.com/leijiangtao/p/5379133.html
 
-   switch ( f_->OrderStatus ) {
-   default:
-   case THOST_FTDC_OST_NoTradeQueueing:     // 已经报到交易所，但是未成交，注意，如果报到交易所并且立即成交，第二个RtnOrder回调状态也是unkonwn
-   case THOST_FTDC_OST_NotTouched:          // 预埋单尚未触发
-   case THOST_FTDC_OST_NoTradeNotQueueing:  // 还未发往交易所是不是最终状态?
-   case THOST_FTDC_OST_Touched:
-   case THOST_FTDC_OST_Unknown:  // 收到保单后第一次返回，表示ctp接受订单，通过ctp的风控检查
-       return _om->update( oid, ostatus_t::pending );
+    switch ( f_->OrderStatus ) {
+    default:
+    case THOST_FTDC_OST_NoTradeQueueing:     // 已经报到交易所，但是未成交，注意，如果报到交易所并且立即成交，第二个RtnOrder回调状态也是unkonwn
+    case THOST_FTDC_OST_NotTouched:          // 预埋单尚未触发
+    case THOST_FTDC_OST_NoTradeNotQueueing:  // 还未发往交易所是不是最终状态?
+    case THOST_FTDC_OST_Touched:
+    case THOST_FTDC_OST_Unknown:  // 收到保单后第一次返回，表示ctp接受订单，通过ctp的风控检查
+        return _om->update( oid, ostatus_t::pending );
 
-   case THOST_FTDC_OST_PartTradedQueueing:       // 还会有成交--我们会同步过程不能在这里结束
-   case THOST_FTDC_OST_AllTraded:                // ctpman-最终状态（1）
-   case THOST_FTDC_OST_PartTradedNotQueueing: {  // todo 最终状态（2）已经不在队列中--剩余部分已经撤单---订单已完成标志?---
-       order_t o = { 0 };
+    case THOST_FTDC_OST_PartTradedQueueing:       // 还会有成交--我们会同步过程不能在这里结束
+    case THOST_FTDC_OST_AllTraded:                // ctpman-最终状态（1）
+    case THOST_FTDC_OST_PartTradedNotQueueing: {  // todo 最终状态（2）已经不在队列中--剩余部分已经撤单---订单已完成标志?---
+        order_t o = { 0 };
 
-       o.id     = oid;
-       o.qty    = f_->VolumeTraded;  // o.qty准备返回结果//f->VolumeTotal，这是剩余数量
-       o.remark = f_->StatusMsg;
+        o.id     = oid;
+        o.qty    = f_->VolumeTraded;  // o.qty准备返回结果//f->VolumeTotal，这是剩余数量
+        o.remark = f_->StatusMsg;
 
-       o.datetime.from_ctp( f_->InsertDate, f_->InsertTime, 0 );  // inserttime 是ctp本地时间或者交易所时间（返回后）
-       o.code = f_->InstrumentID;
+        o.datetime.from_ctp( f_->InsertDate, f_->InsertTime, 0 );  // inserttime 是ctp本地时间或者交易所时间（返回后）
+        o.code = f_->InstrumentID;
 
-       o.status = ostatus_t::dealt;  // note! OrderSubmitStatus：CTP内部使用，普通投资者可以忽略
-       LOG_INFO( "order dir %d %s", f_->Direction, f_->CombOffsetFlag );
+        o.status = ostatus_t::dealt;  // note! OrderSubmitStatus：CTP内部使用，普通投资者可以忽略
+        LOG_INFO( "order dir %d %s", f_->Direction, f_->CombOffsetFlag );
 
-       o.dir = cvt_direction( f_->Direction, f_->CombOffsetFlag );
-       if ( odir_t::none == o.dir ) {
-           LOG_INFO( "bad order direction'" );
-       }
+        o.dir = cvt_direction( f_->Direction, f_->CombOffsetFlag );
+        if ( odir_t::none == o.dir ) {
+            LOG_INFO( "bad order direction'" );
+        }
 
-       o.price = f_->LimitPrice;
+        o.price = f_->LimitPrice;
 
-       return _om->update( o );
-   } break;
+        return _om->update( o );
+    } break;
 
-   case THOST_FTDC_OST_Canceled:  // 最终状态（4），当ordersubmitstatus为thost_ftdc_accepts时是主动撤单
-       return _om->update( oid, ostatus_t::cancelled );
-   }
+    case THOST_FTDC_OST_Canceled:  // 最终状态（4），当ordersubmitstatus为thost_ftdc_accepts时是主动撤单
+        return _om->update( oid, ostatus_t::cancelled );
+    }
 }
 
 /*-------------------------------------------------------------------------
@@ -634,52 +616,52 @@ void CtpTrader::OnRtnOrder( CThostFtdcOrderField* f_ ) {
     有极小的概率会出现在平仓指令到达 CTP 交易核心时该报单的状态仍未更新，就会导致无法平仓。
 ----------------------------------------------------------------------------*/
 void CtpTrader::OnRtnTrade( CThostFtdcTradeField* f_ ) {
-   auto id = id_of( f_->OrderRef );
+    auto id = id_of( f_->OrderRef );
 
-   if ( !IS_VALID_ID( id ) ) {
-       LOG_INFO( "rtn trade, cannot reg order id" );
-       return;
-   }
+    if ( !IS_VALID_ID( id ) ) {
+        LOG_INFO( "rtn trade, cannot reg order id" );
+        return;
+    }
 
-   order_t o = { 0 };
-   o.id      = id;
-   o.datetime.from_ctp( f_->TradeDate, f_->TradeTime, 0 );
-   o.qty   = f_->Volume;
-   o.code  = f_->InstrumentID;
-   o.price = f_->Price;
-   o.dir   = cvt_direction( f_->Direction, f_->OffsetFlag );
+    order_t o = { 0 };
+    o.id      = id;
+    o.datetime.from_ctp( f_->TradeDate, f_->TradeTime, 0 );
+    o.qty   = f_->Volume;
+    o.code  = f_->InstrumentID;
+    o.price = f_->Price;
+    o.dir   = cvt_direction( f_->Direction, f_->OffsetFlag );
 
-   if ( odir_t::none == o.dir ) {
-       LOG_INFO( "bad order direction'" );
-   }
+    if ( odir_t::none == o.dir ) {
+        LOG_INFO( "bad order direction'" );
+    }
 
-   _om->update( id, ostatus_t::finished );
+    _om->update( id, ostatus_t::finished );
 }
 
 void CtpTrader::OnErrRtnOrderInsert( CThostFtdcInputOrderField* f_, CThostFtdcRspInfoField* pRspInfo ) {
-   LOG_INFO( "INSERT ERROR,errid=%d msg=%s", pRspInfo->ErrorID, pRspInfo->ErrorMsg );
+    LOG_INFO( "INSERT ERROR,errid=%d msg=%s", pRspInfo->ErrorID, pRspInfo->ErrorMsg );
 
-   auto id = id_of( f_->OrderRef );
+    auto id = id_of( f_->OrderRef );
 
-   if ( !IS_VALID_ID( id ) ) {
-       LOG_INFO( "errrtn insert, cannot reg order id" );
-       return;
-   }
+    if ( !IS_VALID_ID( id ) ) {
+        LOG_INFO( "errrtn insert, cannot reg order id" );
+        return;
+    }
 
-   _om->update( id, ostatus_t::error );
+    _om->update( id, ostatus_t::error );
 }
 
 // 删除失败对现有的订单没有任何影响(no update)，但是要通知算法
 void CtpTrader::OnErrRtnOrderAction( CThostFtdcOrderActionField* pOrderAction, CThostFtdcRspInfoField* pRspInfo ) {
-   LOG_INFO( "order action error: {frontid=%d ,sessionid=%d, oref=%d} ,{ex=%s sysid=%s} , instument=%s, msg=%s, req=%d",
-             pOrderAction->FrontID,
-             pOrderAction->SessionID,
-             pOrderAction->OrderRef,
-             pOrderAction->ExchangeID,
-             pOrderAction->OrderSysID,
-             pOrderAction->InstrumentID,
-             pRspInfo->ErrorID,
-             pRspInfo->ErrorMsg );
+    LOG_INFO( "order action error: {frontid=%d ,sessionid=%d, oref=%d} ,{ex=%s sysid=%s} , instument=%s, msg=%s, req=%d",
+              pOrderAction->FrontID,
+              pOrderAction->SessionID,
+              pOrderAction->OrderRef,
+              pOrderAction->ExchangeID,
+              pOrderAction->OrderSysID,
+              pOrderAction->InstrumentID,
+              pRspInfo->ErrorID,
+              pRspInfo->ErrorMsg );
 }
 
 void CtpTrader::OnRspQryInstrument( CThostFtdcInstrumentField* pInstrument, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) {

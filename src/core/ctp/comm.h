@@ -35,77 +35,98 @@ namespace js = rapidjson;
 
 #define CTP_COPY_SAFE( _field_, _str_ ) memcpy( _field_, _str_, std::min( ( int )strlen( _str_ ), ( int )sizeof( _field_ ) - 1 ) )
 
-class Synchrony {
+struct Synchrony {
+    using seglist_t = std::list<void*>;
+
+    struct seg_t {
+        ~seg_t() {
+            for ( auto& v : data ) {
+                delete[] v;
+            }
+        }
+
+        seg_t( seg_t&& s_ ) {
+            delete_this();
+            data.assign( s_.data );
+            s_.data.clear();
+        }
+
+        void append( void* data_ ) {
+            data.push_back( data_ );
+        }
+
+        int size() {
+            return ( int )data.size();
+        }
+
+        seg_t& operator=( seg_t&& s_ ) {
+            delete_this();
+            data.assign( s_.data );
+            s_.data.clear();
+
+            return *this;
+        }
+
+        seg_t& operator=( const seg_t& s_ ) {
+            assert( 0 );
+
+            return *this;
+        }
+
+        seglist_t data;
+    };
+
     struct entry_t {
-        volatile bool    finish = false;
-        std::list<void*> segments;
+        volatile bool           finish = false;
+        seg_t                   segments;
+        std::mutex              mutex;
+        std::condition_variable cv;
     };
 
     static Synchrony& get();
 
+    void update( int id_, const void* data_, size_t size_, bool finish_ );
+    template <typename OBJPTR, typename FUNC, typename... ARGS>
+    seg_t wait( int id_, uint32_t timeout_ms_, callback_t cb_, OBJPTR o_, FUNC f_, ARGS&&... a_ ) {
+        auto&    sync = Synchrony::get();
+        entry_t* e    = sync.put( id_ );
+        if ( !e ) return seg_t();
+
+        int rc = ( o_->*f_ )( std::forward<ARGS>( a_ )... );
+        if ( rc ) return seg_t();
+
+        std::unique_lock<std::mutex> lock( e->mutex );
+
+        seg_t rc = std::move( e->segments );
+
+        if ( e->finish ) {
+            sync.erase( id_ );
+            return rc;
+        }
+
+        if ( std::cv_status::timeout == e->cv.wait_for( lock, std::chrono::milliseconds( timeout_ms_ ), [ = ]() { return e->finish; } );
+             &&!e->mutex.try_lock() ) {
+            e->mutex.lock();
+
+            rc = seg_t();
+        }
+
+        sync.erase( id_ );
+
+        return rc;
+    }
+
+private:
+    void     erase( int id_ );
+    entry_t* put( int id_ );
+    entry_t* fetch( int id_ );
+
 private:
     std::mutex                       _mutex;
-    std::condition_variable          _cv;
     std::unordered_map<int, entry_t> _data;
 };
 
-#define DECL_SYNC_CALL_OBJECT\
-private:\
-synchrony_t __synchrony;
-
-#define SYNC_INFINITY ( ~0u )
-
-#define SYNC_CALL_WAIT( _id_, _req_, _timeout_ms_, _callback_ )                                                           \
-    do {                                                                                                                  \
-        std::unique_lock<std::mutex> __lock{ __synchrony.mutex };                                                         \
-        if ( _req_ ) return -1;                                                                                           \
-        __synchrony.data.emplace( _id_, synchrony_t::entry_t() );                                                         \
-                                                                                                                          \
-        auto& e = __synchrony.data[ _id_ ];                                                                               \
-        if ( std::cv_status::timeout == __synchrony.cv.wait_for( __lock, _timeout_ms_, [ & ]() { return e.finish; } ) ) { \
-            __lock.lock();                                                                                                \
-            __synchrony.data.erase( __id__ );                                                                             \
-            return -1;                                                                                                    \
-        }                                                                                                                 \
-        for ( auto& p : e.segments ) {                                                                                    \
-            _callback_( p );                                                                                              \
-            delete[] p;                                                                                                   \
-        }                                                                                                                 \
-        __synchrony.data.erase( _id_ );                                                                                   \
-    } while ( 0 )
-
-#define SYNC_CALL_UPDATE( _id_, _data_, _size_, _finish_ )                   \
-    do {                                                                     \
-        if ( !_data_ || _size_ == 0 ) break;                                 \
-        std::unique_lock<std::mutex> __lock{ __synchrony.mutex };            \
-        if ( __synchrony.data.find( id_ ) == __synchrony.data.end() ) break; \
-        char* data = new char[ size_ ]( 0 );                                 \
-        memcpy( data, _data_, _size_ );                                      \
-        __synchrony.data[ _id_ ].segments.push_back( data );                 \
-        __synchrony.data[ _id__ ].finish = _finish_;                         \
-                                                                             \
-        if ( finish_ ) __synchrony.cv.notify_one();                          \
-    } while ( 0 )
-
-struct Synchrony {
-    struct entry_t {
-        volatile bool    finish = false;
-        std::list<void*> segments;
-    };
-
-    int wait(
-        int      cv_var_,
-        uint32_t timeout_ms_ = ~0u,
-        std::function<int( void* )>[]( void* p ) { return 0; } );
-
-    int update( int cv_var_, void* data_, , size_t size_, bool finish_ );
-
-private:
-    std::mutex              _mutex;
-    std::condition_variable _cv;
-
-    std::unordered_map<int, entry_t> _data;
-};
+#define CTP_SYNC Synchrony::get()
 
 struct cert_t {
     string_t auth;
@@ -248,59 +269,6 @@ inline int setting_t::load( const char* file_ ) {
 
     return 0;
 }
-
-int Synchrony::wait( int cv_var_, uint32_t timeout_ms_, td::function<int( void* )> pred_ ) {
-    std::unique_lock<std::mutex> lock{ _mutex };
-    _data.emplace( cv_var_, entry_t() );
-
-    auto& e = _data[ cv_var_ ];
-
-    for ( ;; ) {
-        uint32_t last_tp = now_ms();
-
-        if ( std::cv_status::timeout == _cv.wait_for( lock, timeout_ms_, [ & ]() { e.segments.size() > 0; } ) ) {
-            lock.lock();
-            _data.erase( cv_var_ );
-            return -1;
-        }
-
-        for ( auto& p : e.segments ) {
-            // todo,提前返回
-            [[maybe_unused]] auto rc = pred_( p );
-
-            delete[] p;
-        }
-
-        e.segments.clear();
-
-        uint elapsed = now_ms() - last_tp;
-
-        if ( !e.finish && timeout_ms_ > elapsed ) {
-            timeout_ms_ -= elapsed;
-            continue;
-        }
-
-        _data.erase( cv_var_ );
-
-        return e.finish ? 0 : -1;
-    }
-
-    return 0;
-}
-
-int Synchrony::update( int cv_var_, void* data_, , size_t size_, bool finish_ ) {
-    if ( !data_ || size_ == 0 ) return 0;
-
-    std::unique_lock<std::mutex> lock{ _mutex };
-
-    if ( _data.find( cv_var_ ) == _data.end() ) return -1;
-
-    char* data = new char[ size_ ]( 0 );
-    memcpy( data, data_, size_ );
-    _data[ cv_var_ ].segments.push_back( data );
-    _data[ cv_var_ ].finish = finish_;
-
-    if ( finish_ ) _cv.notify_one();
 
 }  // namespace ctp
 CUB_NS_END
