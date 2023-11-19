@@ -39,41 +39,14 @@ struct Synchrony {
     using seglist_t = std::list<void*>;
 
     struct seg_t {
-        ~seg_t() {
-            for ( auto& v : data ) {
-                delete[] v;
-            }
-        }
-
-        seg_t( seg_t&& s_ ) {
-            delete_this();
-            data.assign( s_.data );
-            s_.data.clear();
-        }
-
-        void append( void* data_ ) {
-            data.push_back( data_ );
-        }
-
-        int size() {
-            return ( int )data.size();
-        }
-
-        seg_t& operator=( seg_t&& s_ ) {
-            delete_this();
-            data.assign( s_.data );
-            s_.data.clear();
-
-            return *this;
-        }
-
-        seg_t& operator=( const seg_t& s_ ) {
-            assert( 0 );
-
-            return *this;
-        }
-
         seglist_t data;
+
+        ~seg_t();
+        seg_t( seg_t&& s_ );
+        void   append( void* data_ );
+        int    size();
+        seg_t& operator=( seg_t&& s_ );
+        seg_t& operator=( const seg_t& s_ );
     };
 
     struct entry_t {
@@ -87,7 +60,7 @@ struct Synchrony {
 
     void update( int id_, const void* data_, size_t size_, bool finish_ );
     template <typename OBJPTR, typename FUNC, typename... ARGS>
-    seg_t wait( int id_, uint32_t timeout_ms_, callback_t cb_, OBJPTR o_, FUNC f_, ARGS&&... a_ ) {
+    seg_t wait( int id_, uint32_t timeout_ms_, OBJPTR o_, FUNC f_, ARGS&&... a_ ) {
         auto&    sync = Synchrony::get();
         entry_t* e    = sync.put( id_ );
         if ( !e ) return seg_t();
@@ -268,6 +241,41 @@ inline int setting_t::load( const char* file_ ) {
                 c.token.c_str() );
 
     return 0;
+}
+
+//----inline implemets.
+inline Synchrony::seg_t::~seg_t() {
+    for ( auto& v : data ) {
+        delete[] v;
+    }
+}
+
+inline Synchrony::seg_t::seg_t( seg_t&& s_ ) {
+    delete_this();
+    data.assign( s_.data );
+    s_.data.clear();
+}
+
+inline void Synchrony::seg_t::append( void* data_ ) {
+    data.push_back( data_ );
+}
+
+inline int Synchrony::seg_t::size() {
+    return ( int )data.size();
+}
+
+inline Synchrony::seg_t& Synchrony::seg_t::operator=( seg_t&& s_ ) {
+    delete_this();
+    data.assign( s_.data );
+    s_.data.clear();
+
+    return *this;
+}
+
+inline Synchrony::seg_t& Synchrony::seg_t::operator=( const seg_t& s_ ) {
+    assert( 0 );
+
+    return *this;
 }
 
 }  // namespace ctp
