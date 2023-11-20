@@ -131,8 +131,7 @@ int CtpTrader::cancel( oid_t o_ ) {
 
     // todo
     // 这里不能这么做，因为用户可能发出很多次req--比如在返回之前多次cancel，put,只能假设用户不会通过其他客户端也在操作
-    _reqs[ act_t::cancel_order ] = req_id();  // todo
-    return !_api->ReqOrderAction( &field, _reqs[ act_t::cancel_order ] ) ? 0 : -1;
+    return !_api->ReqOrderAction( &field, req_id() ) ? 0 : -1;
 }
 
 int CtpTrader::put( const order_t& o_ ) {
@@ -255,10 +254,9 @@ int CtpTrader::put( const order_t& o_ ) {
               field.IsAutoSuspend,
               field.UserForceClose );
 
-    _reqs[ act_t::put_order ] = req_id();
-    field.RequestID           = _reqs[ act_t::put_order ];
+    field.RequestID = req_id();
 
-    return !_api->ReqOrderInsert( &field, _reqs[ act_t::put_order ] ) ? 0 : -1;
+    return !_api->ReqOrderInsert( &field, req_id() ) ? 0 : -1;
 }
 
 int CtpTrader::assign_ref( oid_t id_ ) {
@@ -312,9 +310,7 @@ int CtpTrader::login() {
     CTP_COPY_SAFE( field.UserID, _settings.i.name.c_str() );
     CTP_COPY_SAFE( field.Password, _settings.i.password.c_str() );
 
-    _reqs[ act_t::login ] = req_id();
-
-    return !this->_api->ReqUserLogin( &field, _reqs[ act_t::login ] ) ?: 0 - 1;
+    return !this->_api->ReqUserLogin( &field, req_id() ) ?: 0 - 1;
 }
 
 int CtpTrader::logout() {
@@ -323,9 +319,7 @@ int CtpTrader::logout() {
     CTP_COPY_SAFE( field.BrokerID, _settings.i.broker.c_str() );
     CTP_COPY_SAFE( field.UserID, _settings.i.name.c_str() );
 
-    _reqs[ act_t::logout ] = req_id();
-
-    return !_api->ReqUserLogout( &field, _reqs[ act_t::logout ] ) ? 0 : -1;
+    return !_api->ReqUserLogout( &field, req_id() ) ? 0 : -1;
 }
 
 void CtpTrader::OnRtnBulletin( CThostFtdcBulletinField* pBulletin ) {
@@ -344,8 +338,7 @@ int CtpTrader::auth() {
     CTP_COPY_SAFE( field.AppID, _settings.c.appid.c_str() );
     CTP_COPY_SAFE( field.AuthCode, _settings.c.token.c_str() );
 
-    _reqs[ act_t::auth ] = req_id();
-    return !_api->ReqAuthenticate( &field, _reqs[ act_t::auth ] ) ? 0 : -1;
+    return !_api->ReqAuthenticate( &field, req_id() ) ? 0 : -1;
 }
 
 void CtpTrader::OnFrontConnected() {
@@ -381,10 +374,6 @@ int CtpTrader::confirm_settlement() {
 
 void CtpTrader::OnRspAuthenticate( CThostFtdcRspAuthenticateField* pRspAuthenticateField, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) {
     LOG_INFO( "OnRspAuthenticate\n" );
-    if ( nRequestID != _reqs[ act_t::auth ] ) {
-        LOG_INFO( "bad auth code .ign" );
-        return;
-    }
 
     if ( pRspInfo != NULL && pRspInfo->ErrorID == 0 ) {
         LOG_INFO( "认证成功,ErrorID={:x}, ErrMsg={}\n\n", pRspInfo->ErrorID, pRspInfo->ErrorMsg );
@@ -396,11 +385,6 @@ void CtpTrader::OnRspAuthenticate( CThostFtdcRspAuthenticateField* pRspAuthentic
 }
 
 void CtpTrader::OnRspUserLogin( CThostFtdcRspUserLoginField* pRspUserLogin, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) {
-    if ( nRequestID != _reqs[ act_t::login ] ) {
-        LOG_INFO( "bad login request .ing" );
-        return;
-    }
-
     session_changed( { pRspUserLogin->FrontID, pRspUserLogin->SessionID, pRspUserLogin->MaxOrderRef } );
     // todo
     // tune_clock();  // todo
@@ -432,9 +416,9 @@ void CtpTrader::OnRspSettlementInfoConfirm( CThostFtdcSettlementInfoConfirmField
 
 void CtpTrader::OnRspQrySettlementInfo( CThostFtdcSettlementInfoField* pSettlementInfo, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) {
     LOG_INFO( "settlement received, req=%d last=%d", nRequestID, bIsLast );
-
-    SYNC_CALL_UPDATE( nRequestID, pSettlementInfo, sizeof( CThostFtdcSettlementInfoField ), bIsLast );
+    CTP_SYNC.update( nRequestID, pSettlementInfo, sizeof( CThostFtdcSettlementInfoField ), bIsLast );
 }
+
 // ctp文档：
 // 报单录入请求响应，当执行ReqOrderInsert后有字段填写不对之类的CTP报错则通过此接口返回
 // 实测:

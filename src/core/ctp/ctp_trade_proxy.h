@@ -118,8 +118,6 @@ private:
     setting_t _settings;
     IdMap     _id_map;
     session_t _ss;
-    req_map_t _reqs;
-    Synchrony _sync_call;
 
 private:
     OrderMgmt* _om;

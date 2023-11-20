@@ -2,22 +2,19 @@
 #define B43732C7_EA9D_4138_8023_E0627CD66A48
 #include <algorithm>
 #include <atomic>
-#include <condition_variable>
 #include <fstream>
 #include <functional>
-#include <list>
 #include <math.h>
 #include <memory>
-#include <mutex>
 #include <rapidjson/document.h>
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
 #include <sstream>
-#include <unordered_map>
 
 #include "../definitions.h"
 #include "../log.hpp"
 #include "../ns.h"
+#include "synchrony.hpp"
 
 //--! 一个req要么
 CUB_NS_BEGIN
@@ -34,72 +31,6 @@ namespace js = rapidjson;
     } while ( 0 )
 
 #define CTP_COPY_SAFE( _field_, _str_ ) memcpy( _field_, _str_, std::min( ( int )strlen( _str_ ), ( int )sizeof( _field_ ) - 1 ) )
-
-struct Synchrony {
-    using seglist_t = std::list<void*>;
-
-    struct seg_t {
-        seglist_t data;
-
-        ~seg_t();
-        seg_t( seg_t&& s_ );
-        void   append( void* data_ );
-        int    size();
-        seg_t& operator=( seg_t&& s_ );
-        seg_t& operator=( const seg_t& s_ );
-    };
-
-    struct entry_t {
-        volatile bool           finish = false;
-        seg_t                   segments;
-        std::mutex              mutex;
-        std::condition_variable cv;
-    };
-
-    static Synchrony& get();
-
-    void update( int id_, const void* data_, size_t size_, bool finish_ );
-    template <typename OBJPTR, typename FUNC, typename... ARGS>
-    seg_t wait( int id_, uint32_t timeout_ms_, OBJPTR o_, FUNC f_, ARGS&&... a_ ) {
-        auto&    sync = Synchrony::get();
-        entry_t* e    = sync.put( id_ );
-        if ( !e ) return seg_t();
-
-        int rc = ( o_->*f_ )( std::forward<ARGS>( a_ )... );
-        if ( rc ) return seg_t();
-
-        std::unique_lock<std::mutex> lock( e->mutex );
-
-        seg_t rc = std::move( e->segments );
-
-        if ( e->finish ) {
-            sync.erase( id_ );
-            return rc;
-        }
-
-        if ( std::cv_status::timeout == e->cv.wait_for( lock, std::chrono::milliseconds( timeout_ms_ ), [ = ]() { return e->finish; } );
-             &&!e->mutex.try_lock() ) {
-            e->mutex.lock();
-
-            rc = seg_t();
-        }
-
-        sync.erase( id_ );
-
-        return rc;
-    }
-
-private:
-    void     erase( int id_ );
-    entry_t* put( int id_ );
-    entry_t* fetch( int id_ );
-
-private:
-    std::mutex                       _mutex;
-    std::unordered_map<int, entry_t> _data;
-};
-
-#define CTP_SYNC Synchrony::get()
 
 struct cert_t {
     string_t auth;
@@ -161,8 +92,6 @@ inline int req_id() {
     static std::atomic<int> r = 0;
     return r++;
 }
-
-using req_map_t = std::unordered_map<act_t, int>;
 
 inline int cvt_ex( const TThostFtdcExchangeIDType& exid_ ) {
     // LOG_INFO( "ex id=%s", exid_ );
@@ -242,42 +171,7 @@ inline int setting_t::load( const char* file_ ) {
 
     return 0;
 }
-
-//----inline implemets.
-inline Synchrony::seg_t::~seg_t() {
-    for ( auto& v : data ) {
-        delete[] v;
-    }
-}
-
-inline Synchrony::seg_t::seg_t( seg_t&& s_ ) {
-    delete_this();
-    data.assign( s_.data );
-    s_.data.clear();
-}
-
-inline void Synchrony::seg_t::append( void* data_ ) {
-    data.push_back( data_ );
-}
-
-inline int Synchrony::seg_t::size() {
-    return ( int )data.size();
-}
-
-inline Synchrony::seg_t& Synchrony::seg_t::operator=( seg_t&& s_ ) {
-    delete_this();
-    data.assign( s_.data );
-    s_.data.clear();
-
-    return *this;
-}
-
-inline Synchrony::seg_t& Synchrony::seg_t::operator=( const seg_t& s_ ) {
-    assert( 0 );
-
-    return *this;
-}
-
 }  // namespace ctp
-CUB_NS_END
-#endif /* B43732C7_EA9D_4138_8023_E0627CD66A48 */
+
+CUB_NS_END  // namespace ctp CUB_NS_END #endif /* B43732C7_EA9D_4138_8023_E0627CD66A48 */
+#endif
