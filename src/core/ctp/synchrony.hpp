@@ -42,13 +42,13 @@ struct Synchrony {
     };
 
     struct entry_t final {
-        volatile bool                             finish = false;
-        seg_t                                     segments;
-        std::unique_lock<std::mutex>              mutex;
-        std::unique_lock<std::condition_variable> cv;
+        volatile bool               finish = false;
+        seg_t                       segments;
+        std::unique_ptr<std::mutex> mutex;
+
+        std::unique_ptr<std::condition_variable> cv;
 
         entry_t();
-        ~entry_t();
         entry_t( entry_t&& e_ );
     };
 
@@ -145,13 +145,13 @@ inline Synchrony& Synchrony::get() {
 }
 
 inline Synchrony::entry_t::entry_t() {
-    _mutex = std::make_unique<std::mutex>();
-    _cv    = std::make_unique<std::condition_variable>();
+    mutex = std::make_unique<std::mutex>();
+    cv    = std::make_unique<std::condition_variable>();
 }
 
-inline Synchrony::entry_t( entry_t&& e_ ) {
-    _mutex.swap( e_._mutex );
-    _cv.swap( e_.cv );
+inline Synchrony::entry_t::entry_t( entry_t&& e_ ) {
+    mutex.swap( e_.mutex );
+    cv.swap( e_.cv );
 }
 
 inline Synchrony::entry_t* Synchrony::put( int id_ ) {

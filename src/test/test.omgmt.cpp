@@ -19,7 +19,7 @@ struct XContext : cub::MgmtContext {
 int main() {
     auto om = new cub::OrderMgmt( new cub::XContext() );
 
-    // om->start();
+     om->start();
     // om->sellshort();
     // om->buylong();
 
