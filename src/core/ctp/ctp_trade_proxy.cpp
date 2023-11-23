@@ -10,7 +10,6 @@ CtpTrader::CtpTrader( OrderMgmt* om_ )
     : _om( om_ ) {}
 
 int CtpTrader::start() {
-
     if ( _settings.load( CTP_TRADE_SETTING_FILE ) < 0 ) {
         LOG_TAGGED( "ctp", "load config failed: %s", CTP_TRADE_SETTING_FILE );
         return -1;
@@ -18,14 +17,17 @@ int CtpTrader::start() {
 
     LOG_INFO( "RegisterSpi@注册ctp交易网关\n" );
     std::string flow = _settings.flow_path;
+
     LOG_INFO( "RegisterSpi@创建交易网关数据流目录：{}\n", flow );
     LOG_INFO( "RegisterSpi@[ctp]创建交易网关数据流目录：\n{}\n", flow );
     _api = CThostFtdcTraderApi::CreateFtdcTraderApi( flow.c_str() );
 
     LOG_INFO( "RegisterSpi@{ctp}初始化交易网关:注册事件\n" );
+
     _api->RegisterSpi( this );                         // 注册事件类
     _api->SubscribePublicTopic( THOST_TERT_RESTART );  // 订阅公共流
     _api->SubscribePrivateTopic( THOST_TERT_QUICK );   // 订阅私有流
+
     LOG_INFO( "RegisterSpi@{ctp}初始化交易网关:注册交易前端\n" );
 
     for ( auto& a : _settings.frontend ) {
@@ -256,7 +258,7 @@ int CtpTrader::put( const order_t& o_ ) {
 
     field.RequestID = req_id();
 
-    return !_api->ReqOrderInsert( &field, req_id() ) ? 0 : -1;
+    return !_api->ReqOrderInsert( &field, field.RequestID ) ? 0 : -1;
 }
 
 int CtpTrader::assign_ref( oid_t id_ ) {
@@ -421,8 +423,8 @@ void CtpTrader::OnRspQrySettlementInfo( CThostFtdcSettlementInfoField* pSettleme
 
 // ctp文档：
 // 报单录入请求响应，当执行ReqOrderInsert后有字段填写不对之类的CTP报错则通过此接口返回
+
 // 实测:
-//
 /*报单录入--实际上就是委托成功  OnRspOrderInsert
 fak fok好像不会到这里来；这两种模式会直接撤单，并且返回status='a' unkonwn
 */
@@ -435,6 +437,7 @@ fak fok好像不会到这里来；这两种模式会直接撤单，并且返回s
 void CtpTrader::OnRspOrderInsert( CThostFtdcInputOrderField* f_, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) {
     LOG_INFO( "订单被ctp前置拒绝,req=%d, id=%d, msg=%s", nRequestID, pRspInfo->ErrorID, pRspInfo->ErrorMsg );
     auto id = id_of( f_->OrderRef );
+
     if ( !IS_VALID_ID( id ) ) {
         LOG_INFO( "can not reg order ref: %s", f_->OrderRef );
         return;
@@ -453,7 +456,7 @@ oid_t CtpTrader::id_of( const TThostFtdcOrderRefType& ref_ ) {
         return 0 == memcmp( ref_, pair_.second.ref, sizeof( ref_ ) ) == 0;
     } );
 
-    return itr == _id_map.end() ? 0 : itr->second.id;
+    return itr == _id_map.end() ? kBadId : itr->second.id;
 }
 
 oid_t CtpTrader::id_of( const ex_oid_t& eoid_ ) {
@@ -461,17 +464,19 @@ oid_t CtpTrader::id_of( const ex_oid_t& eoid_ ) {
         return eoid_ == pair_.second.eoid;
     } );
 
-    return itr == _id_map.end() ? 0 : itr->second.id;
+    return itr == _id_map.end() ? kBadId : itr->second.id;
 }
 
 oid_t CtpTrader::id_of( const ex_oid_t& exoid_, const TThostFtdcOrderRefType& ref_ ) {
+    oid_t id = kBadId;
+
     if ( IS_VALID_ID( ref_ ) )
-        return id_of( ref_ );
+        id = id_of( ref_ );
 
-    else if ( exoid_.is_valid() )
-        return id_of( exoid_ );
+    if ( !IS_VALID_ID( id ) && exoid_.is_valid() )
+        id = id_of( exoid_ );
 
-    return 0;
+    return id;
 }
 
 /////////////////////////////////////////////////////////////////////////

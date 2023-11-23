@@ -85,7 +85,6 @@ private:
         session_t() = default;
         session_t( TThostFtdcFrontIDType f_, TThostFtdcSessionIDType s_, const TThostFtdcOrderRefType& r_ );
     };
-
     struct ex_oid_t {
         TThostFtdcExchangeIDType ex;
         TThostFtdcOrderSysIDType oid;
@@ -96,9 +95,6 @@ private:
         bool is_valid() const;
         bool operator==( const ex_oid_t& eoid_ ) const;
     };
-
-    oid_t id_of( const ex_oid_t& eoid_ );
-
     struct order_ids_t {
         oid_t                  id;
         ex_oid_t               eoid;
@@ -109,6 +105,7 @@ private:
         order_ids_t( oid_t id_, const ex_oid_t& ex_oid_, const TThostFtdcOrderRefType& ref_ );
     };
 
+    oid_t id_of( const ex_oid_t& eoid_ );
     void  session_changed( const session_t& s_ );
     oid_t id_of( const ex_oid_t& exoid_, const TThostFtdcOrderRefType& ref_ );
 

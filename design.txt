@@ -1,5 +1,44 @@
+---20多天没看代码,基本上看不懂了. 为了防止思路丢失,尤其是防止忘记开始的设计走了弯路.还是有必要好把整体的设计做记录
+
+1- dci设计模式
+
+整个程序的功能结构分为数据,交易和订单,面向交易策略的其他服务
+为了方便的略的编写,提供一个facade模式
+
+所有这些动能集中在quant.h 中, 并且可以根据需要cast成不同的上下文:datacontext,mgmtcontxt,context
+
+data和order mgmt通过delegate指向ctpdata(通过工厂类)
+并且通过datacontext和mgmtcontext对外提供服务(主动调用context函数)
+
+2- 指标系统的设计
+aspect indicator  series 
+
+每个aspect都必须以某个k线为基准,包含多个indicator
+每个indicator下面有多个series,相当于一个指标有多个值,每个series使用一个循环数组保存,数组内的元素是element_t
+
+
+3- 时钟和校准
+
+
+
+4- 总线消息服务
+reactor.h reactor_impl.h
+
+总线用于对上层的应用模块提供支持,包括io(启动参数,控制命令,界面等, 也可以是内部提供上层服务)
+n-n的通信模式,任何模块都可以pub或者sub消息,消息类型最好是统一的(msg.h)
+
+
+其他
+任务和内存池
+
+---------------------------------
+
+
+
+
 
 --数据设计---
+
 
 两个层次，ctp层和通用数据层，希望ctp可以随时被替换,ctp回调中可以调用MARET.pub接口发送数据
 从外部来的指令可以通过maret.on_msg_received收到，然后下发给ctp
