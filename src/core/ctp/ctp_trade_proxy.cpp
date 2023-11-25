@@ -157,7 +157,7 @@ int CtpTrader::put( const order_t& o_ ) {
     field.VolumeTotalOriginal = ( TThostFtdcVolumeType )o_.qty;  /// 数量:1
     field.LimitPrice          = o_.price;
 
-    LOG_INFO( "单模式:%d\n", o_.mode );
+    LOG_INFO( "order mode:%d\n", o_.mode );
 
     switch ( o_.mode ) {
     default:
@@ -470,7 +470,7 @@ oid_t CtpTrader::id_of( const ex_oid_t& eoid_ ) {
 oid_t CtpTrader::id_of( const ex_oid_t& exoid_, const TThostFtdcOrderRefType& ref_ ) {
     oid_t id = kBadId;
 
-    if ( IS_VALID_ID( ref_ ) )
+    if ( IS_VALID_REF( ref_ ) )
         id = id_of( ref_ );
 
     if ( !IS_VALID_ID( id ) && exoid_.is_valid() )

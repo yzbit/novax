@@ -166,6 +166,10 @@ inline int Logz::shut() {
 }
 
 inline int Logz::lite( const char* msg_ ) {
+    if ( _use_stdout ) {
+        fprintf( stderr, "%s", msg_ );
+    }
+
     if ( _log_fd < 0 ) {
         return -1;
     }
@@ -198,10 +202,6 @@ inline int Logz::lite( const char* msg_ ) {
     // if ( sz >= 2 && msg_[ sz - 1 ] == '\n' && msg_[ sz - 2 ] == '\n' )
     //    sz = write( _log_fd, msg_, strlen( msg_ ) - 1 );
     // else
-
-    if ( _use_stdout ) {
-        fprintf( stderr, "%s", msg_ );
-    }
 
     sz = write( _log_fd, msg_, strlen( msg_ ) );
 

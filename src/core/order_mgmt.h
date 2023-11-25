@@ -73,8 +73,8 @@ private:
     static std::atomic<oid_t> _init_id;
 
 private:
-    MgmtContext* _c;
-    Delegator*   _d;
+    MgmtContext* _c = nullptr;
+    Delegator*   _d = nullptr;
 };
 
 CUB_NS_END

@@ -43,6 +43,7 @@ struct code_t {
     code_t( const std::string& str_ );
     code_t( int c_ );
     code_t() = default;
+    const char* c_str() const;
 
     bool    empty() const;
     code_t& operator=( const code_t& c_ );
@@ -53,7 +54,7 @@ struct code_t {
     operator const char*() const;
 
 private:
-    char code[ kMaxCodeLength ] = { 0 };
+    char _code[ kMaxCodeLength ] = { 0 };
 };
 
 struct code_hash_t {
@@ -164,8 +165,12 @@ struct algo_t {
 
 //--inlines------------------------------------------------------------------------
 inline code_t::code_t( const char* code_ )
-    : code{ 0 } {
-    memcpy( code, code_, std::min( sizeof( code ) - 1, strlen( code_ ) ) );
+    : _code{ 0 } {
+    memcpy( _code, code_, std::min( sizeof( _code ) - 1, strlen( code_ ) ) );
+}
+
+inline const char* code_t::c_str() const {
+    return _code;
 }
 
 inline code_t::code_t( const std::string& str_ )
@@ -173,20 +178,20 @@ inline code_t::code_t( const std::string& str_ )
 }
 
 inline code_t::code_t( int c_ ) {
-    sprintf( code, "%d", c_ );
+    sprintf( _code, "%d", c_ );
 }
 
 inline bool code_t::empty() const {
-    return code[ 0 ] == '\0';
+    return _code[ 0 ] == '\0';
 }
 
 inline code_t& code_t::operator=( const code_t& c_ ) {
-    memcpy( code, c_.code, sizeof( code ) );
+    memcpy( _code, c_._code, sizeof( _code ) );
     return *this;
 }
 
 inline bool code_t::operator==( const code_t& c_ ) {
-    return memcmp( code, c_.code, sizeof( code ) ) == 0;
+    return memcmp( _code, c_._code, sizeof( _code ) ) == 0;
 }
 
 inline bool code_t::operator!=( const code_t& c_ ) {
@@ -194,11 +199,11 @@ inline bool code_t::operator!=( const code_t& c_ ) {
 }
 
 inline code_t::operator char*() {
-    return code;
+    return _code;
 }
 
 inline code_t::operator const char*() const {
-    return code;
+    return _code;
 }
 //
 // todo note: 注意：如果t=year，rep > 1是没有意义的

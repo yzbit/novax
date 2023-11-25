@@ -26,23 +26,23 @@ Context* Context::create( QuantImpl* q_ ) {
 }
 
 Aspect* QuantImpl::add_aspect( const code_t& symbol_, const period_t& period_, int count_ ) {
-    return _q->data()->attach( symbol_, period_, count_ );
+    return _d->attach( symbol_, period_, count_ );
 }
 
 int QuantImpl::pshort( const code_t& c_, vol_t qty_, price_t price_, otype_t mode_ ) {
-    return _q->mgmt()->sellshort( { c_, qty_, price_, mode_ } );
+    return _o->sellshort( { c_, qty_, price_, mode_ } );
 }
 
 int QuantImpl::plong( const code_t& c_, vol_t qty_, price_t price_, otype_t mode_ ) {
-    return _q->mgmt()->buylong( { c_, qty_, price_, mode_ } );
+    return _o->buylong( { c_, qty_, price_, mode_ } );
 }
 
 int QuantImpl::cshort( const code_t& c_, vol_t qty_, price_t price_, otype_t mode_ ) {
-    return _q->mgmt()->buy( { c_, qty_, price_, mode_ } );
+    return _o->buy( { c_, qty_, price_, mode_ } );
 }
 
 int QuantImpl::clong( const code_t& c_, vol_t qty_, price_t price_, otype_t mode_ ) {
-    return _q->mgmt()->sell( { c_, qty_, price_, mode_ } );
+    return _o->sell( { c_, qty_, price_, mode_ } );
 }
 
 vol_t Context::position() {  // 已成交持仓

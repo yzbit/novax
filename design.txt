@@ -10,6 +10,11 @@
 data和order mgmt通过delegate指向ctpdata(通过工厂类)
 并且通过datacontext和mgmtcontext对外提供服务(主动调用context函数)
 
+
+===>
+quant 继承了 context，组合了omgmt来实现订单管理（真正实现了context的接口）
+
+
 2- 指标系统的设计
 aspect indicator  series 
 

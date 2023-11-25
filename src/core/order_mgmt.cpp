@@ -43,7 +43,7 @@ oid_t OrderMgmt::put( const oattr_t& attr_ ) {
 
     auto rc = _d->put( *ord.get() );
 
-    LOG_TAGGED( "om", "put order fail:%d %s %v %.1lf", rc, ( const char* )attr_.symbol, attr_.qty, attr_.price );
+    LOG_TAGGED( "om", "put order fail:%d, %s, %d, %.1lf", rc, attr_.symbol.c_str(), attr_.qty, attr_.price );
     if ( rc != 0 )
         return 0;
 
@@ -106,7 +106,7 @@ position_t* OrderMgmt::position( const code_t& code_, bool long_ ) {
     auto itr_p = _ins_position.find( code_ );
 
     if ( itr_p == _ins_position.end() ) {
-        LOG_INFO( "can not find orde for code = %s,sel = %d, new=%d", code_, long_ );
+        LOG_INFO( "can not find orde for code = %s,sel = %d", code_.c_str(), long_ );
         return nullptr;
     }
 
@@ -125,7 +125,7 @@ void OrderMgmt::herge( order_t* src_, const order_t* update_ ) {
                        src_->dir == odir_t::sell );
 
     if ( !p ) {
-        LOG_INFO( "no position for order: id=%u, symbol=%s", src_->id, src_->code );
+        LOG_INFO( "no position for order: id=%u, symbol=%s", src_->id, src_->code.c_str() );
         return;
     }
 

@@ -1,5 +1,6 @@
 #include "../core/dci_role.h"
 #include "../core/definitions.h"
+#include "../core/log.hpp"
 #include "../core/models.h"
 #include "../core/order_mgmt.h"
 #include "../core/proxy.h"
@@ -17,15 +18,14 @@ struct XContext : cub::MgmtContext {
 }  // namespace cub
 
 int main() {
-    auto om = new cub::OrderMgmt( new cub::XContext() );
+    LOG_ENABLE_STDOUT();
 
-     om->start();
-    // om->sellshort();
-    // om->buylong();
+    auto om = new cub::OrderMgmt( 0 );
 
-    // om->position();
-
-    // om->start();
+    om->start();
+    om->sellshort( { "rb2410", 1, 6543.0, cub::otype_t::market } );
+    om->buylong( { "rb2410", 1, 6543.0, cub::otype_t::market } );
+    om->position( "rb2410" );
 
     return 0;
 }
