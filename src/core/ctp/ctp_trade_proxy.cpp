@@ -258,6 +258,11 @@ int CtpTrader::put( const order_t& o_ ) {
 
     field.RequestID = req_id();
 
+    if ( !_api ) {
+        LOG_INFO( "##ctp, not inited" );
+        return -1;
+    }
+
     return !_api->ReqOrderInsert( &field, field.RequestID ) ? 0 : -1;
 }
 
@@ -613,7 +618,7 @@ void CtpTrader::OnRtnTrade( CThostFtdcTradeField* f_ ) {
     }
 
     order_t o;
-    o.id      = id;
+    o.id = id;
     o.datetime.from_ctp( f_->TradeDate, f_->TradeTime, 0 );
     o.qty   = f_->Volume;
     o.code  = f_->InstrumentID;

@@ -25,8 +25,8 @@ using id_t     = uint32_t;
 using price_t  = double;
 using vol_t    = int;  // todo double ctp都是整数仓位;
 using oid_t    = id_t;
-using text_t   = std::string;
 using string_t = std::string;
+using text_t   = string_t;
 using money_t  = double;
 
 constexpr int kBadId = 0;
