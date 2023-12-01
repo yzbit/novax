@@ -36,31 +36,46 @@ void OrderMgmt::stop() {
     _d->stop();
 }
 
-oid_t OrderMgmt::put( const oattr_t& attr_ ) {
-    auto ord = std::make_unique<order_t>();
-    ord->from_attr( attr_ );
-    ord->id = oid();
+oid_t OrderMgmt::put( const odir_t& dir_,
+                      const code_t& code_,
+                      const vol_t   qty_,
+                      const price_t price_,
+                      const otype_t mode_,
+                      const price_t sl_,
+                      const price_t tp_,
+                      const text_t& remark_ ) {
 
-    auto rc = _d->put( *ord.get() );
+    std::unique_ptr<order_t> r( order_t::from( code_, qty_, price_, mode_, dir_ ) );
+    r->id     = oid();
+    r->remark = remark_;
 
-    LOG_TAGGED( "om", "put order fail:%d, %s, %d, %.1lf", rc, attr_.symbol.c_str(), attr_.qty, attr_.price );
-    if ( rc != 0 )
-        return 0;
+    if ( 0 == _d->put( *r ) ) {
+        _book.emplace( r->id, r.release() );
+    }
 
-    _book.emplace( ord->id, ord.release() );
-    LOG_TAGGED( "om", "total roders=%d", ( int )_book.size() );
-
-    return ord->id;
+    return r->id;
 }
 
-oid_t OrderMgmt::sellshort( const oattr_t& attr_, price_t sl_, price_t tp_, const text_t& remark ) {
-    LOG_TAGGED( "om", "sellshort" );
-    return put( attr_ );
+oid_t OrderMgmt::sellshort( const code_t& code_,
+                            const vol_t   qty_,
+                            const price_t price_,
+                            const otype_t mode_,
+                            const price_t sl_,
+                            const price_t tp_,
+                            const text_t& remark_ ) {
+    LOG_TAGGED( "om", "short: code=%s qty%d price=%.2f sl=%d, tp=%d, r=%s", code_.c_str(), qty_, price_, ( int )mode_, sl_, tp_, remark_.c_str() );
+    return put( odir_t::p_short, code_, qty_, price_, mode_, sl_, tp_, remark_ );
 }
 
-oid_t OrderMgmt::buylong( const oattr_t& attr_, price_t sl_, price_t tp_, const text_t& remark_ ) {
-    LOG_TAGGED( "om", "buylong" );
-    return put( attr_ );
+oid_t OrderMgmt::buylong( const code_t& code_,
+                          const vol_t   qty_,
+                          const price_t price_,
+                          const otype_t mode_,
+                          const price_t sl_,
+                          const price_t tp_,
+                          const text_t& remark_ ) {
+    LOG_TAGGED( "om", "long: code=%s qty%d price=%.2f sl=%d, tp=%d, r=%s", code_.c_str(), qty_, price_, ( int )mode_, sl_, tp_, remark_.c_str() );
+    return put( odir_t::p_long, code_, qty_, price_, mode_, sl_, tp_, remark_ );
 }
 
 int OrderMgmt::cancel( oid_t id_ ) {
@@ -220,12 +235,30 @@ void OrderMgmt::update( const order_t& o_ ) {
         accum( o, &o_ );
 }
 
-int OrderMgmt::sell( const oattr_t& a_ ) {
-    return close( odir_t::sell, a_ );
+int OrderMgmt::sell( const code_t& code_,
+                     const vol_t   qty_,
+                     const price_t price_,
+                     const otype_t mode_,
+                     const text_t& remark_ ) {
+    LOG_TAGGED( "om", "sell: code=%s qty=%d price=%.2f, mode=%d, r=%s", code_.c_str(), qty_, price_, ( int )mode_, remark_.c_str() );
+
+    order_t r( code_, qty_, price_, mode_, odir_t::sell );
+    r.remark = remark_;
+    r.id     = oid();
+
+    return close( r );
 }
 
-int OrderMgmt::buy( const oattr_t& a_ ) {
-    return close( odir_t::cover, a_ );
+int OrderMgmt::buy( const code_t& code_,
+                    const vol_t   qty_,
+                    const price_t price_,
+                    const otype_t mode_,
+                    const text_t& remark_ ) {
+    LOG_TAGGED( "om", "buy: code=%s qty=%d price=%.2f, mode=%d, r=%s", code_.c_str(), qty_, price_, ( int )mode_, remark_.c_str() );
+    order_t r( code_, qty_, price_, mode_, odir_t::cover );
+    r.id = oid();
+
+    return close( r );
 }
 /*如下的仓位如何关闭：
 rb2410 long     4
@@ -233,36 +266,32 @@ rb2410 short    2
 
 todo 总仓位是 2，那么此时关闭的是什么，关闭净仓? 使用参数决定,我们目前只支持单腿
 */
-int OrderMgmt::close( odir_t dir_, const oattr_t& a_ ) {
-    CUB_ASSERT( dir_ == odir_t::sell || dir_ == odir_t::cover );
+int OrderMgmt::close( const order_t& r_ ) {
+    CUB_ASSERT( r_.dir == odir_t::sell || r_.dir == odir_t::cover );
 
-    if ( a_.qty == 0 ) {
-        LOG_INFO( "close [%s] with qty=0, and will close all avaiable", a_.symbol );
+    if ( r_.qty == 0 ) {
+        LOG_INFO( "close [%s] with qty=0, !!will close all avaiable", r_.code.c_str() );
     }
 
-    auto pv = dir_ == odir_t::sell ? long_position( a_.symbol ) : short_position( a_.symbol );
+    auto pv = r_.dir == odir_t::sell
+                  ? long_position( r_.code.c_str() )
+                  : short_position( r_.code.c_str() );
 
     if ( 0 >= pv ) {
-        LOG_INFO( "no position of [%s] , close ign", a_.symbol );
+        LOG_INFO( "no position of [%s] , close ign", r_.code.c_str() );
         return -2;
     }
 
-    if ( pv > a_.qty && a_.qty > 0 )
-        pv = a_.qty;
+    if ( pv > r_.qty && r_.qty > 0 ) pv = r_.qty;
 
-    LOG_INFO( "close position for [%s %d]", a_.symbol, pv );
+    LOG_INFO( "close position for [%s %d]", r_.code.c_str(), pv );
 
-    order_t order = { 0 };
-    order.from_attr( a_ );
-    order.qty = pv;
-    order.id  = oid();
-    order.dir = dir_;
-
-    if ( _d->put( order ) != 0 ) {
-        LOG_INFO( "close position failed, dir=%d ,sym=%s, qty=%d ,price=%ld ,mode=%d", dir_, a_.symbol, a_.qty, order.price, order.mode );
+    if ( 0 != _d->put( r_ ) ) {
+        LOG_INFO( "close position failed,id=%u ,sym=%s", r_.id, r_.code.c_str() );
         return -1;
     }
 
+    // todo
     //_book.emplace( order.code, order );
 
     return 0;

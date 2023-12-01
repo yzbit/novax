@@ -23,8 +23,8 @@ int main() {
     auto om = new cub::OrderMgmt( 0 );
 
     om->start();
-    om->sellshort( { "rb2410", 1, 6543.0, cub::otype_t::market } );
-    om->buylong( { "rb2410", 1, 6543.0, cub::otype_t::market } );
+    om->sellshort( "rb2410", 1, 6543.0, cub::otype_t::market );
+    om->buylong( "rb2410", 1, 6543.0, cub::otype_t::market );
     om->position( "rb2410" );
 
     return 0;

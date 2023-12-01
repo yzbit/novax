@@ -115,14 +115,6 @@ struct order_t {
         fam,     // 立即成交，其余使用市价交易 = fak+market
     };
 
-    struct attr_t {
-        code_t  symbol;
-        vol_t   qty;
-        price_t price;
-        // price_t stoploss;//止损止盈让用户来做就好,我们没必要
-        type_t mode;
-    };
-
     enum class status_t {
         create          = 0x0001,
         pending         = 0x0002,
@@ -139,14 +131,20 @@ struct order_t {
         error           = 0x0100
     };
 
-    void from_attr( const attr_t& a_ ) {
-        code  = a_.symbol;
-        price = a_.price;
-        mode  = a_.mode;
-        qty   = a_.qty;
-    }
+    order_t() = default;
+    order_t( const code_t& c_,
+             const vol_t   v_,
+             const price_t p_,
+             const type_t& t_,
+             const dir_t&  d_ );
 
-    oid_t      id;        //! 订单id
+    static order_t* from( const code_t& c_,
+                          const vol_t   v_,
+                          const price_t p_,
+                          const type_t& t_,
+                          const dir_t&  d_ );
+
+    oid_t      id = kBadId;        //! 订单id
     code_t     code;      //! 代码，RB1910
     ex_t       ex;        //! 交易所，SHEX
     dir_t      dir;       //! 方向，买、卖、平
@@ -165,7 +163,6 @@ struct order_t {
 using odir_t    = order_t::dir_t;
 using otype_t   = order_t::type_t;
 using ostatus_t = order_t::status_t;
-using oattr_t   = order_t::attr_t;
 
 // todo.note 订单和仓位不要搞混,部分平仓的时候是可以计算利润的
 struct position_t {
@@ -248,6 +245,27 @@ struct margin_rate_t {
     float    short_by_money;   /// 空头保证金率
     float    short_by_volume;  // 空头保证金费;
 };
+
+//---inlines
+inline order_t::order_t( const code_t& c_,
+                         const vol_t   v_,
+                         const price_t p_,
+                         const type_t& t_,
+                         const dir_t&  d_ ) {
+    code  = c_;
+    qty   = v_;
+    price = p_;
+    mode  = t_;
+    dir   = d_;
+}
+
+inline order_t* order_t::from( const code_t& c_,
+                               const vol_t   v_,
+                               const price_t p_,
+                               const type_t& t_,
+                               const dir_t&  d_ ) {
+    return new order_t( c_, v_, p_, t_, d_ );
+}
 
 CUB_NS_END
 

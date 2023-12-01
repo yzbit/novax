@@ -570,7 +570,7 @@ void CtpTrader::OnRtnOrder( CThostFtdcOrderField* f_ ) {
     case THOST_FTDC_OST_PartTradedQueueing:       // 还会有成交--我们会同步过程不能在这里结束
     case THOST_FTDC_OST_AllTraded:                // ctpman-最终状态（1）
     case THOST_FTDC_OST_PartTradedNotQueueing: {  // todo 最终状态（2）已经不在队列中--剩余部分已经撤单---订单已完成标志?---
-        order_t o = { 0 };
+        order_t o;
 
         o.id     = oid;
         o.qty    = f_->VolumeTraded;  // o.qty准备返回结果//f->VolumeTotal，这是剩余数量
@@ -612,7 +612,7 @@ void CtpTrader::OnRtnTrade( CThostFtdcTradeField* f_ ) {
         return;
     }
 
-    order_t o = { 0 };
+    order_t o;
     o.id      = id;
     o.datetime.from_ctp( f_->TradeDate, f_->TradeTime, 0 );
     o.qty   = f_->Volume;

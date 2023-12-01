@@ -12,7 +12,7 @@
 
 //#define CTP_MD_SETTING_FILE "ctp_md.json"
 //#define CTP_MD_SETTING_FILE "/home/ubuntu/code/cub/src/core/ctp/ctp_md.json"
-#define CTP_MD_SETTING_FILE "/home/data/code/cub/src/core/ctp/ctp_md.json"
+#define CTP_MD_SETTING_FILE "conf/ctp_md.json"
 CUB_NS_BEGIN
 
 namespace ctp {

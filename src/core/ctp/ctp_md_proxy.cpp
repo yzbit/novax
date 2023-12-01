@@ -23,7 +23,7 @@ int CtpExMd::subscribe( const code_t& code_ ) {
     LOG_TAGGED( "ctp",
                 "subscribe svc=%d, code=%s, pending sub=%d pending_unsub=%d",
                 _is_svc_online,
-                ( const char* )code_,
+                code_.c_str(),
                 ( int )_sub_symbols.size(),
                 ( int )_unsub_symbols.size() );
 
@@ -43,7 +43,7 @@ int CtpExMd::unsubscribe( const code_t& code_ ) {
     LOG_TAGGED( "ctp",
                 "UNsubscribe svc=%d, code=%s, pending sub=%d pending_unsub=%d",
                 _is_svc_online,
-                ( const char* )code_,
+                code_.c_str(),
                 ( int )_sub_symbols.size(),
                 ( int )_unsub_symbols.size() );
 
@@ -223,12 +223,12 @@ void CtpExMd::OnRspUserLogin( CThostFtdcRspUserLoginField* pRspUserLogin, CThost
     {
         LOG_TAGGED( "ctp", "login ok , process subcribtion" );
         for ( auto& c : _sub_symbols ) {
-            LOG_INFO( "=> %s", ( const char* )c );
+            LOG_INFO( "=> %s", c.c_str() );
         }
 
         LOG_INFO( "unsubcribtion" );
         for ( auto& c : _unsub_symbols ) {
-            LOG_INFO( "=> %s", ( const char* )c );
+            LOG_INFO( "=> %s", c.c_str() );
         }
 
         std::unique_lock<std::mutex> lock{ _sub_mtx };
@@ -276,7 +276,7 @@ void CtpExMd::OnRtnDepthMarketData( CThostFtdcDepthMarketDataField* f ) {
              q.ex,
              q.last,
              q.volume,
-             ( const char* )q.code,
+             q.code.c_str(),
              q.opi,
              q.ask,
              q.askvol,

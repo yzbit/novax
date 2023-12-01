@@ -28,13 +28,13 @@ int main() {
     d->stop();
 
     d->subscribe( "rb2401" );
-    //d->unsubscribe( "rb2410" );
+    // d->unsubscribe( "rb2410" );
 
     d->update( q );
 
     fprintf( stderr, "case finish\n" );
 
-    for ( ;; ) {
+    for ( int i = 0; i < 10; ++i ) {
         fprintf( stderr, "-\n" );
         ::sleep( 1 );
     }
