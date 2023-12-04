@@ -54,7 +54,7 @@ protected:
     int start() override;
     int stop() override;
     int put( const order_t& o_ ) override;
-    int cancel( oid_t o_ ) override;
+    int cancel( const order_t& o_ ) override;
 
 private:
     int login();

@@ -3,6 +3,7 @@
 
 #include <atomic>
 #include <mutex>
+#include <optional>
 #include <unordered_map>
 
 #include "definitions.h"
@@ -87,11 +88,11 @@ private:
 private:
     oid_t       oid();
     order_t*    get( oid_t id_ );
-    position_t* position( const code_t& code_, bool long_ );
     void        create_position( const code_t& code_ );
+    position_t* position( const code_t& code_, bool long_ );
 
 private:
-    using instrument_p_t = std::array<position_t, 2>;                                //! 仓位
+    using instrument_p_t = std::array<position_t, 2>;                                //! 仓位, [0]-long, [1]-short
     using OrderDetails   = std::unordered_map<oid_t, order_t*>;                      //! 所有的订单列表
     using InsPosition    = std::unordered_map<code_t, instrument_p_t, code_hash_t>;  //! 每个合约有正反两个方向的持仓
 

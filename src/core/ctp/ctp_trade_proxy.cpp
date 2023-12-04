@@ -83,11 +83,24 @@ int CtpTrader::qry_position() {
     return 0;
 }
 
-int CtpTrader::cancel( oid_t o_ ) {
+/*
+1) CTP支不支持批量撤单？
+暂不支持。API里面有个迷惑性的接口ReqBatchOrderAction，写着是批量撤单请求。目前该接口仅支持大商所，而且只有做市商客户才能用。所以目前批量撤单只能客户自己实现该逻辑。
+
+2) 撤单数过多是否属于异常交易？
+为了防止盘口愰骗，各交易所都将频繁撤单列入异常交易管理规范。目前上期所明确规定单个合约撤单数不能超过500笔，但CTP内并没有该项风控，建议策略自行加入该项风控。其他交易所没看到有明确数量规定，
+建议查看对应交易所公告自行风控。另外，FAK和FOK的撤单不计入该数，所以如果策略可能会有大量撤单，建议使用FOK和FAK报单。
+
+3) 是否可以指定撤单数量？
+例如已报入20手，是否可以指定撤10手？不可以。只能指定该笔报单撤销，无法指定数量。如果报入20手，已成交10手，此时再去撤单会将剩余10手全部撤销。
+*/
+int CtpTrader::cancel( const order_t& o_ ) {
     CThostFtdcInputOrderActionField field = { 0 };
 
     CTP_COPY_SAFE( field.BrokerID, _settings.i.broker.c_str() );
     CTP_COPY_SAFE( field.InvestorID, _settings.i.id.c_str() );
+    // UserID非必填，是操作员账号，不填写会收不到OnErrRtnOrderAction回报，一般客户和InvestorID填写一样就可以
+    CTP_COPY_SAFE( field.UserID, _settings.i.id.c_str() );
 
     /*来自网络的解释：
     如果单子还在CTP就要用FrontID+SessionID+OrderRef撤，因为送到exchange前还没有OrderSysID.
@@ -108,6 +121,7 @@ int CtpTrader::cancel( oid_t o_ ) {
         memcpy( field.OrderRef, oids->second.ref, sizeof( field.OrderRef ) );
         field.FrontID   = _ss.front;
         field.SessionID = _ss.sess;
+        CTP_COPY_SAFE( field.InstrumentID, o_.code.c_str() );
     }
     else {
         LOG_INFO( "xModifyOrder@试图删除一个不存在订单ID,oid=%d\n", o_ );
@@ -244,8 +258,8 @@ int CtpTrader::put( const order_t& o_ ) {
               field.OrderRef,
               field.LimitPrice,
               field.VolumeTotalOriginal,
-              field.ContingentCondition,
-              field.MinVolume,
+              field.ContingentCondition
+                  field.MinVolume,
               field.OrderPriceType,
               field.TimeCondition,
               field.VolumeCondition,
@@ -568,8 +582,8 @@ void CtpTrader::OnRtnOrder( CThostFtdcOrderField* f_ ) {
     case THOST_FTDC_OST_NoTradeQueueing:     // 已经报到交易所，但是未成交，注意，如果报到交易所并且立即成交，第二个RtnOrder回调状态也是unkonwn
     case THOST_FTDC_OST_NotTouched:          // 预埋单尚未触发
     case THOST_FTDC_OST_NoTradeNotQueueing:  // 还未发往交易所是不是最终状态?
-    case THOST_FTDC_OST_Touched:
-    case THOST_FTDC_OST_Unknown:  // 收到保单后第一次返回，表示ctp接受订单，通过ctp的风控检查
+    case THOST_FTDC_OST_Touched:             //
+    case THOST_FTDC_OST_Unknown:             // 收到保单后第一次返回，表示ctp接受订单，通过ctp的风控检查
         return _om->update( oid, ostatus_t::pending );
 
     case THOST_FTDC_OST_PartTradedQueueing:       // 还会有成交--我们会同步过程不能在这里结束

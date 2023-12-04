@@ -23,9 +23,20 @@ int main() {
     auto om = new cub::OrderMgmt( 0 );
 
     om->start();
-    om->sellshort( "rb2410", 1, 6543.0, cub::otype_t::market );
-    om->buylong( "rb2410", 1, 6543.0, cub::otype_t::market );
+    auto ids = om->sellshort( "rb2410", 1, 6543.0, cub::otype_t::market );
+    auto idl = om->buylong( "cu2410", 1, 6543.0, cub::otype_t::market );
+
     om->position( "rb2410" );
+
+    cub::order_t o;
+    o.id = ids;
+    om->update( o );
+
+    o.id = idl;
+    om->update( o );
+
+    om->sell( "rb2410", 1 );
+    om->buy( "cu2410", 1 );
 
     return 0;
 }

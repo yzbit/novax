@@ -52,7 +52,11 @@ oid_t OrderMgmt::put( const odir_t& dir_,
     if ( 0 == _d->put( *r ) ) {
         _book.emplace( r->id, r.release() );
     }
+    else {
+        return kBadId;
+    }
 
+    LOG_INFO( "order count in book: [ %d ]", _book.size() );
     return r->id;
 }
 
@@ -79,8 +83,22 @@ oid_t OrderMgmt::buylong( const code_t& code_,
 }
 
 int OrderMgmt::cancel( oid_t id_ ) {
-    LOG_TAGGED( "om", "del order" );
-    return _d->cancel( id_ );
+    LOG_TAGGED( "om", "del order: %u", id_ );
+    order_t* o = get( id_ );
+    if ( !o ) {
+        LOG_TAGGED( "om", "cannot find order: %u", id_ );
+        return -1;
+    }
+
+    if ( !o
+         || ( o->status != ostatus_t::pending
+              && o->status != ostatus_t::patial_dealed
+              && o->status != ostatus_t::patial_canelled ) ) {
+        LOG_TAGGED( "om", "can not cancel order, id=%u status=%d", id_, o->status );
+        return -1;
+    }
+
+    return _d->cancel( *o );
 }
 
 order_t* OrderMgmt::get( oid_t id_ ) {
@@ -103,7 +121,9 @@ void OrderMgmt::update( oid_t id_, ostatus_t status_ ) {
     LOG_INFO( "unexpected status %d", status_ );
     CUB_ASSERT( status_ != ostatus_t::dealt );
 
+    //会不会出现部分canclled
     if ( ostatus_t::cancelled == status_ ) {
+        LOG_INFO( "cancel order: id=%u ,qty=%d", id, qty );
         delete o;
         _book.erase( id_ );
     }
@@ -198,8 +218,7 @@ vol_t OrderMgmt::long_position( const code_t& code_ ) {
 // 所以我们的最好做法是把每个合约的仓位统一成一条，然后算出平均价，每次有成交的时候就简单的处理就好,否则还要区分昨仓，今仓
 // 如果这样就会出现合约同时持有long和short，也就是说一个合约应该有两条记录，[0] long汇总 [1]short汇总
 void OrderMgmt::accum( order_t* src_, const order_t* update_ ) {
-    auto p = position( src_->code,
-                       src_->dir == odir_t::p_long );
+    auto p = position( src_->code, src_->dir == odir_t::p_long );
 
     if ( !p ) {
         LOG_INFO( "no position for order: id=%u, symbol=%s", src_->id, src_->code );
@@ -221,6 +240,7 @@ void OrderMgmt::accum( order_t* src_, const order_t* update_ ) {
 void OrderMgmt::update( const order_t& o_ ) {
     std::unique_lock<std::mutex> lock{ _mutex };
 
+    LOG_INFO( "update order id=%u, status=[ %d,0x%x ], dir=%d", o_.id, o_.status, o_.status, o_.dir );
     auto o = get( o_.id );
     if ( !o ) return;
 
@@ -260,6 +280,7 @@ int OrderMgmt::buy( const code_t& code_,
 
     return close( r );
 }
+
 /*如下的仓位如何关闭：
 rb2410 long     4
 rb2410 short    2
