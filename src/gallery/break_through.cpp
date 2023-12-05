@@ -23,7 +23,7 @@ void BreakTh::on_invoke( Context* c ) {
     auto t = c.time_since( open_time() );
 
     if ( c.position() == 0 ) {
-        if ( c.bar().close() < c.kline().llv( 10, Kline::pricetype_t::close ) && t > 15 * 60 ) {  // 开盘15分钟后
+        if ( c.bar().close() < c.kline().llv( 10, pricetype_t::close ) && t > 15 * 60 ) {  // 开盘15分钟后
             oid_t id = c.pshort( _code, 1, c.bar().close, otype_t::market );
 
             if ( id == 0 ) {
@@ -31,7 +31,7 @@ void BreakTh::on_invoke( Context* c ) {
                 return;
             }
         }
-        else if ( c.bar().close() > c.kline().hhv( 10, Kline::pricetype_t::close ) && t > 15 * 60 ) {
+        else if ( c.bar().close() > c.kline().hhv( 10, pricetype_t::close ) && t > 15 * 60 ) {
             oid_t id = c.plong( _code, 1, c.bar().close, otype_t::market );
 
             if ( id == 0 ) {

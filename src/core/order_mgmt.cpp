@@ -84,6 +84,7 @@ oid_t OrderMgmt::buylong( const code_t& code_,
 
 int OrderMgmt::cancel( oid_t id_ ) {
     LOG_TAGGED( "om", "del order: %u", id_ );
+
     order_t* o = get( id_ );
     if ( !o ) {
         LOG_TAGGED( "om", "cannot find order: %u", id_ );
@@ -123,26 +124,24 @@ void OrderMgmt::update( oid_t id_, ostatus_t status_ ) {
 
     //会不会出现部分canclled
     if ( ostatus_t::cancelled == status_ ) {
-        LOG_INFO( "cancel order: id=%u ,qty=%d", id, qty );
+        // 无论是部分撤掉(部分已经成交) 还是全部撤掉, 撤单只能是基于整个订单的
+        LOG_INFO( "close order: id=%u ", id_ );
         delete o;
         _book.erase( id_ );
     }
-}
-
-void OrderMgmt::create_position( const code_t& code_ ) {
-    position_t p{ 0 };
-    p.symbol             = code_;
-    instrument_p_t ins_p = { p, p };
-
-    _ins_position.try_emplace( code_, ins_p );
 }
 
 position_t* OrderMgmt::position( const code_t& code_, bool long_ ) {
     auto itr_p = _ins_position.find( code_ );
 
     if ( itr_p == _ins_position.end() ) {
-        LOG_INFO( "can not find orde for code = %s,sel = %d", code_.c_str(), long_ );
-        return nullptr;
+        LOG_INFO( "new position; can not find orde for code = %s,sel = %d", code_.c_str(), long_ );
+
+        position_t p{ 0 };
+        p.symbol          = code_;
+        portfilio_t ins_p = { p, p };
+
+        _ins_position.try_emplace( code_, ins_p );
     }
 
     return &itr_p->second[ long_ ? LONG_POSITION : SHORT_POSITION ];
@@ -156,13 +155,7 @@ position_t* OrderMgmt::position( const code_t& code_, bool long_ ) {
 //注意因为这里是把仓位合并了，所以和交易软件的能够实时查询不一样，这里只能看到合并后的持仓
 */
 void OrderMgmt::herge( order_t* src_, const order_t* update_ ) {
-    auto p = position( src_->code,
-                       src_->dir == odir_t::sell );
-
-    if ( !p ) {
-        LOG_INFO( "no position for order: id=%u, symbol=%s", src_->id, src_->code.c_str() );
-        return;
-    }
+    auto p = position( src_->code, src_->dir == odir_t::sell );  //-sell -> p_long
 
     vol_t act_closed = std::min( p->qty, update_->qty );
 
@@ -181,18 +174,12 @@ void OrderMgmt::herge( order_t* src_, const order_t* update_ ) {
                        * act_closed;
 
     if ( p->qty == 0 ) {
+        LOG_INFO( "position closed: %s", p->symbol.c_str() );
         p->price = 0;  // else keep
     }
 
     p->value      = p->price * p->qty;
     p->last_price = update_->price;
-
-    src_->traded += update_->traded;
-
-    if ( src_->traded == src_->qty ) {
-        _book.erase( src_->id );
-        delete src_;
-    }
 }
 
 vol_t OrderMgmt::position( const code_t& code_ ) {
@@ -220,20 +207,9 @@ vol_t OrderMgmt::long_position( const code_t& code_ ) {
 void OrderMgmt::accum( order_t* src_, const order_t* update_ ) {
     auto p = position( src_->code, src_->dir == odir_t::p_long );
 
-    if ( !p ) {
-        LOG_INFO( "no position for order: id=%u, symbol=%s", src_->id, src_->code );
-        return;
-    }
-
-    src_->traded += update_->traded;
     p->qty += update_->traded;
-    p->price      = ( src_->qty * src_->price + update_->traded * update_->price ) / src_->traded;
+    p->price      = ( src_->qty * src_->price + update_->traded * update_->price ) / p->qty;
     p->last_price = update_->price;
-
-    if ( src_->traded == src_->qty ) {
-        _book.erase( src_->id );
-        delete src_;
-    }
 }
 
 //--一个订单可能成交多次
@@ -242,7 +218,11 @@ void OrderMgmt::update( const order_t& o_ ) {
 
     LOG_INFO( "update order id=%u, status=[ %d,0x%x ], dir=%d", o_.id, o_.status, o_.status, o_.dir );
     auto o = get( o_.id );
-    if ( !o ) return;
+
+    if ( !o ) {
+        LOG_INFO( "cannot find order of id=%u", o_.id );
+        return;
+    }
 
     // todo  最后返回的rtntrade重复的吗，会不会导致数据重算,--如果直接成交了，是不是就没有没有rtnorder，只有一个rtntrade'?不确定需要做测试
     CUB_ASSERT( ostatus_t::dealt == o_.status );
@@ -253,6 +233,14 @@ void OrderMgmt::update( const order_t& o_ ) {
         herge( o, &o_ );
     else
         accum( o, &o_ );
+
+    o->traded += o_.traded;
+
+    if ( o->traded == o->qty ) {
+        LOG_INFO( "order of [ %u ] complete dealt, eraise it", o->id );
+        _book.erase( o->id );
+        delete o;
+    }
 }
 
 int OrderMgmt::sell( const code_t& code_,

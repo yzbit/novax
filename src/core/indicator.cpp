@@ -28,6 +28,10 @@ Indicator* Indicator::create( const string_t& name_, const arg_pack_t& args_, As
     }
 }
 
+Kline& Indicator::ref_base() {
+    return _asp->kline();
+}
+
 Indicator::~Indicator() {
     for ( auto& [ t, s ] : _series ) {
         delete s;

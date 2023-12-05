@@ -93,6 +93,7 @@ auto le = ACCOUNT.ganggan();
 #include <atomic>
 #include <unordered_map>
 
+#include "aspect.h"
 #include "definitions.h"
 #include "models.h"
 #include "ns.h"
@@ -101,15 +102,13 @@ auto le = ACCOUNT.ganggan();
 #define MAX_INDICATOR_PRIO -1
 
 CUB_NS_BEGIN
-struct Aspect;
-
 struct Indicator {
     static Indicator* create( const string_t& name_, const arg_pack_t& args_, Aspect* asp_ );
 
     virtual ~Indicator();
 
     virtual string_t name() { return "#indi"; }
-    virtual void     on_calc( const quotation_t& q_ ) = 0;
+    virtual void     on_calc( const Kline& ref_, const quotation_t& q_ ) = 0;
 
     int                tracks();
     Series::element_t* value( int track_ = 0, int index_ = 0 );
@@ -120,15 +119,16 @@ protected:
     Indicator() {}
 
 protected:
+    Kline&  ref_base();
     Series* add_series( int track_, int size_, Series::free_t free_ = Series::default_free() );
     Series* track( int index_ = 0 );
+    Aspect* asp() {
+        return _asp;
+    }
 
 private:
     void set_asp( Aspect* asp_ ) {
         _asp = asp_;
-    }
-    Aspect* asp() {
-        return _asp;
     }
 
 private:

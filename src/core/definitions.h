@@ -36,6 +36,15 @@ inline uint64_t now_ms() {
     return std::chrono::duration_cast<std::chrono::milliseconds>( std::chrono::steady_clock::now().time_since_epoch() ).count();
 }
 
+enum class pricetype_t {
+    open,
+    close,
+    high,
+    low,
+    mid,
+    avg
+};
+
 struct code_t {
     static constexpr int kMaxCodeLength = 16;
 

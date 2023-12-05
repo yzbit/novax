@@ -124,6 +124,7 @@ struct order_t {
         closed          = 0x0040,
         cancelling      = 0x0080,
         finished        = 0x0100,  // ctp 已成交和finish是两个状态，参照onrtntrade的函数说明
+        aborted         = 0x0200,  // 操作失败
         cancelled       = deleted,
         patial_dealed   = patial | dealt,
         patial_deleted  = patial | deleted,
@@ -144,15 +145,15 @@ struct order_t {
                           const type_t& t_,
                           const dir_t&  d_ );
 
-    oid_t      id = kBadId;        //! 订单id
-    code_t     code;      //! 代码，RB1910
-    ex_t       ex;        //! 交易所，SHEX
-    dir_t      dir;       //! 方向，买、卖、平
-    price_t    price;     //! 期望成交价格，已成交价格
-    price_t    tp_price;  //! 止盈价格
-    price_t    sl_price;  //! 止损价格
-    vol_t      qty;       //! 期望成交数量, 已成交数量
-    vol_t      traded;    //! 已经成交
+    oid_t      id = kBadId;  //! 订单id
+    code_t     code;         //! 代码，RB1910
+    ex_t       ex;           //! 交易所，SHEX
+    dir_t      dir;          //! 方向，买、卖、平
+    price_t    price;        //! 期望成交价格，已成交价格
+    price_t    tp_price;     //! 止盈价格
+    price_t    sl_price;     //! 止损价格
+    vol_t      qty;          //! 期望成交数量, 已成交数量
+    vol_t      traded;       //! 已经成交
     status_t   status;
     type_t     mode;
     bool       today;     //! 今仓，昨仓

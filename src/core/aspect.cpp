@@ -45,7 +45,7 @@ void Aspect::update( const quotation_t& q_ ) {
     _k->on_calc( q_ );
 
     for ( auto& i : _algos ) {
-        i.i->on_calc( q_ );
+        i.i->on_calc( this, q_ );
     }
 }
 

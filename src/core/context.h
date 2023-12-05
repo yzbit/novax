@@ -10,7 +10,7 @@
 CUB_NS_BEGIN
 struct Indicator;
 struct Aspect;
-
+struct Clock;
 struct QuantImpl;
 // facade 类
 struct Context {
@@ -18,6 +18,7 @@ struct Context {
 
     quotation_t q;
     fund_t      f;
+    Clock*      clock;
 
     //----apects---
     virtual Aspect* add_aspect( const code_t& symbol_, const period_t& period_, int count_ ) = 0;

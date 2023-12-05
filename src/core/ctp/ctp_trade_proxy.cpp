@@ -106,7 +106,7 @@ int CtpTrader::cancel( const order_t& o_ ) {
     如果单子还在CTP就要用FrontID+SessionID+OrderRef撤，因为送到exchange前还没有OrderSysID.
     如果单子已经送到Exchange,那既可以用 FrontID+SessionID+OrderRef撤，也可以用ExchangeID+OrderSysID撤。
     */
-    auto oids = _id_map.find( o_ );
+    auto oids = _id_map.find( o_.id );
 
     if ( oids == _id_map.end() ) {
         LOG_INFO( "xModifyOrder@试图删除一个不存在订单ID,%d\n", o_ );
@@ -258,8 +258,8 @@ int CtpTrader::put( const order_t& o_ ) {
               field.OrderRef,
               field.LimitPrice,
               field.VolumeTotalOriginal,
-              field.ContingentCondition
-                  field.MinVolume,
+              field.ContingentCondition,
+              field.MinVolume,
               field.OrderPriceType,
               field.TimeCondition,
               field.VolumeCondition,
@@ -468,6 +468,15 @@ void CtpTrader::OnRspOrderInsert( CThostFtdcInputOrderField* f_, CThostFtdcRspIn
 // 报单操作请求响应，当执行ReqOrderAction后有字段填写不对之类的CTP报错则通过此接口返回
 void CtpTrader::OnRspOrderAction( CThostFtdcInputOrderActionField* pInputOrderAction, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) {
     LOG_INFO( "撤单被ctp前置拒绝,req=%d, id=%d, msg=%s", nRequestID, pRspInfo->ErrorID, pRspInfo->ErrorMsg );
+
+    auto id = id_of( pInputOrderAction->OrderRef );
+
+    if ( !IS_VALID_ID( id ) ) {
+        LOG_INFO( "rtn trade, cannot reg order id" );
+        return;
+    }
+
+    _om->update( id, ostatus_t::aborted );
 }
 
 oid_t CtpTrader::id_of( const TThostFtdcOrderRefType& ref_ ) {
@@ -549,6 +558,7 @@ odir_t CtpTrader::cvt_direction( const TThostFtdcDirectionType& di_, const TThos
         return odir_t::none;
 }
 
+// 撤单的时候,前置通过校验会返回一次; 交易中心通过会再返回一次
 void CtpTrader::OnRtnOrder( CThostFtdcOrderField* f_ ) {
     LOG_INFO( "[ctp] OnOrderRtn[1]@front=%d sess=%d ref=%s exid=%s sysid=%s\n", f_->FrontID, f_->SessionID, f_->OrderRef, f_->ExchangeID, f_->OrderSysID );
 
@@ -611,7 +621,8 @@ void CtpTrader::OnRtnOrder( CThostFtdcOrderField* f_ ) {
         return _om->update( o );
     } break;
 
-    case THOST_FTDC_OST_Canceled:  // 最终状态（4），当ordersubmitstatus为thost_ftdc_accepts时是主动撤单
+    case THOST_FTDC_OST_Canceled:
+        LOG_INFO( "撤单原因: %d", f_->OrderSubmitStatus );
         return _om->update( oid, ostatus_t::cancelled );
     }
 }
@@ -670,6 +681,17 @@ void CtpTrader::OnErrRtnOrderAction( CThostFtdcOrderActionField* pOrderAction, C
               pOrderAction->InstrumentID,
               pRspInfo->ErrorID,
               pRspInfo->ErrorMsg );
+
+    LOG_INFO( "撤单被交易所拒绝, 原因: [ %d %s ]", pRspInfo->ErrorID, pRspInfo->ErrorMsg );
+
+    auto id = id_of( pOrderAction->OrderRef );
+
+    if ( !IS_VALID_ID( id ) ) {
+        LOG_INFO( "rtn trade, cannot reg order id" );
+        return;
+    }
+
+    _om->update( id, ostatus_t::aborted );
 }
 
 void CtpTrader::OnRspQryInstrument( CThostFtdcInstrumentField* pInstrument, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) {
