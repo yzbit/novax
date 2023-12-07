@@ -108,7 +108,7 @@ struct Indicator {
     virtual ~Indicator();
 
     virtual string_t name() { return "#indi"; }
-    virtual void     on_calc( const Kline& ref_, const quotation_t& q_ ) = 0;
+    virtual void     on_calc( const Kline& ref_ ) = 0;
 
     int                tracks();
     Series::element_t* value( int track_ = 0, int index_ = 0 );

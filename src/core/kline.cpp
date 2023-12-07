@@ -31,6 +31,10 @@ candle_t& Kline::bar( int index_ ) {
     return *( candle_t* )value( 0, index_ )->p;
 }
 
+quotation_t& Kline::qut() {
+    return _qut;
+}
+
 //--period如果是天，当然是以每天的开盘价作为上一个x线的结束
 //--以小时为单位，则必然是以开盘+n小时作为结果，而且以天为单位
 //--暂且不处理超过日的周期
@@ -77,6 +81,8 @@ TradingDay,InstrumentID,...,UpdateTime,UpdateMillisec...
 考虑到开盘价很重要，这么做可能意义不是很大
 */
 void Kline::on_calc( const quotation_t& q_ ) {
+    _qut = q_;
+
     auto r = recent();
 
     // 此时可以认为是新开盘

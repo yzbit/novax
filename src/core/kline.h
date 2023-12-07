@@ -9,11 +9,12 @@
 CUB_NS_BEGIN
 
 struct Series;
-struct Kline : Indicator {
+struct Kline {
     static Kline* create( const arg_pack_t& arg_ );
 
-    void      on_calc( const quotation_t& q_ ) override;
-    candle_t& bar( int index_ = 0 );
+    void         on_calc( const quotation_t& q_ );
+    candle_t&    bar( int index_ = 0 );
+    quotation_t& qut();
 
 private:
     Kline( const code_t& code_, const period_t& p_, int series_count_ );
@@ -23,11 +24,12 @@ private:
     bool is_new_bar( const quotation_t& q_ );
 
 private:
-    int        _count;
-    code_t     _symbol;
-    period_t   _period;
-    int        _curr_bar;
-    datetime_t _curr_start;  // 当前k的起始时间
+    quotation_t _qut;
+    int         _count;
+    code_t      _symbol;
+    period_t    _period;
+    int         _curr_bar;
+    datetime_t  _curr_start;  // 当前k的起始时间
 
 private:
     Series* _data;
