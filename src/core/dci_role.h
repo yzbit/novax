@@ -3,7 +3,7 @@
 #include "models.h"
 #include "ns.h"
 
-CUB_NS_BEGIN
+SATURN_NS_BEGIN
 
 // context as role
 struct DataContext {
@@ -14,6 +14,6 @@ struct DataContext {
 struct MgmtContext {
 };
 
-CUB_NS_END
+SATURN_NS_END
 
 #endif /* FA53C2F6_3D31_46A5_A112_0E4AA8FF9E25 */

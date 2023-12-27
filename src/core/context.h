@@ -7,7 +7,7 @@
 #include "ns.h"
 #include "strategy.h"
 
-CUB_NS_BEGIN
+SATURN_NS_BEGIN
 struct Indicator;
 struct Aspect;
 struct Clock;
@@ -18,9 +18,10 @@ struct Context {
 
     quotation_t q;
     fund_t      f;
-    Clock*      clock;
+    Clock       clock;
 
     //----apects---
+    Aspect*         load( const code_t& symbol_, const period_t& period_, int count_ );
     virtual Aspect* add_aspect( const code_t& symbol_, const period_t& period_, int count_ ) = 0;
     virtual Aspect* aspect()                                                                 = 0;
 
@@ -50,6 +51,6 @@ protected:
     Context() {}
 };
 
-CUB_NS_END
+SATURN_NS_END
 
 #endif /* C2E26F98_58D2_4FB6_9B05_CB4ED59A65C3 */

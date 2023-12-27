@@ -7,7 +7,7 @@
 #include "log.hpp"
 #include "proxy.h"
 
-CUB_NS_BEGIN
+SATURN_NS_BEGIN
 OrderMgmt::Delegator* ProxyFactory::create_trader( OrderMgmt* om_, int type_ ) {
     return new ctp::CtpTrader( om_ );
 }
@@ -311,4 +311,4 @@ int OrderMgmt::close( oid_t id_ ) {
     return 0;
 }
 
-CUB_NS_END
+SATURN_NS_END

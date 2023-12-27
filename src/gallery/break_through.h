@@ -11,7 +11,7 @@ struct BreakTh : Strategy {
 
     void on_invoke( Context* c ) override;
     void on_init( Context* c ) override;
-    void on_instant( const quotation_t& ) override;
+    void on_ck( const quotation_t& ) override;
 
 private:
     code_t     _code;

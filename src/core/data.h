@@ -13,7 +13,7 @@
 #include "ring_buffer.h"
 #include "task_queue.h"
 
-CUB_NS_BEGIN
+SATURN_NS_BEGIN
 struct Aspect;
 struct DataContext;
 
@@ -55,6 +55,6 @@ private:
     std::condition_variable _cv;
 };
 
-CUB_NS_END
+SATURN_NS_END
 
 #endif /* F4D9DAEC_B9A1_48EF_8FEB_A99D60585AD3 */

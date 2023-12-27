@@ -6,7 +6,7 @@
 #include "models.h"
 #include "ns.h"
 
-CUB_NS_BEGIN
+SATURN_NS_BEGIN
 
 struct Series;
 struct Kline {
@@ -35,6 +35,6 @@ private:
     Series* _data;
 };
 
-CUB_NS_END
+SATURN_NS_END
 
 #endif /* B0FD204B_DBB0_4DB4_BA81_807E439AA053 */

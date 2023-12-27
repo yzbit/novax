@@ -12,7 +12,7 @@
 
 #include "../ns.h"
 
-CUB_NS_BEGIN
+SATURN_NS_BEGIN
 namespace ctp {
 struct Synchrony {
     struct block_t final {
@@ -225,4 +225,4 @@ inline Synchrony::seg_t::seg_t( const seg_t& s_ ) {
 }  // namespace ctp
 
 #endif /* C54C1177_02ED_410B_A390_8C14D20A42F5 */
-CUB_NS_END
+SATURN_NS_END

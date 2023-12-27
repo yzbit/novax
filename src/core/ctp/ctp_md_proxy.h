@@ -13,7 +13,7 @@
 //#define CTP_MD_SETTING_FILE "ctp_md.json"
 //#define CTP_MD_SETTING_FILE "/home/ubuntu/code/cub/src/core/ctp/ctp_md.json"
 #define CTP_MD_SETTING_FILE "conf/ctp_md.json"
-CUB_NS_BEGIN
+SATURN_NS_BEGIN
 
 namespace ctp {
 struct CtpExMd : Data::Delegator, CThostFtdcMdSpi {
@@ -71,6 +71,6 @@ private:
     static id_t session_id();
 };
 }  // namespace ctp
-CUB_NS_END
+SATURN_NS_END
 
 #endif /* DF548D9F_3819_44FA_89F5_6218193C54F2 */

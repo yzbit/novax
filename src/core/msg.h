@@ -3,7 +3,7 @@
 #include "ns.h"
 #include <stdint.h>
 
-CUB_NS_BEGIN
+SATURN_NS_BEGIN
 
 namespace msg {
 enum class mid_t : int32_t {
@@ -86,6 +86,6 @@ const T& frame_cast( const header_t& h ) {
 
 }  // namespace msg
 
-CUB_NS_END
+SATURN_NS_END
 
 #endif /* D0A82F45_7141_4EE2_ABB6_9929837DA41C */

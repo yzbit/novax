@@ -14,7 +14,7 @@
 #include "timer.h"
 #include "trader.h"
 
-CUB_NS_BEGIN
+SATURN_NS_BEGIN
 
 Quant* Quant::create() {
     return new QuantImpl();
@@ -70,7 +70,7 @@ int QuantImpl::execute( Strategy* s_ ) {
 }
 
 void QuantImpl::quote( const quotation_t& q_ ) {
-    _s->on_instant( q_ );
+    _s->on_ck( q_ );
 
     _s->on_invoke( _c );
 }
@@ -112,4 +112,4 @@ void QuantImpl::ontick() {
         }
     }
 }
-CUB_NS_END
+SATURN_NS_END

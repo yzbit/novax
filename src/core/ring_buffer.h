@@ -5,7 +5,7 @@
 
 #include "ns.h"
 
-CUB_NS_BEGIN
+SATURN_NS_BEGIN
 
 template <typename T, int N>
 struct RingBuff {
@@ -62,5 +62,5 @@ inline int RingBuff<T, N>::size() {
                : _wr + N - _rd;
 }
 
-CUB_NS_END
+SATURN_NS_END
 #endif /* CF758CC5_745E_496C_84C3_CAF4B56F5303 */

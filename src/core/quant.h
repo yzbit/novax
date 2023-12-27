@@ -2,7 +2,7 @@
 #define C4704959_F4BE_4EAA_9C19_9CD09E83DA7D
 #include "ns.h"
 
-CUB_NS_BEGIN
+SATURN_NS_BEGIN
 
 struct Strategy;
 struct Quant {
@@ -15,6 +15,6 @@ protected:
     Quant() {}
 };
 
-CUB_NS_END
+SATURN_NS_END
 
 #endif /* C4704959_F4BE_4EAA_9C19_9CD09E83DA7D */

@@ -109,7 +109,7 @@
 
 #include "ns.h"
 
-CUB_NS_BEGIN
+SATURN_NS_BEGIN
 
 // Public types
 using timer_id  = std::size_t;
@@ -319,7 +319,7 @@ private:
     }
 };
 
-CUB_NS_END
+SATURN_NS_END
 // issue: update to gcc10 for mono.. clock
 /*link: https://github.com/eglimi/cpptime*/
 /*demo

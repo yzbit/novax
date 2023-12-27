@@ -6,7 +6,7 @@
 #include "order_mgmt.h"
 #include "quant_impl.h"
 
-CUB_NS_BEGIN
+SATURN_NS_BEGIN
 
 QuantImpl::QuantImpl( QuantImpl* q_ )
     : _dctx( q_ )
@@ -15,7 +15,9 @@ QuantImpl::QuantImpl( QuantImpl* q_ )
     _q->data()->attach( _def_asp );
 }
 
-std::list<Aspect*> _aspects;
+Aspect* Context::load( const code_t& symbol_, const period_t& period_, int count_ ) {
+    return add_aspect( symbol_, period_, count_ );
+}
 
 Aspect* QuantImpl::aspect() {
     return _def_asp;
@@ -91,4 +93,4 @@ int Context::last_exit() {  // 最近出场的k线//和aspect相关
     return 0;
 }
 
-CUB_NS_END
+SATURN_NS_END

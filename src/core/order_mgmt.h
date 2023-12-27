@@ -13,7 +13,7 @@
 #define LONG_POSITION 0
 #define SHORT_POSITION 1
 
-CUB_NS_BEGIN
+SATURN_NS_BEGIN
 
 // 接口的设计：实际交易的过程中，按照订单平仓的可能性其实蛮小的，应该还是按照合约名称+仓位 平仓的可能性更大
 // 高频交易可能下单，撤单，平仓快速发生，此时oid显然是用的
@@ -107,6 +107,6 @@ private:
     Delegator*   _d = nullptr;
 };
 
-CUB_NS_END
+SATURN_NS_END
 
 #endif /* A0120CD0_E1AB_40A0_93BC_9BE6188CDA2A */

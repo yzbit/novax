@@ -5,7 +5,7 @@
 #include "log.hpp"
 #include "series.h"
 
-CUB_NS_BEGIN
+SATURN_NS_BEGIN
 
 Indicator* Indicator::create( const string_t& name_, const arg_pack_t& args_, Aspect* asp_ ) {
     if ( ALGO.find( name_ ) == ALGO.end() ) {
@@ -72,4 +72,4 @@ Series* Indicator::track( int index_ ) {
                : _series[ index_ ];
 }
 
-CUB_NS_END
+SATURN_NS_END

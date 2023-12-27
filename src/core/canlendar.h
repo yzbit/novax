@@ -4,7 +4,7 @@
 #include "models.h"
 #include "ns.h"
 
-CUB_NS_BEGIN
+SATURN_NS_BEGIN
 
 struct Canlendar {
     static Canlendar& instance();
@@ -15,7 +15,7 @@ struct Canlendar {
     time_range_t trading_time( const code_t& c_ = "" );
 };
 
-CUB_NS_END
+SATURN_NS_END
 
 #define CANLEN Canlendar::instance()
 

@@ -20,7 +20,7 @@
 
 #define ALGO_NAME( _t_ ) __NAME__( _t_ )
 
-CUB_NS_BEGIN
+SATURN_NS_BEGIN
 
 #define MA "Ma"
 #define KLINE "Kline"
@@ -29,7 +29,7 @@ BEGIN_ALGO_REPO()
 
 END_ALGO_REPO()
 
-CUB_NS_END
+SATURN_NS_END
 
 #define ALGO cub::_s_algo_repo
 #endif /* ABC258CE_1A2E_4412_B044_2334BA65204C */

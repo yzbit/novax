@@ -101,7 +101,7 @@ auto le = ACCOUNT.ganggan();
 
 #define MAX_INDICATOR_PRIO -1
 
-CUB_NS_BEGIN
+SATURN_NS_BEGIN
 struct Indicator {
     static Indicator* create( const string_t& name_, const arg_pack_t& args_, Aspect* asp_ );
 
@@ -145,6 +145,6 @@ inline int Indicator::tracks() {
     return ( int )_series.size();
 }
 
-CUB_NS_END
+SATURN_NS_END
 
 #endif /* B4872862_3AFF_45FF_86DA_A0808D740978 */

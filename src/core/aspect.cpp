@@ -7,7 +7,7 @@
 #include "kline.h"
 #include "log.hpp"
 
-CUB_NS_BEGIN
+SATURN_NS_BEGIN
 
 void Aspect::debug() {
     std::cout << "##aspect dump##\n";
@@ -76,4 +76,4 @@ Indicator* Aspect::addi( const string_t& name_, const arg_pack_t& args_ ) {
     return i;
 }
 
-CUB_NS_END
+SATURN_NS_END

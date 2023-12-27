@@ -26,7 +26,7 @@
 
 #include "ns.h"
 
-CUB_NS_BEGIN
+SATURN_NS_BEGIN
 
 struct Logz {
     enum class severty_t {
@@ -70,9 +70,9 @@ inline Logz& Logz::instance() {
     return l;
 }
 
-CUB_NS_END
+SATURN_NS_END
 
-#define LOGZ CUB_NS::Logz::instance()
+#define LOGZ SATURN_NS::Logz::instance()
 #define SR_LOGZ_CLOSE LOGZ.shut
 
 #ifdef MS_VC
@@ -109,7 +109,7 @@ CUB_NS_END
         exit( -1 );                       \
     } while ( 0 )
 
-CUB_NS_BEGIN
+SATURN_NS_BEGIN
 
 inline std::string Logz::time_str( bool simple_ ) {
     auto now = std::chrono::system_clock::now();
@@ -291,6 +291,6 @@ inline int Logz::init( const char* log_file_, int rotate_, bool keep_ ) {
     return 0;
 }
 
-CUB_NS_END
+SATURN_NS_END
 
 #endif /* EB26CA36_71A3_4274_998C_7AA18A5F113A */

@@ -6,7 +6,7 @@
 
 #include "ns.h"
 
-CUB_NS_BEGIN
+SATURN_NS_BEGIN
 
 struct Series final {
     struct element_t {
@@ -230,5 +230,5 @@ inline int Series::map( int index_ ) {
     return index < 0 ? index + _total : index;
 }
 
-CUB_NS_END
+SATURN_NS_END
 #endif /* A37995CF_4ECF_464C_B471_04E26CC7055C */

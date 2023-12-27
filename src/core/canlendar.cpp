@@ -1,6 +1,6 @@
 #include "canlendar.h"
 
-CUB_NS_BEGIN
+SATURN_NS_BEGIN
 
 int Canlendar::load_schedule( const variety_t& v_ ) {
     return 0;
@@ -24,4 +24,4 @@ Canlendar& instance() {
     return can;
 }
 
-CUB_NS_END
+SATURN_NS_END
