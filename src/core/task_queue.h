@@ -14,7 +14,7 @@
 // #define DBG_TRACE fprintf
 #define DBG_TRACE( ... )
 
-SATURN_NS_BEGIN
+NVX_NS_BEGIN
 struct TaskQueue {
     TaskQueue()          = default;
     virtual ~TaskQueue() = default;
@@ -134,6 +134,6 @@ inline TaskQueue* TaskQueue::create( int _poolsize_ ) {
     return new ThreadPool( _poolsize_ );
 }
 
-SATURN_NS_END
+NVX_NS_END
 
 #endif /* B2AD377C_2C34_45B8_829B_C12AABBC4481 */

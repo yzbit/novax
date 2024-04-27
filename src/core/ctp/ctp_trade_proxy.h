@@ -38,7 +38,7 @@ THOST_FTDC_OST_AllTraded 、 THOST_FTDC_OST_Canceled 、 THOST_FTDC_OST_NoTradeN
 sessionid orderref，ordersysid等只是为了撤单用的，如果重新登陆，那么如何去查询
 */
 
-SATURN_NS_BEGIN
+NVX_NS_BEGIN
 
 #define CTP_TRADE_SETTING_FILE "/home/data/code/cub/src/core/ctp/ctp_trade.json"
 
@@ -184,5 +184,5 @@ inline void CtpTrader::order_ids_t::set_ref( const TThostFtdcOrderRefType& ref_ 
 }
 }  // namespace ctp
 
-SATURN_NS_END
+NVX_NS_END
 #endif /* AB88A976_581A_4E7C_A4D4_45CCCE67B257 */

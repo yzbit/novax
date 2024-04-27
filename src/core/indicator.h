@@ -91,6 +91,8 @@ auto le = ACCOUNT.ganggan();
 */
 
 #include <atomic>
+#include <cstddef>
+#include <type_traits>
 #include <unordered_map>
 
 #include "aspect.h"
@@ -101,16 +103,17 @@ auto le = ACCOUNT.ganggan();
 
 #define MAX_INDICATOR_PRIO -1
 
-SATURN_NS_BEGIN
+NVX_NS_BEGIN
+
 struct Indicator {
-    static Indicator* create( const string_t& name_, const arg_pack_t& args_, Aspect* asp_ );
+    template <typename T>  //,std::enable_if<argt>>
+    static Indicator* create( const string_t& name_, T&& t );
 
     virtual ~Indicator();
 
     virtual string_t name() { return "#indi"; }
-    virtual void     on_calc( const Kline& ref_ ) = 0;
+    virtual void     calc( const Kline& ref_ ) = 0;
 
-    int                tracks();
     Series::element_t* value( int track_ = 0, int index_ = 0 );
     Series::element_t* recent();
     void               shift();
@@ -119,7 +122,9 @@ protected:
     Indicator() {}
 
 protected:
-    Kline&  ref_base();
+    Kline& ref_base();
+
+    template <typename T>
     Series* add_series( int track_, int size_, Series::free_t free_ = Series::default_free() );
     Series* track( int index_ = 0 );
     Aspect* asp() {
@@ -131,7 +136,12 @@ private:
         _asp = asp_;
     }
 
+    static auto creator_by_name( const string_t& name_ );
+    template <typename T, std::size_t... Is>
+    static Indicator* create( const string_t& name_, T&& t, std::index_sequence<Is...> );
+
 private:
+    // 这里也没法统一存储
     using series_repo_t = std::unordered_map<int, Series*>;
 
     series_repo_t _series;
@@ -140,11 +150,35 @@ private:
     static std::atomic<int> _global_prio;
 };
 
-//---inline---
-inline int Indicator::tracks() {
-    return ( int )_series.size();
+auto Indicator::creator_by_name( const string_t& name_ ) {
+    return ALGO.find( name_ ) == ALGO.end() ? nullptr : ALGO[ name_ ];
 }
 
-SATURN_NS_END
+template <typename As>
+Indicator* Indicator::create( const string_t& name_, As&& args_ ) {
+    return create( name_, std::forward<As>( args_ ), std::make_index_sequence<std::decay_t<As>::size>{} );
+}
+
+template <typename T, std::size_t... Is>
+Indicator* Indicator::create( const string_t& name_, T&& t, std::index_sequence<Is...> ) {
+    auto fn = creator_by_name( name_ );
+
+    if ( !fn ) return nullptr;
+
+    try {
+        Indicator* i = fn( t.get( Is )... );
+        if ( i ) {
+            i->set_asp( asp_ );
+            asp_->addi( i );
+        }
+
+        return i;
+    }
+    catch ( ... ) {
+        return nullptr;  // bad func call
+    }
+}
+
+NVX_NS_END
 
 #endif /* B4872862_3AFF_45FF_86DA_A0808D740978 */

@@ -5,8 +5,29 @@
 #include "log.hpp"
 #include "series.h"
 
-SATURN_NS_BEGIN
+NVX_NS_BEGIN
 
+/**
+假设界面设置了三个参数,分别是int,double,char,如何把这个三个参数按照类型正确的传递
+
+double price;
+int count;
+char flag;
+//--每个指标是知道自己的类型的,他从界面上收集正确的参数类型,然后传给create函数?---显然
+//不是....而是要先调用下面的函数,框架如何知道create可变参数的类型
+Indicator::create("Ma",count,price,flag);
+
+//用户在界面上选择一个指标Ma,然后按照类型设置了三个参数的值,点确定,框架收集到这些参数,然后传递给create函数,这些参数只能是any,
+除非增加traits,告诉我们每个指标的详细
+IndiTraits<Rsi>{
+    using result=typelist=<int,double,char>;
+};
+
+
+
+
+
+*/
 Indicator* Indicator::create( const string_t& name_, const arg_pack_t& args_, Aspect* asp_ ) {
     if ( ALGO.find( name_ ) == ALGO.end() ) {
         LOG_INFO( "cant not find indicator for %s", name_.c_str() );
@@ -72,4 +93,4 @@ Series* Indicator::track( int index_ ) {
                : _series[ index_ ];
 }
 
-SATURN_NS_END
+NVX_NS_END

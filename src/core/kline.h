@@ -5,10 +5,10 @@
 #include "indicator.h"
 #include "models.h"
 #include "ns.h"
+#include "series.h"
 
-SATURN_NS_BEGIN
+NVX_NS_BEGIN
 
-struct Series;
 struct Kline {
     static Kline* create( const arg_pack_t& arg_ );
 
@@ -32,9 +32,9 @@ private:
     datetime_t  _curr_start;  // 当前k的起始时间
 
 private:
-    Series* _data;
+    Series<candle_t>* _data;
 };
 
-SATURN_NS_END
+NVX_NS_END
 
 #endif /* B0FD204B_DBB0_4DB4_BA81_807E439AA053 */

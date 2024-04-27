@@ -17,7 +17,7 @@
 #include "synchrony.hpp"
 
 //--! 一个req要么
-SATURN_NS_BEGIN
+NVX_NS_BEGIN
 
 namespace ctp {
 namespace js = rapidjson;
@@ -173,5 +173,5 @@ inline int setting_t::load( const char* file_ ) {
 }
 }  // namespace ctp
 
-SATURN_NS_END  // namespace ctp SATURN_NS_END #endif /* B43732C7_EA9D_4138_8023_E0627CD66A48 */
+NVX_NS_END  // namespace ctp NVX_NS_END #endif /* B43732C7_EA9D_4138_8023_E0627CD66A48 */
 #endif

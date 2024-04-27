@@ -4,7 +4,7 @@
 #include "log.hpp"
 
 #define BAR_TRACK 0
-SATURN_NS_BEGIN
+NVX_NS_BEGIN
 
 Kline::Kline( const code_t& code_, const period_t& p_, int series_count_ )
     : _count( series_count_ )
@@ -116,4 +116,4 @@ void Kline::on_calc( const quotation_t& q_ ) {
     k->low   = std::min( k->low, k->close );
 }
 
-SATURN_NS_END
+NVX_NS_END

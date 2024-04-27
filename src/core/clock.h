@@ -6,7 +6,7 @@
 #include "definitions.h"
 #include "ns.h"
 
-SATURN_NS_BEGIN
+NVX_NS_BEGIN
 
 struct Clock {
     static Clock& of_exchange( int exid_ );
@@ -23,7 +23,7 @@ private:
     uint32_t _open_shift = 0;
 };
 
-SATURN_NS_END
+NVX_NS_END
 
 #define CLOCK_OF( _exid_ ) Clock::of_exchange( _exid_ )
 

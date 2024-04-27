@@ -6,7 +6,7 @@
 #include "models.h"
 #include "ns.h"
 
-SATURN_NS_BEGIN
+NVX_NS_BEGIN
 
 struct Kline;
 struct Indicator;
@@ -51,6 +51,6 @@ inline bool Aspect::loaded() const {
     return !_symbol.empty();
 }
 
-SATURN_NS_END
+NVX_NS_END
 
 #endif /* B51B8BF1_EFFE_4FD1_94C3_9C7FFB93D609 */

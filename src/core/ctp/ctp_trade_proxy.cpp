@@ -3,7 +3,7 @@
 #include "../log.hpp"
 #include "comm.h"
 
-SATURN_NS_BEGIN
+NVX_NS_BEGIN
 namespace ctp {
 
 CtpTrader::CtpTrader( OrderMgmt* om_ )
@@ -724,4 +724,4 @@ void CtpTrader::OnRspQryExchangeMarginRateAdjust( CThostFtdcExchangeMarginRateAd
 void CtpTrader::OnRspQryInstrumentCommissionRate( CThostFtdcInstrumentCommissionRateField* pInstrumentCommissionRate, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) {
 }
 }  // namespace ctp
-SATURN_NS_END
+NVX_NS_END

@@ -6,7 +6,7 @@
 
 #include "ns.h"
 
-SATURN_NS_BEGIN
+NVX_NS_BEGIN
 
 inline void dumpHex(
     const uint8_t*                          data_,
@@ -26,6 +26,6 @@ inline void dumpHex(
     print_( "\n" );
 }
 
-SATURN_NS_END
+NVX_NS_END
 
 #endif /* A0091236_F594_4A70_BDCB_927CD411D38C */

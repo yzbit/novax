@@ -7,7 +7,7 @@
 #include "quant.h"
 #include "timer.h"
 
-SATURN_NS_BEGIN
+NVX_NS_BEGIN
 struct OrderMgmt;
 struct Data;
 struct Strategy;
@@ -63,6 +63,6 @@ private:
     Timer _timer;
 };
 
-SATURN_NS_END
+NVX_NS_END
 
 #endif /* D392EBBF_A7F9_4ED1_B8F6_BE4B2E02DA07 */

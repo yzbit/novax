@@ -13,7 +13,6 @@
 
 #include <chrono>
 #include <fcntl.h>
-#include <filesystem>
 #include <libgen.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -26,7 +25,7 @@
 
 #include "ns.h"
 
-SATURN_NS_BEGIN
+NVX_NS_BEGIN
 
 struct Logz {
     enum class severty_t {
@@ -70,9 +69,9 @@ inline Logz& Logz::instance() {
     return l;
 }
 
-SATURN_NS_END
+NVX_NS_END
 
-#define LOGZ SATURN_NS::Logz::instance()
+#define LOGZ NVX_NS::Logz::instance()
 #define SR_LOGZ_CLOSE LOGZ.shut
 
 #ifdef MS_VC
@@ -109,7 +108,7 @@ SATURN_NS_END
         exit( -1 );                       \
     } while ( 0 )
 
-SATURN_NS_BEGIN
+NVX_NS_BEGIN
 
 inline std::string Logz::time_str( bool simple_ ) {
     auto now = std::chrono::system_clock::now();
@@ -291,6 +290,6 @@ inline int Logz::init( const char* log_file_, int rotate_, bool keep_ ) {
     return 0;
 }
 
-SATURN_NS_END
+NVX_NS_END
 
 #endif /* EB26CA36_71A3_4274_998C_7AA18A5F113A */

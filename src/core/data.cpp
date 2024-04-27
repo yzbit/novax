@@ -9,7 +9,7 @@
 #include "reactor.h"
 #include "strategy.h"
 
-SATURN_NS_BEGIN
+NVX_NS_BEGIN
 
 Data::Delegator* ProxyFactory::create_data( Data* d_, int type_ ) {
     return new ctp::CtpExMd( d_ );
@@ -108,4 +108,4 @@ Data::~Data() {
     }
 }
 
-SATURN_NS_END
+NVX_NS_END

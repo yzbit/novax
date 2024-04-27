@@ -2,7 +2,7 @@
 
 #include "ma.h"
 
-SATURN_NS_BEGIN
+NVX_NS_BEGIN
 
 Ma* Ma::create( const arg_pack_t& p_ ) {
     return new Ma( p_[ 0 ], ( int )p_[ 1 ] );
@@ -30,4 +30,4 @@ void Ma::on_calc( const Kline& ref_, const quotation_t& q_ ) {
     //
 }
 
-SATURN_NS_END
+NVX_NS_END

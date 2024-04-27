@@ -6,7 +6,7 @@
 #include "log.hpp"
 #include "ns.h"
 
-SATURN_NS_BEGIN
+NVX_NS_BEGIN
 
 #define REACTOR_XPUB "inproc://cub-xpub-chan"
 #define REACTOR_XSUB "inproc://cub-xsub-chan"
@@ -167,4 +167,4 @@ int ReactorImpl::sub( const mid_set_t& msg_set_, msg_handler_t h_ ) {
 ReactorImpl::~ReactorImpl() {
 }
 
-SATURN_NS_END
+NVX_NS_END

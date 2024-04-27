@@ -6,7 +6,7 @@
 #include "order_mgmt.h"
 #include "quant_impl.h"
 
-SATURN_NS_BEGIN
+NVX_NS_BEGIN
 
 QuantImpl::QuantImpl( QuantImpl* q_ )
     : _dctx( q_ )
@@ -32,6 +32,7 @@ Aspect* QuantImpl::add_aspect( const code_t& symbol_, const period_t& period_, i
 }
 
 int QuantImpl::pshort( const code_t& c_, vol_t qty_, price_t price_, otype_t mode_ ) {
+    char* b = "aaa";
     return _o->sellshort( { c_, qty_, price_, mode_ } );
 }
 
@@ -56,8 +57,10 @@ vol_t Context::position() {  // 已成交持仓
     } );
 
     return v;
-#endif
     return p().dealt();
+
+#endif
+    return vol_t();
 }
 
 vol_t Context::position( const code_t& c_ ) {
@@ -93,4 +96,4 @@ int Context::last_exit() {  // 最近出场的k线//和aspect相关
     return 0;
 }
 
-SATURN_NS_END
+NVX_NS_END

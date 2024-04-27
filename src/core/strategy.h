@@ -4,7 +4,7 @@
 #include "models.h"
 #include "ns.h"
 
-SATURN_NS_BEGIN
+NVX_NS_BEGIN
 
 struct Context;
 struct Strategy {
@@ -15,6 +15,6 @@ struct Strategy {
     virtual void on_ck( const quotation_t& q_ ) = 0;
 };
 
-SATURN_NS_END
+NVX_NS_END
 
 #endif /* E93F5C75_9223_409D_8F98_DFFDE2E179BF */

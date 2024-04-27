@@ -11,7 +11,7 @@
 #include "ns.h"
 #include "reactor.h"
 
-SATURN_NS_BEGIN
+NVX_NS_BEGIN
 
 using FilterToken = char[ 4 ];
 
@@ -37,6 +37,6 @@ private:
     zmq::context_t _center_ctx;
 };
 
-SATURN_NS_END
+NVX_NS_END
 
 #endif /* C20EEFC2_0BE4_4918_AAD4_2F0119D413CB */

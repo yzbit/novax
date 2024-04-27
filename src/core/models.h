@@ -6,7 +6,7 @@
 #include "definitions.h"
 #include "ns.h"
 
-SATURN_NS_BEGIN
+NVX_NS_BEGIN
 
 enum class variety_t {
     cn_fu,
@@ -268,6 +268,6 @@ inline order_t* order_t::from( const code_t& c_,
     return new order_t( c_, v_, p_, t_, d_ );
 }
 
-SATURN_NS_END
+NVX_NS_END
 
 #endif /* B7C02AA3_83E0_4A71_B207_3E05F194B663 */

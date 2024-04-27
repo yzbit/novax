@@ -4,7 +4,7 @@
 
 #include "log.hpp"
 
-SATURN_NS_BEGIN
+NVX_NS_BEGIN
 
 Clock::Clock()
     : _epoch( time( 0 ) )
@@ -28,4 +28,4 @@ Clock& Clock::of_exchange( int exid_ ) {
     return p->second;
 }
 
-SATURN_NS_END
+NVX_NS_END

@@ -109,7 +109,7 @@
 
 #include "ns.h"
 
-SATURN_NS_BEGIN
+NVX_NS_BEGIN
 
 // Public types
 using timer_id  = std::size_t;
@@ -179,7 +179,7 @@ class Timer {
     std::multiset<detail::Time_event> time_events;
 
     // A list of ids to be re-used. If possible, ids are used from this pool.
-    std::stack<cub::timer_id> free_ids;
+    std::stack<NVX_NS::timer_id> free_ids;
 
 public:
     Timer()
@@ -288,7 +288,7 @@ private:
             }
             else {
                 detail::Time_event te = *time_events.begin();
-                if ( cub::clock::now() >= te.next ) {
+                if ( NVX_NS::clock::now() >= te.next ) {
 
                     // Remove time event
                     time_events.erase( time_events.begin() );
@@ -319,7 +319,7 @@ private:
     }
 };
 
-SATURN_NS_END
+NVX_NS_END
 // issue: update to gcc10 for mono.. clock
 /*link: https://github.com/eglimi/cpptime*/
 /*demo

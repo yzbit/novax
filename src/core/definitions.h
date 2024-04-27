@@ -14,20 +14,23 @@
 #include <string>
 #include <thread>
 #include <time.h>
+#include <tuple>
+#include <vector>
 
 #include "ns.h"
 
-SATURN_NS_BEGIN
+NVX_NS_BEGIN
 
 #define CUB_ASSERT assert
 
-using id_t     = uint32_t;
-using price_t  = double;
-using vol_t    = int;  // todo double ctp都是整数仓位;
-using oid_t    = id_t;
-using string_t = std::string;
-using text_t   = string_t;
-using money_t  = double;
+using id_t         = uint32_t;
+using price_t      = double;
+using vol_t        = int;  // todo double ctp都是整数仓位;
+using oid_t        = id_t;
+using string_t     = std::string;
+using stringlist_t = std::vector<std::string>;
+using text_t       = string_t;
+using money_t      = double;
 
 constexpr int kBadId = 0;
 #define IS_VALID_ID( _id_ ) ( kBadId != ( _id_ ) )
@@ -150,18 +153,53 @@ private:
             _t.detach();                 \
     } while ( 0 )
 
+template <typename... Ts>
 struct arg_t {
-    std::any value;
+    arg_t( Ts... ts )
+        : _tuple( ts... ) {}
 
-    operator const int() const;
-    operator const double() const;
-    operator const char*() const;
-    operator string_t() const;
-    operator const period_t() const;
+    auto& get( std::size_t i ) {
+        return std::get<i>( _tuple );
+    }
+
+    static constexpr size_t count = std::tuple_size_v<std::tuple<Ts...>>;
+
+    template <typename F>
+    void for_each( F f ) {
+        for_each_impl( f, std::make_index_sequence<sizeof...( Ts )>{} );
+    }
+
+private:
+    template <typename F, size_t... N>
+    void for_each_impl( F f, std::index_sequence<N...> ) {
+        ( std::invoke( f, std::get<N>( _tuple ) ), ... );
+    }
+
+    std::tuple<Ts...> _tuple;
 };
 
-#define MAX_ARG_SUPPORT 16
-using arg_pack_t = std::array<arg_t, MAX_ARG_SUPPORT>;
+#define DEFAULT_ARG_VALUES( ... )    \
+    auto args() {                    \
+        return arg_t{ __VA_ARGS__ }; \
+    };
+
+#define DECLARE_ARG_NAMES( ... )                \
+    stringlist_t& arg_names() {                 \
+        static stringlist_t __v{ __VA_ARGS__ }; \
+        return __v;                             \
+    }
+
+template <typename T>
+struct arg_binding_t {
+    arg_binding_t( const T& v_ )
+        : v( v_ ) {}
+
+    arg_binding_t& operator==( const T& v_ ) {
+        v = v_;
+    }
+
+    T v;
+};
 
 struct Indicator;
 
@@ -404,6 +442,6 @@ inline std::string datetime_t::to_iso() const {
 
     return fmt;
 }
-SATURN_NS_END
+NVX_NS_END
 
 #endif /* C096ECC6_D3E8_4656_A4DF_F125629A8BE4 */

@@ -14,7 +14,7 @@
 #include "timer.h"
 #include "trader.h"
 
-SATURN_NS_BEGIN
+NVX_NS_BEGIN
 
 Quant* Quant::create() {
     return new QuantImpl();
@@ -112,4 +112,4 @@ void QuantImpl::ontick() {
         }
     }
 }
-SATURN_NS_END
+NVX_NS_END

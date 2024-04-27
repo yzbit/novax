@@ -9,7 +9,7 @@
 // todo debug
 #include "../utils.hpp"
 
-SATURN_NS_BEGIN
+NVX_NS_BEGIN
 namespace ctp {
 namespace fs = std::filesystem;
 
@@ -345,4 +345,4 @@ void CtpExMd::OnRspUnSubForQuoteRsp( CThostFtdcSpecificInstrumentField* pSpecifi
     LOG_INFO( "rsp for unsubquote" );
 }
 }  // namespace ctp
-SATURN_NS_END
+NVX_NS_END

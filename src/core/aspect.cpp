@@ -7,7 +7,7 @@
 #include "kline.h"
 #include "log.hpp"
 
-SATURN_NS_BEGIN
+NVX_NS_BEGIN
 
 void Aspect::debug() {
     std::cout << "##aspect dump##\n";
@@ -44,8 +44,9 @@ int Aspect::load( const code_t& code_, const period_t& p_, int count_ ) {
 void Aspect::update( const quotation_t& q_ ) {
     _k->on_calc( q_ );
 
+    //todo
     for ( auto& i : _algos ) {
-        i.i->on_calc( *_k, q_ );
+    //    i.i->on_calc( *_k, q_ );
     }
 }
 
@@ -76,4 +77,4 @@ Indicator* Aspect::addi( const string_t& name_, const arg_pack_t& args_ ) {
     return i;
 }
 
-SATURN_NS_END
+NVX_NS_END

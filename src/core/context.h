@@ -2,15 +2,15 @@
 #define C2E26F98_58D2_4FB6_9B05_CB4ED59A65C3
 #include <memory>
 
+#include "clock.h"
 #include "definitions.h"
 #include "models.h"
 #include "ns.h"
 #include "strategy.h"
 
-SATURN_NS_BEGIN
+NVX_NS_BEGIN
 struct Indicator;
 struct Aspect;
-struct Clock;
 struct QuantImpl;
 // facade 类
 struct Context {
@@ -51,6 +51,6 @@ protected:
     Context() {}
 };
 
-SATURN_NS_END
+NVX_NS_END
 
 #endif /* C2E26F98_58D2_4FB6_9B05_CB4ED59A65C3 */

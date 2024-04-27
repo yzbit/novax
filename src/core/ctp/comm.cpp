@@ -1,9 +1,9 @@
 #include "comm.h"
 
-SATURN_NS_BEGIN
+NVX_NS_BEGIN
 namespace ctp {
 
 
 }  // namespace ctp
 
-SATURN_NS_END
+NVX_NS_END
