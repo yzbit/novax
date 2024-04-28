@@ -5,6 +5,10 @@
 NVX_NS_BEGIN
 
 struct Strategy;
+
+//-是否有必要运行多个实例
+//-不同的策略是可以共享一个数据源,一个订单管理模块的
+//-
 struct Quant {
     static Quant* create();
 

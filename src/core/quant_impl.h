@@ -12,12 +12,8 @@ struct OrderMgmt;
 struct Data;
 struct Strategy;
 
-struct QuantImpl : Quant, DataContext, Context {
+struct QuantImpl : Quant {
     QuantImpl();
-
-    // protected:
-    //     int put_order( const order_t& o_ ) override;
-    //    int del_order( oid_t id_ ) override;
 
 protected:
     void update( const quotation_t& q_ ) override;
