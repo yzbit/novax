@@ -1,7 +1,6 @@
 #include "data.h"
 
 #include "aspect.h"
-#include "ctp/ctp_md_proxy.h"
 #include "dci_role.h"
 #include "log.hpp"
 #include "proxy.h"
@@ -11,14 +10,13 @@
 
 NVX_NS_BEGIN
 
-Data::Delegator* ProxyFactory::create_data( Data* d_, int type_ ) {
-    return new ctp::CtpExMd( d_ );
+Data& Data::instance() {
+    static Data d;
+    return d;
 }
 
-Data::Data( DataContext* q_ )
-    : _r( q_ ) {
-
-    _d    = ProxyFactory::create_data( this, 0 );
+Data::Data() {
+    _m    = create_market( this );
     _jobs = TaskQueue::create( 4 );
 
     THREAD_DETACHED( [ & ]() { this->process(); } );
@@ -32,19 +30,19 @@ void Data::update( const quotation_t& tick_ ) {
 }
 
 int Data::start() {
-    return _d->start();
+    return _m->start();
 }
 
 int Data::stop() {
-    return _d->stop();
+    return _m->stop();
 }
 
 int Data::subscribe( const code_t& code_ ) {
-    return _d->subscribe( code_ );
+    return _m->subscribe( code_ );
 }
 
 int Data::unsubscribe( const code_t& code_ ) {
-    return _d->unsubscribe( code_ );
+    return _m->unsubscribe( code_ );
 }
 
 int Data::attach( Aspect* a_ ) {
@@ -98,8 +96,7 @@ void Data::process() {
 }
 
 Data::~Data() {
-    delete _d;
-    delete _r;
+    delete _m;
 
     _jobs->shutdown();
     delete _jobs;

@@ -10,31 +10,26 @@
 #include "models.h"
 #include "msg.h"
 #include "ns.h"
+#include "proxy.h"
 #include "ring_buffer.h"
 #include "task_queue.h"
 
 NVX_NS_BEGIN
 struct Aspect;
-struct DataContext;
+struct IMarket;
 
-struct Data {
-    struct Delegator {
-        virtual ~Delegator() {}
-        virtual int start()                            = 0;
-        virtual int stop()                             = 0;
-        virtual int subscribe( const code_t& code_ )   = 0;
-        virtual int unsubscribe( const code_t& code_ ) = 0;
-    };
-
-    Data( DataContext* q_ );
+struct Data : IData {
+    Data();
     ~Data();
 
-    void update( const quotation_t& tick_ );
+    static Data& instance();
 
-    int     start();
-    int     stop();
-    int     subscribe( const code_t& code_ );
-    int     unsubscribe( const code_t& code_ );
+    void update( const quotation_t& tick_ ) override;
+    int  start();
+    int  stop();
+    int  subscribe( const code_t& code_ );
+    int  unsubscribe( const code_t& code_ );
+
     Aspect* attach( const code_t& symbol_, const period_t& period_, int count_ );
     int     attach( Aspect* a_ );
 
@@ -44,17 +39,16 @@ private:
 private:
     RingBuff<quotation_t, 30> _cache;
     std::list<Aspect*>        _aspects;
-    Delegator*                _d    = nullptr;
     TaskQueue*                _jobs = nullptr;
-
-private:
-    DataContext* _r = nullptr;
 
 private:
     std::mutex              _mutex;
     std::condition_variable _cv;
+    IMarket*                _m = nullptr;
 };
 
 NVX_NS_END
+
+#define DATA Data::instance()
 
 #endif /* F4D9DAEC_B9A1_48EF_8FEB_A99D60585AD3 */

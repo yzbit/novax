@@ -14,12 +14,6 @@ Kline::Kline( const code_t& code_, const period_t& p_, int series_count_ )
     init();
 }
 
-Kline* Kline::create( const arg_pack_t& arg_ ) {
-    auto c = ( const char* )arg_[ 0 ];
-
-    return new Kline( ( string_t )arg_[ 0 ], ( const period_t )arg_[ 1 ], ( int )arg_[ 2 ] );
-}
-
 void Kline::init() {
     _data = add_series( BAR_TRACK, _count, ::free );
     _data->init( []( Series::element_t& e_ ) {
@@ -80,7 +74,7 @@ TradingDay,InstrumentID,...,UpdateTime,UpdateMillisec...
 我们可以提供两种模式，一种按照自然日来分割，日内按照K线周期来分，最后不足一个周期就算了; 第二按照每根k线足够的周期来生成
 考虑到开盘价很重要，这么做可能意义不是很大
 */
-void Kline::on_calc( const quotation_t& q_ ) {
+void Kline::calc( const quotation_t& q_ ) {
     _qut = q_;
 
     auto r = recent();

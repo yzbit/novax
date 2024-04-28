@@ -8,6 +8,7 @@
 #include "../models.h"
 #include "../ns.h"
 #include "../order_mgmt.h"
+#include "../proxy.h"
 #include "comm.h"
 
 /*最近对ctp的流程有了更多的认识。
@@ -47,8 +48,8 @@ NVX_NS_BEGIN
 
 namespace ctp {
 
-struct CtpTrader : OrderMgmt::Delegator, CThostFtdcTraderSpi {
-    CtpTrader( OrderMgmt* om_ );
+struct CtpTrader : IBroker, CThostFtdcTraderSpi {
+    CtpTrader( ITrader* tr_ );
 
 protected:
     int start() override;
@@ -115,9 +116,6 @@ private:
     setting_t _settings;
     IdMap     _id_map;
     session_t _ss;
-
-private:
-    OrderMgmt* _om;
 
 private:
     void OnRtnBulletin( CThostFtdcBulletinField* pBulletin ) override;                                                                                                                     /// 交易所公告通知

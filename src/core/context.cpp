@@ -1,3 +1,4 @@
+#include <cassert>
 #include <list>
 
 #include "aspect.h"
@@ -8,46 +9,44 @@
 
 NVX_NS_BEGIN
 
-QuantImpl::QuantImpl( QuantImpl* q_ )
-    : _dctx( q_ )
-    , _octx( q_ ) {
-    _def_asp = new Aspect();
-    _q->data()->attach( _def_asp );
+Context::Context() {
 }
 
 Aspect* Context::load( const code_t& symbol_, const period_t& period_, int count_ ) {
-    return add_aspect( symbol_, period_, count_ );
+    return ASP.add( symbol_, period_, count_ );
 }
 
-Aspect* QuantImpl::aspect() {
-    return _def_asp;
-}
-
-Context* Context::create( QuantImpl* q_ ) {
-    return q_;
+Context* Context::create() {
+    static Context c;
+    return &c;
 }
 
 Aspect* QuantImpl::add_aspect( const code_t& symbol_, const period_t& period_, int count_ ) {
     return _d->attach( symbol_, period_, count_ );
 }
 
-int QuantImpl::pshort( const code_t& c_, vol_t qty_, price_t price_, otype_t mode_ ) {
-    char* b = "aaa";
-    return _o->sellshort( { c_, qty_, price_, mode_ } );
+int Context::open( const code_t& c_, vol_t qty_, price_t sl_, price_t tp_, price_t price_, otype_t mode_ ) {
+    if ( qty_ < 0 )
+        return TRADER.sellshort( { c_, -qty_, price_, mode_ } );
+    else if ( qty_ > 0 )
+        TRADER.buylong( { c_, qty_, price_, mode_ } );
+    else {
+        assert( false );
+        return 0;
+    };
 }
 
-int QuantImpl::plong( const code_t& c_, vol_t qty_, price_t price_, otype_t mode_ ) {
-    return _o->buylong( { c_, qty_, price_, mode_ } );
+int Context::close( const code_t& c_, vol_t qty_, price_t price_, otype_t mode_ ) {
+    if ( qty_ < 0 ) {
+        return TRADER.buy( { c_, -qty_, price_, mode_ } );
+    }
+    else if ( qty_ > 0 ) {
+        return TRADER.sell( { c_, qty_, price_, mode_ } );
+    }
+    else {
+        return TRADER.closeall( c_ );
+    }
 }
-
-int QuantImpl::cshort( const code_t& c_, vol_t qty_, price_t price_, otype_t mode_ ) {
-    return _o->buy( { c_, qty_, price_, mode_ } );
-}
-
-int QuantImpl::clong( const code_t& c_, vol_t qty_, price_t price_, otype_t mode_ ) {
-    return _o->sell( { c_, qty_, price_, mode_ } );
-}
-
 vol_t Context::position() {  // 已成交持仓
 #if 0
     auto& pf = p();
@@ -64,22 +63,13 @@ vol_t Context::position() {  // 已成交持仓
 }
 
 vol_t Context::position( const code_t& c_ ) {
-    0;
+    return 0;
 }
 
 vol_t Context::pending() {  // 未成交持仓
 }
 
 vol_t Context::pending( const code_t& c_ ) {}
-
-Kline& Context::kline() {
-    return aspect()->kline();
-}
-
-candle_t& Context::bar( int index_ ) {
-    static candle_t c;
-    return c;
-}
 
 price_t Context::put_price() {
     return 0;

@@ -9,6 +9,7 @@
 #include "definitions.h"
 #include "models.h"
 #include "ns.h"
+#include "proxy.h"
 
 #define LONG_POSITION 0
 #define SHORT_POSITION 1
@@ -17,49 +18,18 @@ NVX_NS_BEGIN
 
 // 接口的设计：实际交易的过程中，按照订单平仓的可能性其实蛮小的，应该还是按照合约名称+仓位 平仓的可能性更大
 // 高频交易可能下单，撤单，平仓快速发生，此时oid显然是用的
-struct MgmtContext;
-struct OrderMgmt {
-    struct Delegator {
-        virtual ~Delegator() {}
-        virtual int start()                     = 0;
-        virtual int stop()                      = 0;
-        virtual int put( const order_t& o_ )    = 0;
-        virtual int cancel( const order_t& o_ ) = 0;
-    };
-
+struct OrderMgmt : ITrader {
     ~OrderMgmt();
-    OrderMgmt( MgmtContext* c_ );
 
-    void start();
-    void stop();
+    static OrderMgmt& instance();
 
-    oid_t sellshort( const code_t& code_,
-                     const vol_t   qty_,
-                     const price_t price_ = 0,
-                     const otype_t mode_  = otype_t::market,
-                     const price_t sl_    = 0,
-                     const price_t tp_    = 0,
-                     const text_t& remark = "open short" );
+    int start();
+    int stop();
 
-    oid_t buylong( const code_t& code_,
-                   const vol_t   qty_,
-                   const price_t price_ = 0,
-                   const otype_t mode_  = otype_t::market,
-                   const price_t sl_    = 0,
-                   const price_t tp_    = 0,
-                   const text_t& remark = "open buy" );
-
-    int sell( const code_t& code_,
-              const vol_t   qty_   = 0,
-              const price_t price_ = 0,
-              const otype_t mode_  = otype_t::market,
-              const text_t& remark = "close buy" );
-
-    int buy( const code_t& code_,
-             const vol_t   qty_   = 0,
-             const price_t price_ = 0,
-             const otype_t mode_  = otype_t::market,
-             const text_t& remark = "close short" );
+    oid_t buylong( const code_t& code_, const vol_t qty_, const price_t price_ = 0, const otype_t mode_ = otype_t::market, const price_t sl_ = 0, const price_t tp_ = 0, const text_t& remark = "open buy" );
+    int   sell( const code_t& code_, const vol_t qty_ = 0, const price_t price_ = 0, const otype_t mode_ = otype_t::market, const text_t& remark = "close buy" );
+    oid_t sellshort( const code_t& code_, const vol_t qty_, const price_t price_ = 0, const otype_t mode_ = otype_t::market, const price_t sl_ = 0, const price_t tp_ = 0, const text_t& remark = "open short" );
+    int   buy( const code_t& code_, const vol_t qty_ = 0, const price_t price_ = 0, const otype_t mode_ = otype_t::market, const text_t& remark = "close short" );
 
     int cancel( oid_t id_ );
     int close( oid_t id_ );
@@ -76,16 +46,11 @@ private:
     void  herge( order_t* src_, const order_t* update_ );
     void  accum( order_t* src_, const order_t* update_ );
     int   close( const order_t& r_ );
-    oid_t put( const odir_t& dir_,
-               const code_t& code_,
-               const vol_t   qty_,
-               const price_t price_,
-               const otype_t mode_,
-               const price_t sl_,
-               const price_t tp_,
-               const text_t& remark_ );
+    oid_t put( const odir_t& dir_, const code_t& code_, const vol_t qty_, const price_t price_, const otype_t mode_, const price_t sl_, const price_t tp_, const text_t& remark_ );
 
 private:
+    OrderMgmt();
+
     oid_t       oid();
     order_t*    get( oid_t id_ );
     position_t* position( const code_t& code_, bool long_ );
@@ -103,10 +68,11 @@ private:
     static std::atomic<oid_t> _init_id;
 
 private:
-    MgmtContext* _c = nullptr;
-    Delegator*   _d = nullptr;
+    IBroker* _ib = nullptr;
 };
 
 NVX_NS_END
+
+#define TRADER OrderMgmt::instance()
 
 #endif /* A0120CD0_E1AB_40A0_93BC_9BE6188CDA2A */

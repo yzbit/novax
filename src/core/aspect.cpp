@@ -20,6 +20,17 @@ void Aspect::debug() {
     }
 }
 
+Kline& Aspect::kline( kidx_t index_ ) {
+    return *_k;
+}
+
+const code_t& Aspect::code() const {
+    return _symbol;
+}
+
+inline bool Aspect::loaded() const {
+    return !_symbol.empty();
+}
 Aspect::~Aspect() {
     delete _k;
 
@@ -44,9 +55,9 @@ int Aspect::load( const code_t& code_, const period_t& p_, int count_ ) {
 void Aspect::update( const quotation_t& q_ ) {
     _k->on_calc( q_ );
 
-    //todo
+    // todo
     for ( auto& i : _algos ) {
-    //    i.i->on_calc( *_k, q_ );
+        //    i.i->on_calc( *_k, q_ );
     }
 }
 
@@ -75,6 +86,24 @@ Indicator* Aspect::addi( const string_t& name_, const arg_pack_t& args_ ) {
     addi( i );
 
     return i;
+}
+
+AspRepo& AspRepo::instance() {
+    static AspRepo as;
+    return as;
+}
+
+Aspect* AspRepo::add( const code_t& code_, const period_t& p_, int count_ ) {
+    Aspect a;
+
+    if ( a.load( code_, p_, count_ ) < 0 ) return nullptr;
+
+    _repo.emplace_back( a );
+
+    Aspect* as = &( *_repo.rbegin() );
+    DATA.attach( as );
+
+    return as;
 }
 
 NVX_NS_END

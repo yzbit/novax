@@ -13,11 +13,11 @@ NVX_NS_BEGIN
 namespace ctp {
 namespace fs = std::filesystem;
 
-CtpExMd::CtpExMd( Data* d_ )
-    : _d( d_ ) {
+CtpExMd::CtpExMd( IData* d_ )
+    : IMarket( d_ ) {
 }
 
-int CtpExMd::subscribe( const code_t& code_ ) {
+ CtpExMd::subscribe( const code_t& code_ ) {
     std::unique_lock<std::mutex> lock{ _sub_mtx };
 
     LOG_TAGGED( "ctp",
@@ -75,7 +75,7 @@ int CtpExMd::unsub() {
     return _api->UnSubscribeMarketData( arr.get(), _unsub_symbols.size() );
 }
 
-std::unique_ptr<char* []> CtpExMd::set2arr( std::set<code_t>& s ) {
+std::unique_ptr<char*[]> CtpExMd::set2arr( std::set<code_t>& s ) {
     auto arr = std::make_unique<char*[]>( _sub_symbols.size() );
     int  n   = 0;
 
@@ -266,7 +266,7 @@ void CtpExMd::OnRtnDepthMarketData( CThostFtdcDepthMarketDataField* f ) {
     q.open     = f->OpenPrice;
     q.close    = q.last;  //->ClosePrice;  // 今收盘价格，盘中是一个错误的值，不太有意义  PreClosePrice 昨收盘
 
-    _d->update( q );
+    delegator()->update( q );
 
     fprintf( stderr,
              "\tdate=%s time=%s ms=%u ex=%d\n\tlast=%.0lf vol=%d code=%s opi=%u \n\task=%.0lf askv=%u bid=%.0lf bidv=%u higest=%.0lf lowest=%.0lf \n\tavg=%.0lf turnover=%.0lf open=%.0lf close=%d\n",

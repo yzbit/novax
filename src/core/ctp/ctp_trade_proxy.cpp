@@ -6,8 +6,8 @@
 NVX_NS_BEGIN
 namespace ctp {
 
-CtpTrader::CtpTrader( OrderMgmt* om_ )
-    : _om( om_ ) {}
+CtpTrader::CtpTrader( ITrader* tr_ )
+    : IBroker( tr_ ) {}
 
 int CtpTrader::start() {
     if ( _settings.load( CTP_TRADE_SETTING_FILE ) < 0 ) {
@@ -462,7 +462,7 @@ void CtpTrader::OnRspOrderInsert( CThostFtdcInputOrderField* f_, CThostFtdcRspIn
         return;
     }
 
-    _om->update( id, ostatus_t::cancelled );
+    delegator()->update( id, ostatus_t::cancelled );
 }
 
 // 报单操作请求响应，当执行ReqOrderAction后有字段填写不对之类的CTP报错则通过此接口返回
@@ -476,7 +476,7 @@ void CtpTrader::OnRspOrderAction( CThostFtdcInputOrderActionField* pInputOrderAc
         return;
     }
 
-    _om->update( id, ostatus_t::aborted );
+    delegator()->update( id, ostatus_t::aborted );
 }
 
 oid_t CtpTrader::id_of( const TThostFtdcOrderRefType& ref_ ) {
@@ -594,7 +594,7 @@ void CtpTrader::OnRtnOrder( CThostFtdcOrderField* f_ ) {
     case THOST_FTDC_OST_NoTradeNotQueueing:  // 还未发往交易所是不是最终状态?
     case THOST_FTDC_OST_Touched:             //
     case THOST_FTDC_OST_Unknown:             // 收到保单后第一次返回，表示ctp接受订单，通过ctp的风控检查
-        return _om->update( oid, ostatus_t::pending );
+        return delegator()->update( oid, ostatus_t::pending );
 
     case THOST_FTDC_OST_PartTradedQueueing:       // 还会有成交--我们会同步过程不能在这里结束
     case THOST_FTDC_OST_AllTraded:                // ctpman-最终状态（1）
@@ -618,12 +618,12 @@ void CtpTrader::OnRtnOrder( CThostFtdcOrderField* f_ ) {
 
         o.price = f_->LimitPrice;
 
-        return _om->update( o );
+        return delegator()->update( o );
     } break;
 
     case THOST_FTDC_OST_Canceled:
         LOG_INFO( "撤单原因: %d", f_->OrderSubmitStatus );
-        return _om->update( oid, ostatus_t::cancelled );
+        return delegator()->update( oid, ostatus_t::cancelled );
     }
 }
 
@@ -654,7 +654,7 @@ void CtpTrader::OnRtnTrade( CThostFtdcTradeField* f_ ) {
         LOG_INFO( "bad order direction'" );
     }
 
-    _om->update( id, ostatus_t::finished );
+    delegator()->update( id, ostatus_t::finished );
 }
 
 void CtpTrader::OnErrRtnOrderInsert( CThostFtdcInputOrderField* f_, CThostFtdcRspInfoField* pRspInfo ) {
@@ -667,7 +667,7 @@ void CtpTrader::OnErrRtnOrderInsert( CThostFtdcInputOrderField* f_, CThostFtdcRs
         return;
     }
 
-    _om->update( id, ostatus_t::error );
+    delegator()->update( id, ostatus_t::error );
 }
 
 // 删除失败对现有的订单没有任何影响(no update)，但是要通知算法
@@ -691,7 +691,7 @@ void CtpTrader::OnErrRtnOrderAction( CThostFtdcOrderActionField* pOrderAction, C
         return;
     }
 
-    _om->update( id, ostatus_t::aborted );
+    delegator()->update( id, ostatus_t::aborted );
 }
 
 void CtpTrader::OnRspQryInstrument( CThostFtdcInstrumentField* pInstrument, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) {

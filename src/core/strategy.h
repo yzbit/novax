@@ -7,12 +7,12 @@
 NVX_NS_BEGIN
 
 struct Context;
-struct Strategy {
-    virtual ~Strategy() {}
+struct IStrategy {
+    virtual ~IStrategy() {}
 
-    virtual void on_invoke( Context* context_ ) = 0;
-    virtual void on_init( Context* context_ )   = 0;
-    virtual void on_ck( const quotation_t& q_ ) = 0;
+    virtual void invoke( Context* context_ )    = 0;
+    virtual void init( Context* context_ )      = 0;
+    virtual void early( const quotation_t& q_ ) = 0;
 };
 
 NVX_NS_END

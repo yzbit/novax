@@ -8,16 +8,17 @@
 #include "../data.h"
 #include "../definitions.h"
 #include "../ns.h"
+#include "../proxy.h"
 #include "comm.h"
 
-//#define CTP_MD_SETTING_FILE "ctp_md.json"
-//#define CTP_MD_SETTING_FILE "/home/ubuntu/code/cub/src/core/ctp/ctp_md.json"
+// #define CTP_MD_SETTING_FILE "ctp_md.json"
+// #define CTP_MD_SETTING_FILE "/home/ubuntu/code/cub/src/core/ctp/ctp_md.json"
 #define CTP_MD_SETTING_FILE "conf/ctp_md.json"
 NVX_NS_BEGIN
 
 namespace ctp {
-struct CtpExMd : Data::Delegator, CThostFtdcMdSpi {
-    CtpExMd( Data* d_ );
+struct CtpExMd : IMarket, CThostFtdcMdSpi {
+    CtpExMd( IData* d_ );
 
 protected:
     int start() override;
@@ -63,9 +64,6 @@ private:
 
 private:
     bool _running = false;
-
-private:
-    Data* _d;
 
 private:
     static id_t session_id();

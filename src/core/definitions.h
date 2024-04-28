@@ -6,6 +6,7 @@
 #include <array>
 #include <assert.h>
 #include <chrono>
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -31,6 +32,7 @@ using string_t     = std::string;
 using stringlist_t = std::vector<std::string>;
 using text_t       = string_t;
 using money_t      = double;
+using kidx_t       = uint32_t;
 
 constexpr int kBadId = 0;
 #define IS_VALID_ID( _id_ ) ( kBadId != ( _id_ ) )
@@ -201,15 +203,6 @@ struct arg_binding_t {
     T v;
 };
 
-struct Indicator;
-
-using algo_creator_t = std::function<Indicator*( const arg_pack_t& a )>;
-
-struct algo_t {
-    string_t       name;
-    algo_creator_t creator;
-};
-
 //--inlines------------------------------------------------------------------------
 inline code_t::code_t( const char* code_ )
     : _code{ 0 } {
@@ -329,52 +322,6 @@ inline T& array_t<T>::element( int index_ ) {
     return _data.get()[ index_ ];
 }
 
-//
-inline arg_t::operator const int() const {
-    try {
-        return std::any_cast<int>( value );
-    }
-    catch ( ... ) {
-        return 0;
-    }
-}
-
-inline arg_t::operator const double() const {
-    try {
-        return std::any_cast<double>( value );
-    }
-    catch ( ... ) {
-        return 0.0;
-    }
-}
-
-inline arg_t::operator const char*() const {
-    try {
-        return std::any_cast<const char*>( value );
-    }
-    catch ( ... ) {
-        return "";
-    }
-}
-
-inline arg_t::operator const period_t() const {
-    try {
-        return std::any_cast<const period_t>( value );
-    }
-    catch ( ... ) {
-        return period_t( period_t::type_t::min, 1 );
-    }
-}
-
-inline arg_t::operator string_t() const {
-    try {
-        return std::any_cast<string_t>( value );
-    }
-    catch ( ... ) {
-        return string_t( ( const char* )*this );
-    }
-}
-
 inline datetime_t datetime_t::now() {
     datetime_t t;
     t.from_unix_time( time( 0 ) );
@@ -442,6 +389,7 @@ inline std::string datetime_t::to_iso() const {
 
     return fmt;
 }
+
 NVX_NS_END
 
 #endif /* C096ECC6_D3E8_4656_A4DF_F125629A8BE4 */

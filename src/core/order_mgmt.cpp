@@ -8,32 +8,32 @@
 #include "proxy.h"
 
 NVX_NS_BEGIN
-OrderMgmt::Delegator* ProxyFactory::create_trader( OrderMgmt* om_, int type_ ) {
-    return new ctp::CtpTrader( om_ );
-}
 
 std::atomic<oid_t> OrderMgmt::_init_id = 1;
 
-OrderMgmt::~OrderMgmt() {
-    delete _c;
-    delete _d;
+OrderMgmt& OrderMgmt::instance() {
+    static OrderMgmt m;
+    return m;
 }
 
-OrderMgmt::OrderMgmt( MgmtContext* c_ )
-    : _c( c_ ) {
-    _d = ProxyFactory::create_trader( this, 0 );
+OrderMgmt::~OrderMgmt() {
+    delete _ib;
+}
+
+OrderMgmt::OrderMgmt() {
+    _ib = create_broker( this );
 }
 
 oid_t OrderMgmt::oid() {
     return ++_init_id;
 }
 
-void OrderMgmt::start() {
-    _d->start();
+int OrderMgmt::start() {
+    return _ib->start();
 }
 
-void OrderMgmt::stop() {
-    _d->stop();
+int OrderMgmt::stop() {
+    return _ib->stop();
 }
 
 oid_t OrderMgmt::put( const odir_t& dir_,
@@ -49,7 +49,7 @@ oid_t OrderMgmt::put( const odir_t& dir_,
     r->id     = oid();
     r->remark = remark_;
 
-    if ( 0 == _d->put( *r ) ) {
+    if ( 0 == _ib->put( *r ) ) {
         _book.emplace( r->id, r.release() );
     }
     else {
@@ -99,7 +99,7 @@ int OrderMgmt::cancel( oid_t id_ ) {
         return -1;
     }
 
-    return _d->cancel( *o );
+    return _ib->cancel( *o );
 }
 
 order_t* OrderMgmt::get( oid_t id_ ) {
@@ -122,7 +122,7 @@ void OrderMgmt::update( oid_t id_, ostatus_t status_ ) {
     LOG_INFO( "unexpected status %d", status_ );
     CUB_ASSERT( status_ != ostatus_t::dealt );
 
-    //会不会出现部分canclled
+    // 会不会出现部分canclled
     if ( ostatus_t::cancelled == status_ ) {
         // 无论是部分撤掉(部分已经成交) 还是全部撤掉, 撤单只能是基于整个订单的
         LOG_INFO( "close order: id=%u ", id_ );
@@ -295,7 +295,7 @@ int OrderMgmt::close( const order_t& r_ ) {
 
     LOG_INFO( "close position for [%s %d]", r_.code.c_str(), pv );
 
-    if ( 0 != _d->put( r_ ) ) {
+    if ( 0 != _ib->put( r_ ) ) {
         LOG_INFO( "close position failed,id=%u ,sym=%s", r_.id, r_.code.c_str() );
         return -1;
     }

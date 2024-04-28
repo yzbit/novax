@@ -9,15 +9,15 @@
 
 NVX_NS_BEGIN
 
-struct Kline {
-    static Kline* create( const arg_pack_t& arg_ );
+struct Kline : IAlgo {
+    Kline( const code_t& code_, const period_t& p_, int series_count_ );
 
-    void         on_calc( const quotation_t& q_ );
+    void calc( const quotation_t& q_, int bar_count_ ) override;
+
     candle_t&    bar( int index_ = 0 );
     quotation_t& qut();
 
 private:
-    Kline( const code_t& code_, const period_t& p_, int series_count_ );
     void init();
 
 private:

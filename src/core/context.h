@@ -4,6 +4,7 @@
 
 #include "clock.h"
 #include "definitions.h"
+#include "kline.h"
 #include "models.h"
 #include "ns.h"
 #include "strategy.h"
@@ -11,35 +12,33 @@
 NVX_NS_BEGIN
 struct Indicator;
 struct Aspect;
-struct QuantImpl;
+
 // facade 类
 struct Context {
-    static Context* create( QuantImpl* q );
+    static Context* create();
 
     quotation_t q;
     fund_t      f;
     Clock       clock;
 
+    //--技术指标不应该在这里出现
     //----apects---
-    Aspect*         load( const code_t& symbol_, const period_t& period_, int count_ );
-    virtual Aspect* add_aspect( const code_t& symbol_, const period_t& period_, int count_ ) = 0;
-    virtual Aspect* aspect()                                                                 = 0;
+    // Aspect* asp( int id_ );
+    // 创建完了自然要保存下来,否则每次还去查找实在没必要
+    // 但是我们可以有默认的asp
+    Aspect* load( const code_t& symbol_, const period_t& period_, int count_ );
 
-    //-----下单------
-    virtual int pshort( const code_t& c_, vol_t qty_, price_t price_ = 0, otype_t mode_ = otype_t::market )     = 0;
-    virtual int plong( const code_t& c_, vol_t qty_, price_t price_ = 0, otype_t mode_ = otype_t::market )      = 0;
-    virtual int cshort( const code_t& c_, vol_t qty_ = 0, price_t price_ = 0, otype_t mode_ = otype_t::market ) = 0;
-    virtual int clong( const code_t& c_, vol_t qty_ = 0, price_t price_ = 0, otype_t mode_ = otype_t::market )  = 0;
+    //--qty_ < 0表示卖空，>0表示做多
+    int open( const code_t& c_, vol_t qty_, price_t sl_ = 0, price_t tp_ = 0, price_t price_ = 0, otype_t mode_ = otype_t::market );
+
+    //--qty_ < 0表示平空，>0表示平多,0平所有
+    int close( const code_t& c_, vol_t qty_, price_t price_ = 0, otype_t mode_ = otype_t::market );
 
     //-------仓位查询-------
-    virtual vol_t position()                   = 0;  // 已成交持仓
-    virtual vol_t position( const code_t& c_ ) = 0;
-    virtual vol_t pending()                    = 0;  // 未成交持仓
-    virtual vol_t pending( const code_t& c_ )  = 0;
-
-    //--------K线相关------
-    virtual Kline&    kline()               = 0;
-    virtual candle_t& bar( int index_ = 0 ) = 0;
+    vol_t position();  // 已成交持仓
+    vol_t position( const code_t& c_ );
+    vol_t pending();  // 未成交持仓
+    vol_t pending( const code_t& c_ );
 
     //--------交易相关-------
     price_t put_price();
@@ -48,7 +47,7 @@ struct Context {
     int     last_exit();   // 最近出场的k线//和aspect相关
 
 protected:
-    Context() {}
+    Context();
 };
 
 NVX_NS_END
