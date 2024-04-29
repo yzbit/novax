@@ -25,13 +25,13 @@ NVX_NS_BEGIN
 #define CUB_ASSERT assert
 
 using id_t         = uint32_t;
-using price_t      = double;
+using price_t      = float;
 using vol_t        = int;  // todo double ctp都是整数仓位;
 using oid_t        = id_t;
 using string_t     = std::string;
 using stringlist_t = std::vector<std::string>;
 using text_t       = string_t;
-using money_t      = double;
+using money_t      = float;
 using kidx_t       = uint32_t;
 
 constexpr int kBadId = 0;

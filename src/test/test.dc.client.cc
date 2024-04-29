@@ -5,12 +5,12 @@
 
 #define SOCK_PATH "unix://tmp/datacenter"
 
+NVX_NS_BEGIN
 void message_cb( struct bufferevent* bev, void* ctx ) {
     char buf[ 256 ];
     bufferevent_read( bev, buf, sizeof( buf ) );
     printf( "Received: %s\n", buf );
 }
-
 int main() {
     struct event_base* base = event_base_new();
 
@@ -34,3 +34,4 @@ int main() {
 
     return 0;
 }
+NVX_NS_END

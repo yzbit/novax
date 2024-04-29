@@ -1,14 +1,25 @@
 #ifndef D0A82F45_7141_4EE2_ABB6_9929837DA41C
 #define D0A82F45_7141_4EE2_ABB6_9929837DA41C
-#include "ns.h"
+#include <cstdint>
+#include <event2/buffer.h>
+#include <event2/bufferevent.h>
 #include <stdint.h>
+
+#include "models.h"
+#include "ns.h"
 
 NVX_NS_BEGIN
 
-namespace msg {
-enum class mid_t : int32_t {
+enum class mid_t : int8_t {
     exception       = -1,
     insuficent_room = -2,
+
+    start_dc,
+    stop_dc,
+    sub_data,
+    unsub_data,
+
+    ack,
 
     svc_data = 1,
     svc_order,
@@ -34,57 +45,84 @@ enum class mid_t : int32_t {
     cub_log
 };
 
-// todo 不考虑跨平台和分布式的情况，否则很多数据结构需要定义两套：一套是不带pack的，一套是专门给msg使用的
-// 以后看情况，如果有必要再做重构
-// #pragma pack( 1 )
-
-constexpr int kMaxMsgLength = 1024;
-
-#define COMPOSE_MSG( MsgDataTick )
-
-struct header_t {
-    mid_t  id;
-    size_t length;
+struct AckMsg {
+    mid_t id = mid_t::data_tick;
+    mid_t req;
+    char  rc;
 };
 
-template <typename T, mid_t ID>
-struct msg_t {
-    using PayloadType = T;
-
-    msg_t() {
-        h.id     = ID;
-        h.length = sizeof( T );
-    }
-
-    msg_t( const T& p_ )
-        : msg_t() {
-        payload = p_;
-    }
-
-    PayloadType& body() { return payload; }
-
-    header_t h;
-    T        payload;
+struct QutMsg {
+    mid_t       id = mid_t::data_tick;
+    quotation_t qut;
 };
 
-#define DECL_MESSAGE( _name_, _payload_, _id_ ) \
-    struct _name_ : msg_t<_payload_, _id_> {    \
-        _name_( const _payload_& p_ )           \
-            : msg_t( p_ ) {}                    \
-        _name_() = default;                     \
-        msg_t::PayloadType* operator->() {      \
-            return &payload;                    \
-        }                                       \
-    }
+struct SubMsg {
+    mid_t  id = mid_t::sub_data;
+    code_t code;
+};
 
-// #pragma pack()
+struct StopDcMsg {
+    mid_t id = mid_t::stop_dc;
+};
 
-template <typename T>
-const T& frame_cast( const header_t& h ) {
-    return reinterpret_cast<const T&>( h );
+struct StartDcMsg {
+    mid_t id = mid_t::start_dc;
+};
+
+struct UnsubMsg {
+    mid_t  id = mid_t::unsub_data;
+    code_t code;
+};
+
+// 实际发送消息的时候没必要发送固定长度的Msg，那是浪费，是什么消息就发送什么消息即可，根据id把消息转成对应下msg即可
+// 问题是如何知道消息长度呢,如何根据消息id判断消息长度，最好是静态的，否则recv消息的时候可能是截断的？
+// 如何保证消息收到的是完整的
+// msg消息可以无损的转成任何xxMsg，前提是数据收的很全
+union Msg {
+    mid_t      id;
+    StartDcMsg startdc;
+    StopDcMsg  stopdc;
+    SubMsg     sub;
+    UnsubMsg   unsub;
+    QutMsg     qut;
+};
+
+#define MAX_MSG_LEN 1024
+struct MsgHdr {
+    short len;
+    char  data[ MAX_MSG_LEN ];
+};
+
+template <typename M>
+int send_msg( struct bufferevent* bev_, const M& m_ ) {
+    static MsgHdr h;
+
+    h.len = sizeof( M );
+    memcpy( h.data, &m_, h.len );
+
+    return bufferevent_write( bev_, &h, sizeof( short ) + h.len );
 }
 
-}  // namespace msg
+inline const Msg* recv_msg( struct bufferevent* bev_ ) {
+    static MsgHdr h;
+
+    size_t len = evbuffer_get_length( bufferevent_get_input( bev_ ) );
+    if ( len < sizeof( short ) ) {
+        return nullptr;
+    }
+
+    if ( sizeof( short ) != bufferevent_read( bev_, &h.len, sizeof( short ) ) ) {
+        return nullptr;
+    }
+
+    if ( h.len > len - sizeof( short ) ) return nullptr;
+
+    if ( h.len != bufferevent_read( bev_, h.data, h.len ) ) {
+        return nullptr;
+    }
+
+    return reinterpret_cast<Msg*>( &h );
+}
 
 NVX_NS_END
 
