@@ -8,11 +8,7 @@
             "name": "sf_car", // 配置名称，将会在启动配置的下拉菜单中显示
             "type": "cppdbg", // ++
             "request": "launch",
-<<<<<<< Updated upstream
             "program": "/home/data/code/cub/src/test/test.lang", // 调试程序的位置及程序名称
-=======
-            "program": "/home/ubuntu/code/cub/src/test/build/test_om", // 调试程序的位置及程序名称
->>>>>>> Stashed changes
             //"program": "/home/ubuntu/code/cub/build/src/reactor/cub_reactor", // 调试程序的位置及程序名称
             "args": [ // 传送进来的参数，像C函数中的argc个的args
             ],
