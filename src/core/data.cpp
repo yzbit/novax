@@ -28,15 +28,15 @@ int Data::start() {
 }
 
 int Data::stop() {
-    return market->stop();
+    return market()->stop();
 }
 
 int Data::subscribe( const code_t& code_ ) {
-    return market->subscribe( code_ );
+    return market()->subscribe( code_ );
 }
 
 int Data::unsubscribe( const code_t& code_ ) {
-    return market->unsubscribe( code_ );
+    return market()->unsubscribe( code_ );
 }
 
 int Data::attach( Aspect* a_ ) {

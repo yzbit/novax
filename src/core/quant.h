@@ -10,24 +10,17 @@ struct ITrader;
 struct Context;
 struct Clock;
 
-struct Quant final {
-    int        execute( IStrategy* s_ );
-    void       invoke();
-    IData*     data();
-    ITrader*   trader();
-    Context*   context();
-    Clock*     clock();
-    IStrategy* strategy();
+struct Quant {
+    static Quant* create();
 
-    ~Quant();
-    Quant();
-
-private:
-    IData*     _d     = nullptr;
-    ITrader*   _t     = nullptr;
-    IStrategy* _s     = nullptr;
-    Context*   _c     = nullptr;
-    Clock*     _clock = nullptr;
+    virtual ~Quant() {}
+    virtual int        execute( IStrategy* s_ ) = 0;
+    virtual void       invoke()                 = 0;
+    virtual IData*     data()                   = 0;
+    virtual ITrader*   trader()                 = 0;
+    virtual Context*   context()                = 0;
+    virtual Clock*     clock()                  = 0;
+    virtual IStrategy* strategy()               = 0;
 };
 
 NVX_NS_END

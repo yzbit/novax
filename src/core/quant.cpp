@@ -10,68 +10,61 @@
 
 NVX_NS_BEGIN
 
-Quant::Quant() {
-    _c     = new Context( this );
-    _d     = new Data();
-    _t     = new OrderMgmt();
-    _clock = new Clock();
-}
+struct QuantImpl : Quant {
 
-Quant::~Quant() {
-    delete _c;
-    delete _t;
-    delete _d;
-    delete _clock;
-}
+    QuantImpl() {
+        _c     = new Context( this );
+        _d     = new Data( this );
+        _t     = new OrderMgmt();
+        _clock = new Clock();
+    }
 
-int Quant::init() {
+    ~QuantImpl() {
+        delete _c;
+        delete _t;
+        delete _d;
+        delete _clock;
+    }
 
-    return 0;
-}
+    int        execute( IStrategy* s_ ) override;
+    void       invoke() override { _s->invoke( context() ); }
+    IData*     data() override { return _d; }
+    ITrader*   trader() override { return _t; }
+    Context*   context() override { return _c; }
+    Clock*     clock() override { return _clock; }
+    IStrategy* strategy() override { return _s; }
 
-IData* Quant::data() {
-    return _d;
-}
+    IData*     _d     = nullptr;
+    ITrader*   _t     = nullptr;
+    IStrategy* _s     = nullptr;
+    Context*   _c     = nullptr;
+    Clock*     _clock = nullptr;
+};
 
-ITrader* Quant::trader() {
-    return _t;
-}
-
-Context* Quant::context() {
-    return _c;
-}
-
-Clock* Quant::clock() {
-    return _clock;
-}
-
-IStrategy* Quant::strategy() {
-    return _s;
-}
-
-void Quant::invoke() {
-    _s->invoke( context() );
+Quant* Quant::create() {
+    return new QuantImpl();
 }
 
 //--处理输入,命令等
-int Quant::execute( IStrategy* s_ ) {
+int QuantImpl::execute( IStrategy* s_ ) {
     _s = s_;
 
     _s->init( this );
 
+#if 0
     [[maybe_unused]] auto id = _timer.add(
         std::chrono::seconds( 2 ),
         [ & ]( cub::timer_id ) { this->ontick(); },
         std::chrono::seconds( 1 ) );
+#endif
 
-    while ( _running ) {
+    for ( ;; )
         ::sleep( 1 );
-    }
 
     delete this;
-
     return 0;
 }
+
 /*
 void QuantImpl::ontick() {
     if ( !CANLEN.is_trading_day() ) {
