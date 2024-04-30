@@ -1,59 +1,63 @@
-#include <chrono>
-#include <exception>
-#include <stdexcept>
 #include <unistd.h>
 
-#include "canlendar.h"
-#include "context_impl.h"
+#include "quant.h"
+
+#include "clock.h"
+#include "context.h"
 #include "data.h"
-#include "log.hpp"
 #include "order_mgmt.h"
-#include "proxy.h"
-#include "quant_impl.h"
 #include "strategy.h"
-#include "timer.h"
-#include "trader.h"
 
 NVX_NS_BEGIN
 
-Quant* Quant::create() {
-    return new QuantImpl();
+Quant::Quant() {
+    _c     = new Context( this );
+    _d     = new Data();
+    _t     = new OrderMgmt();
+    _clock = new Clock();
 }
 
-QuantImpl::QuantImpl() {
-    init();
+Quant::~Quant() {
+    delete _c;
+    delete _t;
+    delete _d;
+    delete _clock;
 }
 
-int QuantImpl::put_order( const order_t& o_ ) {
-    return _t->put( o_ );
-}
-
-int QuantImpl::del_order( oid_t id_ ) {
-    return _t->cancel( id_ );
-}
-
-void QuantImpl::update( const quotation_t& q_ ) {
-    _c->q = q_;
-    _s->on_instant( q_ );
-}
-
-void QuantImpl::invoke() {
-    _s->on_invoke( _c );
-}
-
-int QuantImpl::init() {
-    ContextImpl* ctx = new ContextImpl( this );
-    _d               = new Data( this );
-    _o               = new OrderMgmt( this );
+int Quant::init() {
 
     return 0;
 }
 
+IData* Quant::data() {
+    return _d;
+}
+
+ITrader* Quant::trader() {
+    return _t;
+}
+
+Context* Quant::context() {
+    return _c;
+}
+
+Clock* Quant::clock() {
+    return _clock;
+}
+
+IStrategy* Quant::strategy() {
+    return _s;
+}
+
+void Quant::invoke() {
+    _s->invoke( context() );
+}
+
 //--处理输入,命令等
-int QuantImpl::execute( Strategy* s_ ) {
+int Quant::execute( IStrategy* s_ ) {
     _s = s_;
 
-    _s->on_init( _c );
+    _s->init( this );
 
     [[maybe_unused]] auto id = _timer.add(
         std::chrono::seconds( 2 ),
@@ -68,16 +72,7 @@ int QuantImpl::execute( Strategy* s_ ) {
 
     return 0;
 }
-
-void QuantImpl::quote( const quotation_t& q_ ) {
-    _s->on_ck( q_ );
-
-    _s->on_invoke( _c );
-}
-
-void QuantImpl::update( const order_t& o_ ) {
-}
-
+/*
 void QuantImpl::ontick() {
     if ( !CANLEN.is_trading_day() ) {
         _working = false;
@@ -112,4 +107,5 @@ void QuantImpl::ontick() {
         }
     }
 }
+*/
 NVX_NS_END

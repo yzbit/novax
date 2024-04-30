@@ -1,22 +1,16 @@
 #include "data.h"
 
 #include "aspect.h"
-#include "dci_role.h"
+#include "context.h"
 #include "log.hpp"
 #include "proxy.h"
-#include "quant_impl.h"
-#include "reactor.h"
+#include "quant.h"
 #include "strategy.h"
 
 NVX_NS_BEGIN
 
-Data& Data::instance() {
-    static Data d;
-    return d;
-}
-
-Data::Data() {
-    _m    = create_market( this );
+Data::Data( Quant* q_ )
+    : _q( q_ ) {
     _jobs = TaskQueue::create( 4 );
 
     THREAD_DETACHED( [ & ]() { this->process(); } );
@@ -30,19 +24,19 @@ void Data::update( const quotation_t& tick_ ) {
 }
 
 int Data::start() {
-    return _m->start();
+    return market()->start();
 }
 
 int Data::stop() {
-    return _m->stop();
+    return market->stop();
 }
 
 int Data::subscribe( const code_t& code_ ) {
-    return _m->subscribe( code_ );
+    return market->subscribe( code_ );
 }
 
 int Data::unsubscribe( const code_t& code_ ) {
-    return _m->unsubscribe( code_ );
+    return market->unsubscribe( code_ );
 }
 
 int Data::attach( Aspect* a_ ) {
@@ -81,7 +75,7 @@ void Data::process() {
 
         _jobs->drain();
 
-        _jobs->run( [ & ]() { _r->update( q ); } );
+        _jobs->run( [ & ]() { _q->context()->update_qut( q ) } );
 
         for ( auto& as : _aspects ) {
             _jobs->run( [ & ]() { as->update( q ); } );
@@ -91,13 +85,11 @@ void Data::process() {
             std::this_thread::yield();
         }
 
-        _r->invoke();
+        _q->invoke();
     }
 }
 
 Data::~Data() {
-    delete _m;
-
     _jobs->shutdown();
     delete _jobs;
     for ( auto as : _aspects ) {

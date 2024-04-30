@@ -9,6 +9,8 @@
 
 NVX_NS_BEGIN
 
+IBroker* create_broker( ITrader* );
+
 std::atomic<oid_t> OrderMgmt::_init_id = 1;
 
 OrderMgmt& OrderMgmt::instance() {

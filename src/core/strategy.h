@@ -7,12 +7,13 @@
 NVX_NS_BEGIN
 
 struct Context;
+struct Quant;
 struct IStrategy {
     virtual ~IStrategy() {}
 
-    virtual void invoke( Context* context_ )    = 0;
-    virtual void init( Context* context_ )      = 0;
-    virtual void early( const quotation_t& q_ ) = 0;
+    virtual void init( Quant* q_ )       = 0;
+    virtual void invoke( Context* c_ )   = 0;
+    virtual void prefight( Context* c_ ) = 0;
 };
 
 NVX_NS_END

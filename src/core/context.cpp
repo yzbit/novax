@@ -5,11 +5,32 @@
 #include "data.h"
 #include "log.hpp"
 #include "order_mgmt.h"
-#include "quant_impl.h"
+#include "quant.h"
 
 NVX_NS_BEGIN
 
-Context::Context() {
+Context::Context( Quant* q_ )
+    : _q( q_ ) {}
+
+quotation_t& Context::qut() {
+    return _qut;
+}
+
+fund_t& Context::fund() {
+    return _fund;
+}
+
+void Context::update_qut( const quotation_t& q_ ) {
+    _qut = q_;
+    _q->strategy()->prefight( this );
+}
+
+void Context::update_fund( const fund_t& f_ ) {
+    _fund = f_;
+}
+
+Clock& Context::clock() {
+    return *( _q->clock() );
 }
 
 Aspect* Context::load( const code_t& symbol_, const period_t& period_, int count_ ) {

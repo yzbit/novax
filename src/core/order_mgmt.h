@@ -19,9 +19,8 @@ NVX_NS_BEGIN
 // 接口的设计：实际交易的过程中，按照订单平仓的可能性其实蛮小的，应该还是按照合约名称+仓位 平仓的可能性更大
 // 高频交易可能下单，撤单，平仓快速发生，此时oid显然是用的
 struct OrderMgmt : ITrader {
+    OrderMgmt();
     ~OrderMgmt();
-
-    static OrderMgmt& instance();
 
     int start();
     int stop();
@@ -49,8 +48,6 @@ private:
     oid_t put( const odir_t& dir_, const code_t& code_, const vol_t qty_, const price_t price_, const otype_t mode_, const price_t sl_, const price_t tp_, const text_t& remark_ );
 
 private:
-    OrderMgmt();
-
     oid_t       oid();
     order_t*    get( oid_t id_ );
     position_t* position( const code_t& code_, bool long_ );

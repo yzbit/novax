@@ -29,9 +29,15 @@ private:
     ITrader* _tr = nullptr;
 };
 
+struct IMarket;
 struct IData {
+    void         set_market( IMarket* m_ ){ _m = m_ };
+    IMarket*     market() { return _m; }
     virtual void update( const quotation_t& tick_ ) = 0;
     virtual ~IData();
+
+private:
+    IMarket* _m;
 };
 
 struct IMarket {
@@ -50,9 +56,6 @@ protected:
 private:
     IData* _dt = nullptr;
 };
-
-IMarket* create_market( IData* );
-IBroker* create_broker( ITrader* );
 
 NVX_NS_END
 

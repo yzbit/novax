@@ -4,19 +4,30 @@
 
 NVX_NS_BEGIN
 
-struct Strategy;
+struct IStrategy;
+struct IData;
+struct ITrader;
+struct Context;
+struct Clock;
 
-//-是否有必要运行多个实例
-//-不同的策略是可以共享一个数据源,一个订单管理模块的
-//-
-struct Quant {
-    static Quant* create();
+struct Quant final {
+    int        execute( IStrategy* s_ );
+    void       invoke();
+    IData*     data();
+    ITrader*   trader();
+    Context*   context();
+    Clock*     clock();
+    IStrategy* strategy();
 
-    virtual ~Quant() {}
-    virtual int execute( Strategy* s_ ) = 0;
+    ~Quant();
+    Quant();
 
-protected:
-    Quant() {}
+private:
+    IData*     _d     = nullptr;
+    ITrader*   _t     = nullptr;
+    IStrategy* _s     = nullptr;
+    Context*   _c     = nullptr;
+    Clock*     _clock = nullptr;
 };
 
 NVX_NS_END

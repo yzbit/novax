@@ -2,6 +2,7 @@
 
 #include "ctp/ctp_md_proxy.h"
 #include "ctp/ctp_trade_proxy.h"
+#include "datacenter.h"
 
 NVX_NS_BEGIN
 
@@ -24,7 +25,7 @@ IMarket::~IMarket() {}
 IData* IMarket::delegator() { return _dt; }
 
 IMarket* create_market( IData* d_ ) {
-    return new ctp::CtpExMd( d_ );
+    return new DcClient( d_ );
 }
 
 IBroker* create_broker( ITrader* t_ ) {
