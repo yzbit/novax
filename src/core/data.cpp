@@ -48,7 +48,7 @@ Aspect* Data::attach( const code_t& symbol_, const period_t& period_, int count_
     if ( subscribe( symbol_ ) < 0 )
         return nullptr;
 
-    Aspect* a = new Aspect();
+    Aspect* a = new Aspect( this );
     a->load( symbol_, period_, count_ );
 
     attach( a );
@@ -75,7 +75,7 @@ void Data::process() {
 
         _jobs->drain();
 
-        _jobs->run( [ & ]() { _q->context()->update_qut( q ) } );
+        _jobs->run( [ & ]() { _q->context()->update_qut( q ); } );
 
         for ( auto& as : _aspects ) {
             _jobs->run( [ & ]() { as->update( q ); } );

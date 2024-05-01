@@ -15,7 +15,7 @@ struct QuantImpl : Quant {
     QuantImpl() {
         _c     = new Context( this );
         _d     = new Data( this );
-        _t     = new OrderMgmt();
+        _t     = new OrderMgmt( this );
         _clock = new Clock();
     }
 

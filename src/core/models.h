@@ -77,11 +77,11 @@ struct candle_t {
 // real time ticks
 struct quotation_t {
     code_t     code;
-    int        ex;        //交易所
+    int        ex;        // 交易所
     vol_t      volume;    // 成交仓位
     money_t    turnover;  // 成交额
     vol_t      opi;
-    vol_t      bidvol;  //没有深度数据
+    vol_t      bidvol;  // 没有深度数据
     vol_t      askvol;
     price_t    bid;
     price_t    ask;
@@ -118,7 +118,7 @@ struct order_t {
     enum class status_t {
         create          = 0x0001,
         pending         = 0x0002,
-        patial          = 0x0004,
+        partial         = 0x0004,
         dealt           = 0x0008,
         deleted         = 0x0010,
         closed          = 0x0040,
@@ -126,8 +126,8 @@ struct order_t {
         finished        = 0x0100,  // ctp 已成交和finish是两个状态，参照onrtntrade的函数说明
         aborted         = 0x0200,  // 操作失败
         cancelled       = deleted,
-        patial_dealed   = patial | dealt,
-        patial_deleted  = patial | deleted,
+        partial_dealed  = partial | dealt,
+        patial_deleted  = partial | deleted,
         patial_canelled = patial_deleted,
         error           = 0x0100
     };

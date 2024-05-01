@@ -112,7 +112,7 @@ private:
                     _pool._jobs.pop_front();
                 }
 
-                CUB_ASSERT( true == static_cast<bool>( fn ) );
+                NVX_ASSERT( true == static_cast<bool>( fn ) );
                 fn();
             }  // for
         }

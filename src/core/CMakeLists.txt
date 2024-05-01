@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.18)
-project(cub VERSION 1.0.0 LANGUAGES CXX)
+project(novax VERSION 1.0.0 LANGUAGES CXX)
 
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++17 -g -Wall")
@@ -15,14 +15,14 @@ SET(SRC
     canlendar.cpp
     clock.cpp
     context.cpp
+    data_center.cpp
     data.cpp
-    indicator.cpp
     kline.cpp
     order_mgmt.cpp
-    reactor_impl.cpp
     ctp/ctp_md_proxy.cpp
     ctp/ctp_trade_proxy.cpp
-    algos/ma.cpp
+    quant.cpp
+    #algos/ma.cpp
 )
 
 add_library(${PROJECT_NAME}  ${SRC}) 

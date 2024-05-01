@@ -1,0 +1,11 @@
+#[submodule "lib/zmq/libzmq"]
+#	path = lib/zmq/libzmq
+#	url = https://github.com/zeromq/libzmq.git
+#
+#[submodule "lib/zmq/cppzmq"]
+#	path = lib/zmq/cppzmq
+#	url = https://github.com/zeromq/cppzmq.git
+
+[submodule "lib/RapidJSON"]
+path = lib/RapidJSON
+url = https://gitee.com/Tencent/RapidJSON.git

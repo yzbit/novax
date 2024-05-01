@@ -11,9 +11,10 @@ struct IIndicator {
         addi
     };
 
-    virtual size_t   track_count() { return 1; }
-    virtual IndiType type() { return IndiType::main; }
-    virtual double   at( int track_, int index_ ) { return .0; }
+    virtual const char* name() const { return "indi##"; }
+    virtual size_t      nvalue() { return 1; }
+    virtual IndiType    type() { return IndiType::main; }
+    virtual double      at( int track_, int index_ ) { return .0; }
 
     virtual ~IIndicator() {}
 };

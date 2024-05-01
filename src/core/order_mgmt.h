@@ -15,11 +15,12 @@
 #define SHORT_POSITION 1
 
 NVX_NS_BEGIN
+struct Quant;
 
 // 接口的设计：实际交易的过程中，按照订单平仓的可能性其实蛮小的，应该还是按照合约名称+仓位 平仓的可能性更大
 // 高频交易可能下单，撤单，平仓快速发生，此时oid显然是用的
 struct OrderMgmt : ITrader {
-    OrderMgmt();
+    OrderMgmt( Quant* q_ );
     ~OrderMgmt();
 
     int start();
@@ -32,9 +33,12 @@ struct OrderMgmt : ITrader {
 
     int cancel( oid_t id_ );
     int close( oid_t id_ );
+    int close( const code_t code_ );
 
-    void update( oid_t id_, ostatus_t status_ );
-    void update( const order_t& o_ );
+    void update_ord( oid_t id_, ostatus_t status_ ) override;
+    void update_ord( const order_t& o_ ) override;
+    void update_fund( const fund_t& f_ ) override;
+    void update_position() override;
 
     // >0 表示long多余short
     vol_t position( const code_t& code_ );
@@ -66,10 +70,9 @@ private:
 
 private:
     IBroker* _ib = nullptr;
+    Quant*   _q;
 };
 
 NVX_NS_END
-
-#define TRADER OrderMgmt::instance()
 
 #endif /* A0120CD0_E1AB_40A0_93BC_9BE6188CDA2A */

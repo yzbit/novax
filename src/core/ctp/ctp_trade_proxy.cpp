@@ -83,17 +83,6 @@ int CtpTrader::qry_position() {
     return 0;
 }
 
-/*
-1) CTP支不支持批量撤单？
-暂不支持。API里面有个迷惑性的接口ReqBatchOrderAction，写着是批量撤单请求。目前该接口仅支持大商所，而且只有做市商客户才能用。所以目前批量撤单只能客户自己实现该逻辑。
-
-2) 撤单数过多是否属于异常交易？
-为了防止盘口愰骗，各交易所都将频繁撤单列入异常交易管理规范。目前上期所明确规定单个合约撤单数不能超过500笔，但CTP内并没有该项风控，建议策略自行加入该项风控。其他交易所没看到有明确数量规定，
-建议查看对应交易所公告自行风控。另外，FAK和FOK的撤单不计入该数，所以如果策略可能会有大量撤单，建议使用FOK和FAK报单。
-
-3) 是否可以指定撤单数量？
-例如已报入20手，是否可以指定撤10手？不可以。只能指定该笔报单撤销，无法指定数量。如果报入20手，已成交10手，此时再去撤单会将剩余10手全部撤销。
-*/
 int CtpTrader::cancel( const order_t& o_ ) {
     CThostFtdcInputOrderActionField field = { 0 };
 
@@ -281,7 +270,7 @@ int CtpTrader::put( const order_t& o_ ) {
 }
 
 int CtpTrader::assign_ref( oid_t id_ ) {
-    CUB_ASSERT( id_ );
+    NVX_ASSERT( id_ );
 
     if ( _id_map.find( id_ ) != _id_map.end() ) {
         LOG_INFO( "band order id" );
@@ -311,7 +300,7 @@ int CtpTrader::assign_ref( oid_t id_ ) {
     }
 
     if ( carry ) {
-        CUB_ASSERT( i == j );
+        NVX_ASSERT( i == j );
         _ss.init_ref[ i ] = '1';
     }
 
@@ -654,7 +643,8 @@ void CtpTrader::OnRtnTrade( CThostFtdcTradeField* f_ ) {
         LOG_INFO( "bad order direction'" );
     }
 
-    delegator()->update( id, ostatus_t::finished );
+    delegator()->update_ord( id, ostatus_t::finished );
+    qry_fund();
 }
 
 void CtpTrader::OnErrRtnOrderInsert( CThostFtdcInputOrderField* f_, CThostFtdcRspInfoField* pRspInfo ) {
@@ -667,7 +657,7 @@ void CtpTrader::OnErrRtnOrderInsert( CThostFtdcInputOrderField* f_, CThostFtdcRs
         return;
     }
 
-    delegator()->update( id, ostatus_t::error );
+    delegator()->update_ord( id, ostatus_t::error );
 }
 
 // 删除失败对现有的订单没有任何影响(no update)，但是要通知算法
@@ -691,13 +681,23 @@ void CtpTrader::OnErrRtnOrderAction( CThostFtdcOrderActionField* pOrderAction, C
         return;
     }
 
-    delegator()->update( id, ostatus_t::aborted );
+    delegator()->update_ord( id, ostatus_t::aborted );
 }
 
 void CtpTrader::OnRspQryInstrument( CThostFtdcInstrumentField* pInstrument, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) {
 }
 
 void CtpTrader::OnRspQryTradingAccount( CThostFtdcTradingAccountField* pTradingAccount, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) {
+    LOG_INFO( "qry account,errid=%d msg=%s", pRspInfo->ErrorID, pRspInfo->ErrorMsg );
+    fund_t f;
+
+    f.available  = pTradingAccount->Available;
+    f.commission = pTradingAccount->Commission;
+    f.balance    = pTradingAccount->balance;
+    f.cprofit    = pTradingAccount->closeProfit;
+    f.pprofit    = pTradingAccount->PositionProfit;
+
+    delegator()->update_fund( f );
 }
 
 void CtpTrader::OnRspQryOrder( CThostFtdcOrderField* pOrder, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) {

@@ -1,22 +1,27 @@
 #include <cassert>
 #include <list>
 
+#include "context.h"
+
 #include "aspect.h"
 #include "data.h"
 #include "log.hpp"
 #include "order_mgmt.h"
 #include "quant.h"
+#include "strategy.h"
 
 NVX_NS_BEGIN
+
+#define TRADER ( *dynamic_cast<OrderMgmt*>( this->_q->trader() ) )
 
 Context::Context( Quant* q_ )
     : _q( q_ ) {}
 
-quotation_t& Context::qut() {
+const quotation_t& Context::qut() const {
     return _qut;
 }
 
-fund_t& Context::fund() {
+const fund_t Context::fund() const {
     return _fund;
 }
 
@@ -35,15 +40,6 @@ Clock& Context::clock() {
 
 Aspect* Context::load( const code_t& symbol_, const period_t& period_, int count_ ) {
     return ASP.add( symbol_, period_, count_ );
-}
-
-Context* Context::create() {
-    static Context c;
-    return &c;
-}
-
-Aspect* QuantImpl::add_aspect( const code_t& symbol_, const period_t& period_, int count_ ) {
-    return _d->attach( symbol_, period_, count_ );
 }
 
 int Context::open( const code_t& c_, vol_t qty_, price_t sl_, price_t tp_, price_t price_, otype_t mode_ ) {
@@ -65,10 +61,10 @@ int Context::close( const code_t& c_, vol_t qty_, price_t price_, otype_t mode_ 
         return TRADER.sell( { c_, qty_, price_, mode_ } );
     }
     else {
-        return TRADER.closeall( c_ );
+        return TRADER.close( c_ );
     }
 }
-vol_t Context::position() {  // 已成交持仓
+vol_t Context::position() const {
 #if 0
     auto& pf = p();
     vol_t v  = 0;
@@ -83,27 +79,31 @@ vol_t Context::position() {  // 已成交持仓
     return vol_t();
 }
 
-vol_t Context::position( const code_t& c_ ) {
+vol_t Context::position( const code_t& c_ ) const {
     return 0;
 }
 
-vol_t Context::pending() {  // 未成交持仓
-}
-
-vol_t Context::pending( const code_t& c_ ) {}
-
-price_t Context::put_price() {
+vol_t Context::pending() const {
     return 0;
 }
 
-price_t Context::last_deal() {
-}
-
-int Context::last_entry() {  // 最近入场的k线
+vol_t Context::pending( const code_t& c_ ) const {
     return 0;
 }
 
-int Context::last_exit() {  // 最近出场的k线//和aspect相关
+price_t Context::put_price() const {
+    return 0;
+}
+
+price_t Context::last_deal() const {
+    return 0;
+}
+
+kidx_t Context::last_entry() const {
+    return 0;
+}
+
+kidx_t Context::last_exit() const {
     return 0;
 }
 

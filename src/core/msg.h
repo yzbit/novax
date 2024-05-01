@@ -115,9 +115,9 @@ inline const Msg* recv_msg( struct bufferevent* bev_ ) {
         return nullptr;
     }
 
-    if ( h.len > len - sizeof( short ) ) return nullptr;
+    if ( h.len > short( len - sizeof( short ) ) ) return nullptr;
 
-    if ( h.len != bufferevent_read( bev_, h.data, h.len ) ) {
+    if ( h.len != ( short )bufferevent_read( bev_, h.data, h.len ) ) {
         return nullptr;
     }
 

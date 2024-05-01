@@ -11,34 +11,6 @@
 #include "../proxy.h"
 #include "comm.h"
 
-/*最近对ctp的流程有了更多的认识。
-
-两类指令的流程:新订单和撤单操作，都是分成两大步骤，第一步是把订单交给ctp系统，他返回一个响应，
-如果正确ctp会把这个订单提交给交易前端，状态通过onorderreturn和orderaction从交易前端返回
-
-对新订单而言，最后还可能返回一个ordertraded消息
-
-ctpmannual中将，订单的最终状态：
-我们主要处理的其实就是这几个状态，其他的都是中间状态
-THOST_FTDC_OST_AllTraded 、 THOST_FTDC_OST_Canceled 、 THOST_FTDC_OST_NoTradeNotQueueing 、 THOST_FTDC_OST_PartTradedNotQueueing。
-
-从文档来看
-所有的成交都会OnRtnTrade，那么对于成交状态，我们可以忽略orderreturn的处理，只监听onrtntrade
-
-但是实际上onrtntrade的状态信息少量很多，和别人交流之后认为还是处理onorderrtn最好，把onrtntrade当成中间状态
-
---但是据群友说成交价格实在onrtntrade中的
-
-==>最终还是要照顾和回归ctp的设计哲学，orderrtn只用来更新状态，rtntrade用来结束报单
-
-
-最终设计的清晰思路：
-下单--》状态更新（中间状态）--》结束状态用来结束等待
-
-
-sessionid orderref，ordersysid等只是为了撤单用的，如果重新登陆，那么如何去查询
-*/
-
 NVX_NS_BEGIN
 
 #define CTP_TRADE_SETTING_FILE "/home/data/code/cub/src/core/ctp/ctp_trade.json"

@@ -2,10 +2,12 @@
 
 #include "order_mgmt.h"
 
+#include "context.h"
 #include "ctp/ctp_trade_proxy.h"
 #include "dci_role.h"
 #include "log.hpp"
 #include "proxy.h"
+#include "quant.h"
 
 NVX_NS_BEGIN
 
@@ -13,16 +15,12 @@ IBroker* create_broker( ITrader* );
 
 std::atomic<oid_t> OrderMgmt::_init_id = 1;
 
-OrderMgmt& OrderMgmt::instance() {
-    static OrderMgmt m;
-    return m;
-}
-
 OrderMgmt::~OrderMgmt() {
     delete _ib;
 }
 
-OrderMgmt::OrderMgmt() {
+OrderMgmt::OrderMgmt( Quant* q_ )
+    : _q( q_ ) {
     _ib = create_broker( this );
 }
 
@@ -62,6 +60,12 @@ oid_t OrderMgmt::put( const odir_t& dir_,
     return r->id;
 }
 
+int OrderMgmt::close( const code_t code_ ) {
+    NVX_ASSERT( 0 );
+
+    return 0;
+}
+
 oid_t OrderMgmt::sellshort( const code_t& code_,
                             const vol_t   qty_,
                             const price_t price_,
@@ -95,7 +99,7 @@ int OrderMgmt::cancel( oid_t id_ ) {
 
     if ( !o
          || ( o->status != ostatus_t::pending
-              && o->status != ostatus_t::patial_dealed
+              && o->status != ostatus_t::partial_dealed
               && o->status != ostatus_t::patial_canelled ) ) {
         LOG_TAGGED( "om", "can not cancel order, id=%u status=%d", id_, o->status );
         return -1;
@@ -114,7 +118,7 @@ order_t* OrderMgmt::get( oid_t id_ ) {
 }
 
 //--成交可能是平仓成交，也可能是开仓成交--所以总是要记录下来的--
-void OrderMgmt::update( oid_t id_, ostatus_t status_ ) {
+void OrderMgmt::update_ord( oid_t id_, ostatus_t status_ ) {
     std::unique_lock<std::mutex> lock{ _mutex };
 
     auto o = get( id_ );
@@ -122,7 +126,7 @@ void OrderMgmt::update( oid_t id_, ostatus_t status_ ) {
     if ( !o ) return;
 
     LOG_INFO( "unexpected status %d", status_ );
-    CUB_ASSERT( status_ != ostatus_t::dealt );
+    NVX_ASSERT( status_ != ostatus_t::dealt );
 
     // 会不会出现部分canclled
     if ( ostatus_t::cancelled == status_ ) {
@@ -204,6 +208,12 @@ vol_t OrderMgmt::long_position( const code_t& code_ ) {
     return 0;
 }
 
+void OrderMgmt::update_fund( const fund_t& f_ ) {
+    _q->context()->update_fund( f_ );
+}
+
+void OrderMgmt::update_position() {
+}
 // 所以我们的最好做法是把每个合约的仓位统一成一条，然后算出平均价，每次有成交的时候就简单的处理就好,否则还要区分昨仓，今仓
 // 如果这样就会出现合约同时持有long和short，也就是说一个合约应该有两条记录，[0] long汇总 [1]short汇总
 void OrderMgmt::accum( order_t* src_, const order_t* update_ ) {
@@ -215,7 +225,7 @@ void OrderMgmt::accum( order_t* src_, const order_t* update_ ) {
 }
 
 //--一个订单可能成交多次
-void OrderMgmt::update( const order_t& o_ ) {
+void OrderMgmt::update_ord( const order_t& o_ ) {
     std::unique_lock<std::mutex> lock{ _mutex };
 
     LOG_INFO( "update order id=%u, status=[ %d,0x%x ], dir=%d", o_.id, o_.status, o_.status, o_.dir );
@@ -227,7 +237,7 @@ void OrderMgmt::update( const order_t& o_ ) {
     }
 
     // todo  最后返回的rtntrade重复的吗，会不会导致数据重算,--如果直接成交了，是不是就没有没有rtnorder，只有一个rtntrade'?不确定需要做测试
-    CUB_ASSERT( ostatus_t::dealt == o_.status );
+    NVX_ASSERT( ostatus_t::dealt == o_.status );
 
     // o的订单已经成交了o_, 主要的作用是更新持仓
     // o_不仅仅是更新了o，可能还是更新了其他的仓位的，比如平仓的时候
@@ -278,7 +288,7 @@ rb2410 short    2
 todo 总仓位是 2，那么此时关闭的是什么，关闭净仓? 使用参数决定,我们目前只支持单腿
 */
 int OrderMgmt::close( const order_t& r_ ) {
-    CUB_ASSERT( r_.dir == odir_t::sell || r_.dir == odir_t::cover );
+    NVX_ASSERT( r_.dir == odir_t::sell || r_.dir == odir_t::cover );
 
     if ( r_.qty == 0 ) {
         LOG_INFO( "close [%s] with qty=0, !!will close all avaiable", r_.code.c_str() );

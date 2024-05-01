@@ -9,26 +9,25 @@
 NVX_NS_BEGIN
 
 struct Kline;
+struct Data;
+struct IIndicator;
 struct Aspect final {
-    Aspect() = default;
+    Aspect( Data* data_ );
     ~Aspect();
 
     void update( const quotation_t& q_ );
     int  load( const code_t& code_, const period_t& p_, int count_ );
+    int  addi( IIndicator* i_ );
 
-    // Indicator*    addi( const string_t& name_, const arg_pack_t& args_ );
-    int           addi( Indicator* i_ );
     const code_t& code() const;
     Kline&        kline( kidx_t index_ = 0 );
     bool          loaded() const;
 
-    //--
-    void debug();
-
 private:
+    void debug();
     struct prii_t {
-        int        p;
-        Indicator* i;
+        int         p;
+        IIndicator* i;
     };
 
     std::vector<prii_t> _algos;
@@ -36,6 +35,9 @@ private:
     int    _ref_prio = 1;
     code_t _symbol   = "";
     Kline* _k        = nullptr;
+
+private:
+    Data* _data;
 };
 
 struct AspRepo {

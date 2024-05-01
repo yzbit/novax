@@ -15,7 +15,7 @@ void Aspect::debug() {
 
     for ( auto& i : _algos ) {
         std::cout << "\tname=" << i.i->name() << std::endl;
-        std::cout << "\ttracks=" << i.i->tracks() << std::endl;
+        std::cout << "\ttrakcs=" << i.i->nvalue() << std::endl;
         std::cout << "\tprio=" << i.p << std::endl;
     }
 }
@@ -45,23 +45,22 @@ int Aspect::load( const code_t& code_, const period_t& p_, int count_ ) {
     if ( loaded() ) return 0;
 
     _symbol = code_;
-    _k      = Kline::create( { code_, p_, count_ } );
+    _k      = new Kline( code_, p_, count_ );
 
-    CUB_ASSERT( _k );
+    NVX_ASSERT( _k );
 
     return 0;
 }
 
 void Aspect::update( const quotation_t& q_ ) {
-    _k->on_calc( q_ );
+    _k->calc( q_, 0 );
 
-    // todo
     for ( auto& i : _algos ) {
-        //    i.i->on_calc( *_k, q_ );
+        dynamic_cast<IAlgo*>( i.i )->calc( q_, 0 );
     }
 }
 
-int Aspect::addi( Indicator* i_ ) {
+int Aspect::addi( IIndicator* i_ ) {
     if ( !i_ ) return 0;
 
     auto itr = std::find_if( _algos.begin(), _algos.end(), [ & ]( const prii_t& pi_ ) { return pi_.i == i_; } );
@@ -72,38 +71,12 @@ int Aspect::addi( Indicator* i_ ) {
     }
 
     _algos.push_back( { _ref_prio++, i_ } );
-
-    _algos.sort( []( auto& a_, auto& b_ ) { return a_.p > b_.p; } );
+    std::sort( _algos.begin(), _algos.end(), []( auto& a_, auto& b_ ) { return a_.p > b_.p; } );
 
     return 0;
 }
 
-Indicator* Aspect::addi( const string_t& name_, const arg_pack_t& args_ ) {
-    auto i = Indicator::create( name_, args_, this );
-
-    if ( !i ) return nullptr;
-
-    addi( i );
-
-    return i;
-}
-
-AspRepo& AspRepo::instance() {
-    static AspRepo as;
-    return as;
-}
-
-Aspect* AspRepo::add( const code_t& code_, const period_t& p_, int count_ ) {
-    Aspect a;
-
-    if ( a.load( code_, p_, count_ ) < 0 ) return nullptr;
-
-    _repo.emplace_back( a );
-
-    Aspect* as = &( *_repo.rbegin() );
-    DATA.attach( as );
-
-    return as;
-}
+Aspect::Aspect( Data* data_ )
+    : _data( data_ ) {}
 
 NVX_NS_END
