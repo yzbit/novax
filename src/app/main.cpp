@@ -1,10 +1,6 @@
+#include <novax.h>
 
-#include <definitions.h>
-#include <quant.h>
-#include <stdio.h>
-#include <strategy.h>
-
-#include "../gallery/break_through.h"
+#include "../gallery/test.strategy.h"
 
 /*
    1）初始化reactor进行进行初始--其实没必要
@@ -15,9 +11,7 @@
 */
 
 int main() {
-    cub::Quant* q = cub::Quant::create();
+    NVX_NS::IStrategy* s = new TestStrategy();
 
-    cub::Strategy* s = new BreakTh( "rb2410" );
-
-    return q->execute( s );
+    return QUANT.execute( s );
 }

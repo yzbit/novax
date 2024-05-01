@@ -32,7 +32,9 @@ private:
     datetime_t  _curr_start;  // 当前k的起始时间
 
 private:
-    Series<candle_t>* _data;
+    using BarSeries = Series<candle_t>;
+
+    BarSeries* _bars = nullptr;
 };
 
 NVX_NS_END

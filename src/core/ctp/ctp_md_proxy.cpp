@@ -4,7 +4,6 @@
 
 #include "../log.hpp"
 #include "../models.h"
-#include "../reactor.h"
 #include "comm.h"
 // todo debug
 #include "../utils.hpp"
@@ -17,7 +16,7 @@ CtpExMd::CtpExMd( IData* d_ )
     : IMarket( d_ ) {
 }
 
- CtpExMd::subscribe( const code_t& code_ ) {
+int CtpExMd::subscribe( const code_t& code_ ) {
     std::unique_lock<std::mutex> lock{ _sub_mtx };
 
     LOG_TAGGED( "ctp",
@@ -84,7 +83,7 @@ std::unique_ptr<char*[]> CtpExMd::set2arr( std::set<code_t>& s ) {
         // fprintf( stderr, "#### %s\n", arr[ n - 1 ] );
     }
 
-    return std::move( arr );
+    return arr;
 }
 
 int CtpExMd::sub( code_t& code_ ) {

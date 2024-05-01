@@ -11,7 +11,7 @@ struct Context;
 struct Clock;
 
 struct Quant {
-    static Quant* create();
+    static Quant& instance();
     virtual ~Quant() {}
 
     virtual int  execute( IStrategy* s_ ) = 0;
@@ -25,5 +25,7 @@ struct Quant {
 };
 
 NVX_NS_END
+
+#define QUANT NVX_NS::Quant::instance()
 
 #endif /* C4704959_F4BE_4EAA_9C19_9CD09E83DA7D */

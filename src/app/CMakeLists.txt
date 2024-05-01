@@ -21,11 +21,19 @@ target_include_directories(${PROJECT_NAME}
     ${REPO_ROOT}/lib
 )
 
+target_link_directories( ${PROJECT_NAME} 
+PRIVATE
+${REPO_ROOT}/lib/ctp)
+
 
 target_link_libraries(${PROJECT_NAME} PRIVATE 
     pthread
-    zmq
-    cub
+    novax
+    event
+    atomic
+    thosttraderapi_se.so
+    thostmduserapi_se.so
+    LinuxDataCollect.so
 )
 
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)

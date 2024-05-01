@@ -13,7 +13,7 @@
 #include "msg.h"
 #include "proxy.h"
 
-#define DC_ADDR "unix://tmp/datacenter"
+#define DC_SERVER_ADDR "unix://tmp/datacenter"
 
 NVX_NS_BEGIN
 
@@ -34,7 +34,7 @@ private:
 
 private:
     static void read_cb( struct bufferevent* bev, void* ctx );
-    static void event_cb( struct bufferevent* bev, void* ctx );
+    static void event_cb( struct bufferevent* bev, short event_, void* ctx );
 
 private:
     using book_t = std::map<code_t, bool>;

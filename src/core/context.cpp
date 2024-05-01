@@ -12,10 +12,9 @@
 
 NVX_NS_BEGIN
 
-#define TRADER ( *dynamic_cast<OrderMgmt*>( this->_q->trader() ) )
+#define TRADER ( *dynamic_cast<OrderMgmt*>( QUANT.trader() ) )
 
-Context::Context( Quant* q_ )
-    : _q( q_ ) {}
+Context::Context() {}
 
 const quotation_t& Context::qut() const {
     return _qut;
@@ -27,7 +26,7 @@ const fund_t Context::fund() const {
 
 void Context::update_qut( const quotation_t& q_ ) {
     _qut = q_;
-    _q->strategy()->prefight( this );
+    QUANT.strategy()->prefight( this );
 }
 
 void Context::update_fund( const fund_t& f_ ) {
@@ -35,30 +34,34 @@ void Context::update_fund( const fund_t& f_ ) {
 }
 
 Clock& Context::clock() {
-    return *( _q->clock() );
+    return *( QUANT.clock() );
 }
 
 Aspect* Context::load( const code_t& symbol_, const period_t& period_, int count_ ) {
-    return ASP.add( symbol_, period_, count_ );
+    // return ASP.add( symbol_, period_, count_ );
+    // todo
+    return nullptr;
 }
 
 int Context::open( const code_t& c_, vol_t qty_, price_t sl_, price_t tp_, price_t price_, otype_t mode_ ) {
     if ( qty_ < 0 )
-        return TRADER.sellshort( { c_, -qty_, price_, mode_ } );
+        return TRADER.sellshort( c_, -qty_, price_, mode_, sl_, tp_ );
     else if ( qty_ > 0 )
-        TRADER.buylong( { c_, qty_, price_, mode_ } );
+        TRADER.buylong( c_, qty_, price_, mode_ );
     else {
         assert( false );
         return 0;
     };
+
+    return 0;
 }
 
 int Context::close( const code_t& c_, vol_t qty_, price_t price_, otype_t mode_ ) {
     if ( qty_ < 0 ) {
-        return TRADER.buy( { c_, -qty_, price_, mode_ } );
+        return TRADER.buy( c_, -qty_, price_, mode_ );
     }
     else if ( qty_ > 0 ) {
-        return TRADER.sell( { c_, qty_, price_, mode_ } );
+        return TRADER.sell( c_, qty_, price_, mode_ );
     }
     else {
         return TRADER.close( c_ );

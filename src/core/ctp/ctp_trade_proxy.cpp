@@ -289,7 +289,7 @@ int CtpTrader::assign_ref( oid_t id_ ) {
     int carry = 0;
     for ( ; i > j; --i ) {
         if ( _ss.init_ref[ i ] == '9' ) {
-            _ss.init_ref[ i ] == '0';
+            _ss.init_ref[ i ] = '0';
             carry = 1;
         }
         else {
@@ -320,7 +320,7 @@ int CtpTrader::login() {
     CTP_COPY_SAFE( field.UserID, _settings.i.name.c_str() );
     CTP_COPY_SAFE( field.Password, _settings.i.password.c_str() );
 
-    return !this->_api->ReqUserLogin( &field, req_id() ) ?: 0 - 1;
+    return !this->_api->ReqUserLogin( &field, req_id() ) ? 0 : -1;
 }
 
 int CtpTrader::logout() {
@@ -451,7 +451,7 @@ void CtpTrader::OnRspOrderInsert( CThostFtdcInputOrderField* f_, CThostFtdcRspIn
         return;
     }
 
-    delegator()->update( id, ostatus_t::cancelled );
+    delegator()->update_ord( id, ostatus_t::cancelled );
 }
 
 // 报单操作请求响应，当执行ReqOrderAction后有字段填写不对之类的CTP报错则通过此接口返回
@@ -465,12 +465,12 @@ void CtpTrader::OnRspOrderAction( CThostFtdcInputOrderActionField* pInputOrderAc
         return;
     }
 
-    delegator()->update( id, ostatus_t::aborted );
+    delegator()->update_ord( id, ostatus_t::aborted );
 }
 
 oid_t CtpTrader::id_of( const TThostFtdcOrderRefType& ref_ ) {
     auto itr = std::find_if( _id_map.begin(), _id_map.end(), [ & ]( auto& pair_ ) {
-        return 0 == memcmp( ref_, pair_.second.ref, sizeof( ref_ ) ) == 0;
+        return 0 == memcmp( ref_, pair_.second.ref, sizeof( ref_ ) );
     } );
 
     return itr == _id_map.end() ? kBadId : itr->second.id;
@@ -583,7 +583,7 @@ void CtpTrader::OnRtnOrder( CThostFtdcOrderField* f_ ) {
     case THOST_FTDC_OST_NoTradeNotQueueing:  // 还未发往交易所是不是最终状态?
     case THOST_FTDC_OST_Touched:             //
     case THOST_FTDC_OST_Unknown:             // 收到保单后第一次返回，表示ctp接受订单，通过ctp的风控检查
-        return delegator()->update( oid, ostatus_t::pending );
+        return delegator()->update_ord( oid, ostatus_t::pending );
 
     case THOST_FTDC_OST_PartTradedQueueing:       // 还会有成交--我们会同步过程不能在这里结束
     case THOST_FTDC_OST_AllTraded:                // ctpman-最终状态（1）
@@ -607,12 +607,12 @@ void CtpTrader::OnRtnOrder( CThostFtdcOrderField* f_ ) {
 
         o.price = f_->LimitPrice;
 
-        return delegator()->update( o );
+        return delegator()->update_ord( o );
     } break;
 
     case THOST_FTDC_OST_Canceled:
         LOG_INFO( "撤单原因: %d", f_->OrderSubmitStatus );
-        return delegator()->update( oid, ostatus_t::cancelled );
+        return delegator()->update_ord( oid, ostatus_t::cancelled );
     }
 }
 
@@ -693,8 +693,8 @@ void CtpTrader::OnRspQryTradingAccount( CThostFtdcTradingAccountField* pTradingA
 
     f.available  = pTradingAccount->Available;
     f.commission = pTradingAccount->Commission;
-    f.balance    = pTradingAccount->balance;
-    f.cprofit    = pTradingAccount->closeProfit;
+    f.balance    = pTradingAccount->Balance;
+    f.cprofit    = pTradingAccount->CloseProfit;
     f.pprofit    = pTradingAccount->PositionProfit;
 
     delegator()->update_fund( f );

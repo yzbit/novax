@@ -140,7 +140,8 @@ inline CtpTrader::ex_oid_t::ex_oid_t( const TThostFtdcExchangeIDType& ex_, const
 }
 
 inline bool CtpTrader::ex_oid_t::operator==( const ex_oid_t& eoid_ ) const {
-    return eoid_.oid == oid && memcmp( eoid_.ex, ex, sizeof( ex ) );
+    return 0 == memcmp( eoid_.oid, oid, sizeof( eoid_.oid ) )
+           && 0 == memcmp( eoid_.ex, ex, sizeof( ex ) );
 }
 
 inline CtpTrader::order_ids_t::order_ids_t( oid_t id_, const ex_oid_t& ex_oid_, const TThostFtdcOrderRefType& ref_ ) {

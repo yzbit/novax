@@ -9,8 +9,7 @@
 
 NVX_NS_BEGIN
 
-Data::Data( Quant* q_ )
-    : _q( q_ ) {
+Data::Data() {
     _jobs = TaskQueue::create( 4 );
 
     THREAD_DETACHED( [ & ]() { this->process(); } );
@@ -75,7 +74,7 @@ void Data::process() {
 
         _jobs->drain();
 
-        _jobs->run( [ & ]() { _q->context()->update_qut( q ); } );
+        _jobs->run( [ & ]() { QUANT.context()->update_qut( q ); } );
 
         for ( auto& as : _aspects ) {
             _jobs->run( [ & ]() { as->update( q ); } );
@@ -85,7 +84,7 @@ void Data::process() {
             std::this_thread::yield();
         }
 
-        _q->invoke();
+        QUANT.invoke();
     }
 }
 

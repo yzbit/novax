@@ -4,7 +4,6 @@
 
 #include "context.h"
 #include "ctp/ctp_trade_proxy.h"
-#include "dci_role.h"
 #include "log.hpp"
 #include "proxy.h"
 #include "quant.h"
@@ -19,8 +18,7 @@ OrderMgmt::~OrderMgmt() {
     delete _ib;
 }
 
-OrderMgmt::OrderMgmt( Quant* q_ )
-    : _q( q_ ) {
+OrderMgmt::OrderMgmt() {
     _ib = create_broker( this );
 }
 
@@ -172,7 +170,8 @@ void OrderMgmt::herge( order_t* src_, const order_t* update_ ) {
     //  成交总价值，首先确保p->qty> =0;
 
     p->qty -= act_closed;
-    money_t close_value = update_->price * act_closed;
+    // todo
+    [[maybe_unused]] money_t close_value = update_->price * act_closed;
 
     p->close_profit += ( src_->dir == odir_t::sell
                              ? update_->price - p->price  // 卖平仓的利润是卖出价格 - 买入价格
@@ -209,7 +208,7 @@ vol_t OrderMgmt::long_position( const code_t& code_ ) {
 }
 
 void OrderMgmt::update_fund( const fund_t& f_ ) {
-    _q->context()->update_fund( f_ );
+    QUANT.context()->update_fund( f_ );
 }
 
 void OrderMgmt::update_position() {

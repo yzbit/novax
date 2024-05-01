@@ -15,14 +15,11 @@ Kline::Kline( const code_t& code_, const period_t& p_, int series_count_ )
 }
 
 void Kline::init() {
-    _data = add_series( BAR_TRACK, _count, ::free );
-    _data->init( []( Series::element_t& e_ ) {
-        e_.p = new candle_t();
-    } );
+    _bars = new BarSeries( _count );
 }
 
 candle_t& Kline::bar( int index_ ) {
-    return *( candle_t* )value( 0, index_ )->p;
+    return _bars->get( index_ );
 }
 
 quotation_t& Kline::qut() {
@@ -74,10 +71,10 @@ TradingDay,InstrumentID,...,UpdateTime,UpdateMillisec...
 我们可以提供两种模式，一种按照自然日来分割，日内按照K线周期来分，最后不足一个周期就算了; 第二按照每根k线足够的周期来生成
 考虑到开盘价很重要，这么做可能意义不是很大
 */
-void Kline::calc( const quotation_t& q_ ) {
+void Kline::calc( const quotation_t& q_, int total_ ) {
     _qut = q_;
 
-    auto r = recent();
+    // auto r = recent();
 
     // 此时可以认为是新开盘
     if ( abs( CLOCK_OF( q_.ex ).now() - q_.time.to_unix_time() ) > 3 * 60 ) {
@@ -94,9 +91,9 @@ void Kline::calc( const quotation_t& q_ ) {
             k->time   = q_.time;
             k->volume = q_.volume - k->volume;
 
-            shift();
+            _bars->shift();
             k = &bar();
-            memset( k, 0x00, sizeof( candle_t ) );
+            memset( k, 0, sizeof( candle_t ) );
         }
 
         k->time   = q_.time;  // 开始时间

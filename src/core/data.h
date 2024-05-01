@@ -27,7 +27,7 @@ struct IMarket;
 //
 struct Quant;
 struct Data : IData {
-    Data( Quant* q_ );
+    Data();
     ~Data();
 
     void update( const quotation_t& tick_ ) override;
@@ -50,9 +50,6 @@ private:
 private:
     std::mutex              _mutex;
     std::condition_variable _cv;
-
-private:
-    Quant* _q;
 };
 
 NVX_NS_END

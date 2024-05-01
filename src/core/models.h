@@ -40,8 +40,10 @@ struct candle_t {
     price_t    open;
     vol_t      volume;
     vol_t      opi;  // opi
-    code_t     symbol;
     datetime_t time;
+
+    // todo no need
+    // code_t     symbol;
 
     price_t body() { return fabs( close - open ); }
     price_t long_shadow() { return std::max( uppers(), lowers() ); }

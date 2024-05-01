@@ -13,9 +13,9 @@ NVX_NS_BEGIN
 struct QuantImpl : Quant {
 
     QuantImpl() {
-        _c     = new Context( this );
-        _d     = new Data( this );
-        _t     = new OrderMgmt( this );
+        _c     = new Context();
+        _d     = new Data();
+        _t     = new OrderMgmt();
         _clock = new Clock();
     }
 
@@ -41,15 +41,16 @@ struct QuantImpl : Quant {
     Clock*     _clock = nullptr;
 };
 
-Quant* Quant::create() {
-    return new QuantImpl();
+Quant& Quant::instance() {
+    static QuantImpl _impl;
+    return _impl;
 }
 
 //--处理输入,命令等
 int QuantImpl::execute( IStrategy* s_ ) {
     _s = s_;
 
-    _s->init( this );
+    _s->init();
 
 #if 0
     [[maybe_unused]] auto id = _timer.add(

@@ -2,7 +2,7 @@
 
 #include "ctp/ctp_md_proxy.h"
 #include "ctp/ctp_trade_proxy.h"
-#include "datacenter.h"
+#include "data_center.h"
 
 NVX_NS_BEGIN
 

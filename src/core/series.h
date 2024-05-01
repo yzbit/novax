@@ -51,7 +51,7 @@ inline Series<T>::Series( int n_ ) {
     static_assert( std::is_copy_assignable_v<T>, "bad series type" );
 
     _values = new element_t[ n_ ]{ 0 };
-    memcpy( _values, 0x00, n_ * sizeof( element_t ) );
+    // memcpy( _values, 0x00, n_ * sizeof( element_t ) );
     shift();
 }
 

@@ -71,7 +71,7 @@ void DcClient::read_cb( struct bufferevent* bev_, void* ctx ) {
     cli->on_msg( msg );
 }
 
-void DcClient::event_cb( struct bufferevent* bev, void* ctx ) {
+void DcClient::event_cb( struct bufferevent* bev, short event_, void* ctx ) {
     printf( "dcclient on event" );
 }
 
@@ -81,7 +81,7 @@ int DcClient::run() {
     struct sockaddr_un addr;
     memset( &addr, 0, sizeof( addr ) );
     addr.sun_family = AF_UNIX;
-    strcpy( addr.sun_path, SOCK_PATH );
+    strcpy( addr.sun_path, DC_SERVER_ADDR );
 
     int sock = socket( AF_UNIX, SOCK_STREAM, 0 );
     ::connect( sock, ( struct sockaddr* )&addr, sizeof( addr ) );

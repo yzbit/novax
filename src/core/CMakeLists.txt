@@ -21,6 +21,7 @@ SET(SRC
     order_mgmt.cpp
     ctp/ctp_md_proxy.cpp
     ctp/ctp_trade_proxy.cpp
+    proxy.cpp
     quant.cpp
     #algos/ma.cpp
 )

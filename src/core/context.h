@@ -29,12 +29,11 @@ struct Context {
     kidx_t  last_entry() const;
     kidx_t  last_exit() const;
 
-    Context( Quant* );
+    Context();
     void update_qut( const quotation_t& q_ );
     void update_fund( const fund_t& f_ );
 
 private:
-    Quant*              _q;
     quotation_t         _qut;
     std::atomic<fund_t> _fund;
 };
