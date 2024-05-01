@@ -7,8 +7,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++17 -g -Wall")
 set(MODULE_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
 set(REPO_ROOT "${MODULE_ROOT}/../..")
 
-message("####mod dir=${MODULE_ROOT}")
-message("####repo dir=${MODULE_ROOT}/../..")
+#message("####mod dir=${MODULE_ROOT}")
+#message("####repo dir=${MODULE_ROOT}/../..")
 
 SET(SRC 
     aspect.cpp

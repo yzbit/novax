@@ -20,7 +20,7 @@ struct Series final {
     //  void append( const element_t& t_ );
     void shift();
     int  size();
-    void for_each( visitor_t& v_ );
+    void for_each( visitor_t v_ );
     void update( int index_, const element_t& t_ );
 
     element_t& operator[]( int index_ );
@@ -96,7 +96,7 @@ inline int Series<T>::size() {
 }
 
 template <typename T>
-inline void Series<T>::for_each( typename Series<T>::visitor_t& v_ ) {
+inline void Series<T>::for_each( typename Series<T>::visitor_t v_ ) {
     for ( int loop = _begin; loop != _end; loop = ( loop + 1 ) % _total ) {
         if ( !v_( _values[ loop ] ) ) break;
     }
