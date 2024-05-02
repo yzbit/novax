@@ -33,11 +33,10 @@ struct Data : IData {
     void update( const quotation_t& tick_ ) override;
     int  start();
     int  stop();
-    int  subscribe( const code_t& code_ );
-    int  unsubscribe( const code_t& code_ );
 
     Aspect* attach( const code_t& symbol_, const period_t& period_, int count_ );
     int     attach( Aspect* a_ );
+    int     dettach( Aspect* a_ );
 
 private:
     void process();

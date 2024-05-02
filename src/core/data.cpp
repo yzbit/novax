@@ -30,21 +30,19 @@ int Data::stop() {
     return market()->stop();
 }
 
-int Data::subscribe( const code_t& code_ ) {
-    return market()->subscribe( code_ );
-}
-
-int Data::unsubscribe( const code_t& code_ ) {
-    return market()->unsubscribe( code_ );
-}
-
 int Data::attach( Aspect* a_ ) {
     _aspects.push_back( a_ );
+
     return 0;
 }
 
+int Data::dettach( Aspect* a_ ) {
+    if ( !a_ ) return -1;
+    return market()->unsubscribe( a_->code() );
+}
+
 Aspect* Data::attach( const code_t& symbol_, const period_t& period_, int count_ ) {
-    if ( subscribe( symbol_ ) < 0 )
+    if ( market()->subscribe( symbol_ ) < 0 )
         return nullptr;
 
     Aspect* a = new Aspect( this );
