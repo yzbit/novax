@@ -27,3 +27,17 @@ TEST( Series, Basic ) {
     s.at( 0 ) = 6;
     ASSERT_EQ( s[ 0 ], 6 );
 }
+
+TEST( Series, Adv ) {
+    nvx::Series<int> s( 3 );
+
+    for ( int i = 0; i < 8; i++ ) {
+        s.append( i );
+    }
+
+    ASSERT_EQ( s.size(), 3 );
+    ASSERT_EQ( s[ 0 ], 7 );
+    ASSERT_EQ( s[ 1 ], 6 );
+    ASSERT_EQ( s[ 2 ], 5 );
+    ASSERT_EQ( s.current(), 7 );
+}
