@@ -40,4 +40,5 @@ TEST( Series, Adv ) {
     ASSERT_EQ( s[ 1 ], 6 );
     ASSERT_EQ( s[ 2 ], 5 );
     ASSERT_EQ( s.current(), 7 );
+    ASSERT_EQ( s.append( 9 ), 9 );
 }
