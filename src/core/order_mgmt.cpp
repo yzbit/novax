@@ -15,11 +15,9 @@ IBroker* create_broker( ITrader* );
 std::atomic<oid_t> OrderMgmt::_init_id = 1;
 
 OrderMgmt::~OrderMgmt() {
-    delete _ib;
 }
 
 OrderMgmt::OrderMgmt() {
-    _ib = create_broker( this );
 }
 
 oid_t OrderMgmt::oid() {
@@ -27,11 +25,11 @@ oid_t OrderMgmt::oid() {
 }
 
 int OrderMgmt::start() {
-    return _ib->start();
+    return ib()->start();
 }
 
 int OrderMgmt::stop() {
-    return _ib->stop();
+    return ib()->stop();
 }
 
 oid_t OrderMgmt::put( const odir_t& dir_,
@@ -43,14 +41,14 @@ oid_t OrderMgmt::put( const odir_t& dir_,
                       const price_t tp_,
                       const text_t& remark_ ) {
 
-    auto r   = order_t::from( code_, qty_, price_, mode_, dir_ );
+    auto r   = order_t( code_, qty_, price_, mode_, dir_ );
     r.id     = oid();
     r.remark = remark_;
 
-    if ( 0 == _ib->put( r ) ) {
-        _book.emplace( r.id, r );
-    }
-    else {
+    _book.emplace( r.id, r );  // impt
+    if ( 0 != ib()->put( r ) ) {
+        LOG_INFO( "put order failed, delete it;oid=[%u]", r.id );
+        _book.erase( r.id );
         return kBadId;
     }
 
@@ -103,8 +101,7 @@ int OrderMgmt::cancel( oid_t id_ ) {
         return -1;
     }
 
-    return _ib->cancel( r );
-    return 0;
+    return ib()->cancel( r );
 }
 
 OrderMgmt::OrderOpt OrderMgmt::get( oid_t id_ ) {
@@ -127,7 +124,7 @@ void OrderMgmt::update_ord( oid_t id_, ostatus_t status_ ) {
     LOG_INFO( "unexpected status %d", status_ );
     NVX_ASSERT( status_ != ostatus_t::dealt );
 
-    // 会不会出现部分canclled
+    // todo 会不会出现部分canclled
     if ( ostatus_t::cancelled == status_ ) {
         // 无论是部分撤掉(部分已经成交) 还是全部撤掉, 撤单只能是基于整个订单的
         LOG_INFO( "close order: id=%u ", id_ );
@@ -306,7 +303,7 @@ int OrderMgmt::close( const order_t& r_ ) {
 
     LOG_INFO( "close position for [%s %d]", r_.code.c_str(), pv );
 
-    if ( 0 != _ib->put( r_ ) ) {
+    if ( 0 != ib()->put( r_ ) ) {
         LOG_INFO( "close position failed,id=%u ,sym=%s", r_.id, r_.code.c_str() );
         return -1;
     }

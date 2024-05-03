@@ -7,12 +7,20 @@
 
 NVX_NS_BEGIN
 
+struct IBroker;
 struct ITrader {
     virtual void update_ord( oid_t id_, ostatus_t status_ ) = 0;
     virtual void update_ord( const order_t& o_ )            = 0;
     virtual void update_fund( const fund_t& f_ )            = 0;
     virtual void update_position()                          = 0;
     virtual ~ITrader();
+
+protected:
+    IBroker* ib() { return _ib; }
+
+private:
+    IBroker* _ib;
+    friend IBroker;
 };
 
 struct IBroker {
@@ -33,13 +41,15 @@ private:
 
 struct IMarket;
 struct IData {
-    void         set_market( IMarket* m_ ) { _m = m_; };
-    IMarket*     market() { return _m; }
     virtual void update( const quotation_t& tick_ ) = 0;
     virtual ~IData();
 
+protected:
+    IMarket* market() { return _m; }
+
 private:
     IMarket* _m;
+    friend IMarket;
 };
 
 struct IMarket {

@@ -9,7 +9,9 @@ NVX_NS_BEGIN
 ITrader::~ITrader() {}
 
 IBroker::IBroker( ITrader* tr_ )
-    : _tr( tr_ ){};
+    : _tr( tr_ ) {
+    tr_->_ib = this;
+};
 
 IBroker::~IBroker() {}
 
@@ -18,7 +20,9 @@ ITrader* IBroker::delegator() { return _tr; }
 IData::~IData() {}
 
 IMarket::IMarket( IData* dt_ )
-    : _dt( dt_ ) {}
+    : _dt( dt_ ) {
+    dt_->_m = this;
+}
 
 IMarket::~IMarket() {}
 

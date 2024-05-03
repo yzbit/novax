@@ -118,7 +118,7 @@ struct order_t {
     };
 
     enum class status_t {
-        create          = 0x0001,
+        // todo noneed, create          = 0x0001,
         pending         = 0x0002,
         partial         = 0x0004,
         dealt           = 0x0008,
@@ -141,26 +141,20 @@ struct order_t {
              const type_t& t_,
              const dir_t&  d_ );
 
-    static order_t from( const code_t& c_,
-                         const vol_t   v_,
-                         const price_t p_,
-                         const type_t& t_,
-                         const dir_t&  d_ );
-
-    oid_t      id = kBadId;  //! 订单id
-    code_t     code;         //! 代码，RB1910
-    ex_t       ex;           //! 交易所，SHEX
-    dir_t      dir;          //! 方向，买、卖、平
-    price_t    price;        //! 期望成交价格，已成交价格
-    price_t    tp_price;     //! 止盈价格
-    price_t    sl_price;     //! 止损价格
-    vol_t      qty;          //! 期望成交数量, 已成交数量
-    vol_t      traded;       //! 已经成交
-    status_t   status;
-    type_t     mode;
-    bool       today;     //! 今仓，昨仓
-    datetime_t datetime;  //! 成交或者下单的时间、日期
-    string_t   remark;    //! 如果会非常频繁的创建和拷贝订单，这里最好是用数组--string的实现必须健壮,考虑到各种可能的诡异操作~
+    oid_t      id       = kBadId;       //! 订单id
+    code_t     code     = "";           //! 代码，RB1910
+    ex_t       ex       = "";           //! 交易所，SHEX
+    dir_t      dir      = dir_t::none;  //! 方向，买、卖、平
+    price_t    price    = .0;           //! 期望成交价格，已成交价格
+    price_t    tp_price = .0;           //! 止盈价格
+    price_t    sl_price = .0;           //! 止损价格
+    vol_t      qty      = .0;           //! 期望成交数量, 已成交数量
+    vol_t      traded   = .0;           //! 已经成交
+    status_t   status   = status_t::pending;
+    type_t     mode     = type_t::market;
+    bool       today    = true;               //! 今仓，昨仓
+    datetime_t datetime = datetime_t::now();  //! 成交或者下单的时间、日期
+    string_t   remark   = "#";                //! 如果会非常频繁的创建和拷贝订单，这里最好是用数组--string的实现必须健壮,考虑到各种可能的诡异操作~
 };
 
 using odir_t    = order_t::dir_t;
@@ -260,14 +254,6 @@ inline order_t::order_t( const code_t& c_,
     price = p_;
     mode  = t_;
     dir   = d_;
-}
-
-inline order_t order_t::from( const code_t& c_,
-                              const vol_t   v_,
-                              const price_t p_,
-                              const type_t& t_,
-                              const dir_t&  d_ ) {
-    return order_t( c_, v_, p_, t_, d_ );
 }
 
 NVX_NS_END

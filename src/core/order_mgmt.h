@@ -68,9 +68,6 @@ private:
 
 private:
     static std::atomic<oid_t> _init_id;
-
-private:
-    IBroker* _ib = nullptr;
 };
 
 NVX_NS_END
