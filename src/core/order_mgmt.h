@@ -46,19 +46,20 @@ struct OrderMgmt : ITrader {
     vol_t long_position( const code_t& code_ );
 
 private:
-    void  herge( order_t* src_, const order_t* update_ );
-    void  accum( order_t* src_, const order_t* update_ );
+    void  herge( order_t& src_, const order_t& update_ );
+    void  accum( order_t& src_, const order_t& update_ );
     int   close( const order_t& r_ );
     oid_t put( const odir_t& dir_, const code_t& code_, const vol_t qty_, const price_t price_, const otype_t mode_, const price_t sl_, const price_t tp_, const text_t& remark_ );
 
 private:
-    oid_t       oid();
-    order_t*    get( oid_t id_ );
+    oid_t oid();
+    using OrderOpt = std::optional<std::reference_wrapper<order_t>>;
+    OrderOpt    get( oid_t id_ );
     position_t* position( const code_t& code_, bool long_ );
 
 private:
     using portfilio_t  = std::array<position_t, 2>;                             //! 仓位, [0]-long, [1]-short
-    using OrderDetails = std::unordered_map<oid_t, order_t*>;                   //! 所有的订单列表
+    using OrderDetails = std::unordered_map<oid_t, order_t>;                    //! 所有的订单列表
     using InsPosition  = std::unordered_map<code_t, portfilio_t, code_hash_t>;  //! 每个合约有正反两个方向的持仓
 
     OrderDetails _book;

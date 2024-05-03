@@ -43,19 +43,19 @@ oid_t OrderMgmt::put( const odir_t& dir_,
                       const price_t tp_,
                       const text_t& remark_ ) {
 
-    std::unique_ptr<order_t> r( order_t::from( code_, qty_, price_, mode_, dir_ ) );
-    r->id     = oid();
-    r->remark = remark_;
+    auto r   = order_t::from( code_, qty_, price_, mode_, dir_ );
+    r.id     = oid();
+    r.remark = remark_;
 
-    if ( 0 == _ib->put( *r ) ) {
-        _book.emplace( r->id, r.release() );
+    if ( 0 == _ib->put( r ) ) {
+        _book.emplace( r.id, r );
     }
     else {
         return kBadId;
     }
 
     LOG_INFO( "order count in book: [ %d ]", _book.size() );
-    return r->id;
+    return r.id;
 }
 
 int OrderMgmt::close( const code_t code_ ) {
@@ -88,28 +88,29 @@ oid_t OrderMgmt::buylong( const code_t& code_,
 
 int OrderMgmt::cancel( oid_t id_ ) {
     LOG_TAGGED( "om", "del order: %u", id_ );
-
-    order_t* o = get( id_ );
+    auto o = get( id_ );
     if ( !o ) {
         LOG_TAGGED( "om", "cannot find order: %u", id_ );
         return -1;
     }
 
+    auto& r = o.value().get();
     if ( !o
-         || ( o->status != ostatus_t::pending
-              && o->status != ostatus_t::partial_dealed
-              && o->status != ostatus_t::patial_canelled ) ) {
-        LOG_TAGGED( "om", "can not cancel order, id=%u status=%d", id_, o->status );
+         || ( r.status != ostatus_t::pending
+              && r.status != ostatus_t::partial_dealed
+              && r.status != ostatus_t::patial_canelled ) ) {
+        LOG_TAGGED( "om", "can not cancel order, id=%u status=%d", id_, r.status );
         return -1;
     }
 
-    return _ib->cancel( *o );
+    return _ib->cancel( r );
+    return 0;
 }
 
-order_t* OrderMgmt::get( oid_t id_ ) {
+OrderMgmt::OrderOpt OrderMgmt::get( oid_t id_ ) {
     if ( _book.find( id_ ) == _book.end() ) {
         LOG_INFO( "can not find order in book: %d, status=%d", id_ );
-        return nullptr;
+        return std::nullopt;
     }
 
     return _book[ id_ ];
@@ -130,7 +131,6 @@ void OrderMgmt::update_ord( oid_t id_, ostatus_t status_ ) {
     if ( ostatus_t::cancelled == status_ ) {
         // 无论是部分撤掉(部分已经成交) 还是全部撤掉, 撤单只能是基于整个订单的
         LOG_INFO( "close order: id=%u ", id_ );
-        delete o;
         _book.erase( id_ );
     }
 }
@@ -158,10 +158,10 @@ position_t* OrderMgmt::position( const code_t& code_, bool long_ ) {
 
 //注意因为这里是把仓位合并了，所以和交易软件的能够实时查询不一样，这里只能看到合并后的持仓
 */
-void OrderMgmt::herge( order_t* src_, const order_t* update_ ) {
-    auto p = position( src_->code, src_->dir == odir_t::sell );  //-sell -> p_long
+void OrderMgmt::herge( order_t& src_, const order_t& update_ ) {
+    auto p = position( src_.code, src_.dir == odir_t::sell );  //-sell -> p_long
 
-    vol_t act_closed = std::min( p->qty, update_->qty );
+    vol_t act_closed = std::min( p->qty, update_.qty );
 
     if ( p->qty <= act_closed )
         LOG_INFO( "over sell/cover of qty:" );
@@ -171,11 +171,11 @@ void OrderMgmt::herge( order_t* src_, const order_t* update_ ) {
 
     p->qty -= act_closed;
     // todo
-    [[maybe_unused]] money_t close_value = update_->price * act_closed;
+    [[maybe_unused]] money_t close_value = update_.price * act_closed;
 
-    p->close_profit += ( src_->dir == odir_t::sell
-                             ? update_->price - p->price  // 卖平仓的利润是卖出价格 - 买入价格
-                             : p->price - update_->price )
+    p->close_profit += ( src_.dir == odir_t::sell
+                             ? update_.price - p->price  // 卖平仓的利润是卖出价格 - 买入价格
+                             : p->price - update_.price )
                        * act_closed;
 
     if ( p->qty == 0 ) {
@@ -184,7 +184,7 @@ void OrderMgmt::herge( order_t* src_, const order_t* update_ ) {
     }
 
     p->value      = p->price * p->qty;
-    p->last_price = update_->price;
+    p->last_price = update_.price;
 }
 
 vol_t OrderMgmt::position( const code_t& code_ ) {
@@ -215,12 +215,12 @@ void OrderMgmt::update_position() {
 }
 // 所以我们的最好做法是把每个合约的仓位统一成一条，然后算出平均价，每次有成交的时候就简单的处理就好,否则还要区分昨仓，今仓
 // 如果这样就会出现合约同时持有long和short，也就是说一个合约应该有两条记录，[0] long汇总 [1]short汇总
-void OrderMgmt::accum( order_t* src_, const order_t* update_ ) {
-    auto p = position( src_->code, src_->dir == odir_t::p_long );
+void OrderMgmt::accum( order_t& src_, const order_t& update_ ) {
+    auto p = position( src_.code, src_.dir == odir_t::p_long );
 
-    p->qty += update_->traded;
-    p->price      = ( src_->qty * src_->price + update_->traded * update_->price ) / p->qty;
-    p->last_price = update_->price;
+    p->qty += update_.traded;
+    p->price      = ( src_.qty * src_.price + update_.traded * update_.price ) / p->qty;
+    p->last_price = update_.price;
 }
 
 //--一个订单可能成交多次
@@ -234,6 +234,7 @@ void OrderMgmt::update_ord( const order_t& o_ ) {
         LOG_INFO( "cannot find order of id=%u", o_.id );
         return;
     }
+    auto& r = o.value().get();
 
     // todo  最后返回的rtntrade重复的吗，会不会导致数据重算,--如果直接成交了，是不是就没有没有rtnorder，只有一个rtntrade'?不确定需要做测试
     NVX_ASSERT( ostatus_t::dealt == o_.status );
@@ -241,16 +242,15 @@ void OrderMgmt::update_ord( const order_t& o_ ) {
     // o的订单已经成交了o_, 主要的作用是更新持仓
     // o_不仅仅是更新了o，可能还是更新了其他的仓位的，比如平仓的时候
     if ( o_.dir == odir_t::cover || o_.dir == odir_t::sell )
-        herge( o, &o_ );
+        herge( r, o_ );
     else
-        accum( o, &o_ );
+        accum( r, o_ );
 
-    o->traded += o_.traded;
+    r.traded += o_.traded;
 
-    if ( o->traded == o->qty ) {
-        LOG_INFO( "order of [ %u ] complete dealt, eraise it", o->id );
-        _book.erase( o->id );
-        delete o;
+    if ( r.traded == r.qty ) {
+        LOG_INFO( "order of [ %u ] complete dealt, eraise it", r.id );
+        _book.erase( r.id );
     }
 }
 

@@ -141,11 +141,11 @@ struct order_t {
              const type_t& t_,
              const dir_t&  d_ );
 
-    static order_t* from( const code_t& c_,
-                          const vol_t   v_,
-                          const price_t p_,
-                          const type_t& t_,
-                          const dir_t&  d_ );
+    static order_t from( const code_t& c_,
+                         const vol_t   v_,
+                         const price_t p_,
+                         const type_t& t_,
+                         const dir_t&  d_ );
 
     oid_t      id = kBadId;  //! 订单id
     code_t     code;         //! 代码，RB1910
@@ -262,12 +262,12 @@ inline order_t::order_t( const code_t& c_,
     dir   = d_;
 }
 
-inline order_t* order_t::from( const code_t& c_,
-                               const vol_t   v_,
-                               const price_t p_,
-                               const type_t& t_,
-                               const dir_t&  d_ ) {
-    return new order_t( c_, v_, p_, t_, d_ );
+inline order_t order_t::from( const code_t& c_,
+                              const vol_t   v_,
+                              const price_t p_,
+                              const type_t& t_,
+                              const dir_t&  d_ ) {
+    return order_t( c_, v_, p_, t_, d_ );
 }
 
 NVX_NS_END

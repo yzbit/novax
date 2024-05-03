@@ -109,7 +109,16 @@ void call_create( T&& t ) {
     call_create( std::forward<T>( t ), std::make_index_sequence<std::decay_t<T>::size>{} );
 }
 //
+#include <optional>
+
 int main() {
+
+    int                                        i = 9;
+    std::optional<std::reference_wrapper<int>> k = std::nullopt;
+    // std::optional<std::reference_wrapper<int>> k = std::ref( i );
+    // printf( "opt k=%d, %d\n", k.value().get(), !k );
+    printf( "opt %d\n", !k );
+
     auto tt = args();
     tt.for_each( []( auto& e ) {
         printf( "aaa\n" );
