@@ -1,5 +1,7 @@
 #ifndef C4704959_F4BE_4EAA_9C19_9CD09E83DA7D
 #define C4704959_F4BE_4EAA_9C19_9CD09E83DA7D
+#include <functional>
+
 #include "ns.h"
 
 NVX_NS_BEGIN
@@ -11,6 +13,7 @@ struct Context;
 struct Clock;
 
 struct Quant {
+
     static Quant& instance();
     virtual ~Quant() {}
 
@@ -20,7 +23,6 @@ struct Quant {
     virtual IData*     data()     = 0;
     virtual ITrader*   trader()   = 0;
     virtual Context*   context()  = 0;
-    virtual Clock*     clock()    = 0;
     virtual IStrategy* strategy() = 0;
 };
 

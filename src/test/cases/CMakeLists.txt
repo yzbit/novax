@@ -16,8 +16,8 @@ SET(SRC
 )
 
 #ut coverage
-add_compile_options(--coverage)
-add_link_options(--coverage)
+#add_compile_options(--coverage)
+#add_link_options(--coverage)
 
 add_executable(${PROJECT_NAME} ${SRC})
 

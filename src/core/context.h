@@ -16,7 +16,6 @@ struct Context {
     const quotation_t& qut() const;
     const fund_t       fund() const;
 
-    Clock&  clock();
     Aspect* load( const code_t& symbol_, const period_t& period_, int count_ );
     int     open( const code_t& c_, vol_t qty_, price_t sl_ = 0, price_t tp_ = 0, price_t price_ = 0, otype_t mode_ = otype_t::market );
     int     close( const code_t& c_, vol_t qty_, price_t price_ = 0, otype_t mode_ = otype_t::market );

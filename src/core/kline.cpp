@@ -30,10 +30,13 @@ quotation_t& Kline::qut() {
 //--以小时为单位，则必然是以开盘+n小时作为结果，而且以天为单位
 //--暂且不处理超过日的周期
 bool Kline::is_new_bar( const quotation_t& q_ ) {
+#if 0  // todo
     uint32_t p     = _period;
     uint32_t shift = CLOCK_OF( q_.ex ).open_shift();
 
     return ( q_.time.to_unix_time() - shift ) / p != ( bar().time.to_unix_time() - shift ) / p;
+#endif
+    return false;
 }
 
 // todo 所有的指标的shift不应该由指标来调,因为都是和aspect(kline)同步的,可以先不做,避免过度优化
@@ -77,8 +80,8 @@ void Kline::calc( const quotation_t& q_, int total_ ) {
     // auto r = recent();
 
     // 此时可以认为是新开盘
-    if ( abs( CLOCK_OF( q_.ex ).now() - q_.time.to_unix_time() ) > 3 * 60 ) {
-        LOG_INFO( "market open ;obsolete data recieved: %u %u", CLOCK_OF( q_.ex ).now(), q_.time.to_unix_time() );
+    if ( abs( CLOCK.now( q_.ex ) - q_.time.to_unix_time() ) > 3 * 60 ) {
+        LOG_INFO( "market open ;obsolete data recieved: %u %u", CLOCK.now( q_.ex ), q_.time.to_unix_time() );
         return;
     }
 

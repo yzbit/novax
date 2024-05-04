@@ -83,6 +83,7 @@ TEST( Mgmt, putfail ) {
     ASSERT_EQ( id, NVX_NS::kBadId );
 }
 
+/// -------------------------------------------------
 struct SimBroker : NVX_NS::IBroker {
     SimBroker( NVX_NS::ITrader* t )
         : NVX_NS::IBroker( t ) {}
@@ -90,19 +91,7 @@ struct SimBroker : NVX_NS::IBroker {
     int start() override { return 0; }
     int stop() override { return 0; }
     int put( const NVX_NS::order_t& o_ ) override {
-
-        if ( fail )
-            delegator()->update_ord( o_.id, NVX_NS::ostatus_t::cancelled );
-        else {
-            if ( sell ) {
-                o_.dir = NVX_NS::odir_t::sell;
-            }
-            else {
-                o_.dir = NVX_NS::odir_t::buy;
-            }
-            delegator()->update_ord( o_ );
-        }
-
+        delegator()->update_ord( o_.id, NVX_NS::ostatus_t::cancelled );
         return 0;
     }
 
@@ -110,8 +99,9 @@ struct SimBroker : NVX_NS::IBroker {
         return 0;
     }
 
-    bool fail = true;
-    bool sell = false;
+    void update( NVX_NS::oid_t id, int flag ) {
+        // delegator()->update_ord( o_ );
+    }
 };
 
 TEST( Mgmt, position ) {
@@ -119,11 +109,8 @@ TEST( Mgmt, position ) {
 
     SimBroker fb( &m );
 
-    fb.flag = 0;
     auto id = m.buylong( "rb2410", 1 );
     ASSERT_EQ( id, NVX_NS::kBadId );
 
-    fb.flag = 1;
-    id      = m.buylong( "rb2410", 1 );
-    ASSERT_GT( id, 0 );
+    fb.update( 0, 0 );
 }

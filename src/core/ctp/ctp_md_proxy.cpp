@@ -198,26 +198,26 @@ void CtpExMd::OnRspUserLogin( CThostFtdcRspUserLoginField* pRspUserLogin, CThost
     //-模拟盘返回的时间都是空白，可能需要根据返回的tick数据进行时间的校准
     LOG_TAGGED( "ctp", "tune clock of SHFE" );
     dt.from_ctp( pRspUserLogin->TradingDay, pRspUserLogin->SHFETime, 0 );
-    CLOCK_OF( ( int )extype_t::SHFE ).tune( dt );
+    CLOCK.tune( dt, ( int )extype_t::SHFE );
 
     LOG_TAGGED( "ctp", "tune clock of DCE" );
     dt.from_ctp( pRspUserLogin->TradingDay, pRspUserLogin->DCETime, 0 );
-    CLOCK_OF( ( int )extype_t::DCE ).tune( dt );
+    CLOCK.tune( dt, ( int )extype_t::DCE );
 
     dt.from_ctp( pRspUserLogin->TradingDay, pRspUserLogin->CZCETime, 0 );
-    CLOCK_OF( ( int )extype_t::CZCE ).tune( dt );
+    CLOCK.tune( dt, ( int )extype_t::CZCE );
 
     LOG_TAGGED( "ctp", "tune clock of FFEX" );
     dt.from_ctp( pRspUserLogin->TradingDay, pRspUserLogin->FFEXTime, 0 );
-    CLOCK_OF( ( int )extype_t::FFEX ).tune( dt );
+    CLOCK.tune( dt, ( int )extype_t::FFEX );
 
     LOG_TAGGED( "ctp", "tune clock of INE" );
     dt.from_ctp( pRspUserLogin->TradingDay, pRspUserLogin->INETime, 0 );
-    CLOCK_OF( ( int )extype_t::INE ).tune( dt );
+    CLOCK.tune( dt, ( int )extype_t::INE );
 
     LOG_TAGGED( "ctp", "tune clock of GFEX" );
     dt.from_ctp( pRspUserLogin->TradingDay, pRspUserLogin->GFEXTime, 0 );
-    CLOCK_OF( ( int )extype_t::GFEX ).tune( dt );
+    CLOCK.tune( dt, ( int )extype_t::GFEX );
 
     {
         LOG_TAGGED( "ctp", "login ok , process subcribtion" );

@@ -13,17 +13,15 @@ NVX_NS_BEGIN
 struct QuantImpl : Quant {
 
     QuantImpl() {
-        _c     = new Context();
-        _d     = new Data();
-        _t     = new OrderMgmt();
-        _clock = new Clock();
+        _c = new Context();
+        _d = new Data();
+        _t = new OrderMgmt();
     }
 
     ~QuantImpl() {
         delete _c;
         delete _t;
         delete _d;
-        delete _clock;
     }
 
     int        execute( IStrategy* s_ ) override;
@@ -31,14 +29,12 @@ struct QuantImpl : Quant {
     IData*     data() override { return _d; }
     ITrader*   trader() override { return _t; }
     Context*   context() override { return _c; }
-    Clock*     clock() override { return _clock; }
     IStrategy* strategy() override { return _s; }
 
-    IData*     _d     = nullptr;
-    ITrader*   _t     = nullptr;
-    IStrategy* _s     = nullptr;
-    Context*   _c     = nullptr;
-    Clock*     _clock = nullptr;
+    IData*     _d = nullptr;
+    ITrader*   _t = nullptr;
+    IStrategy* _s = nullptr;
+    Context*   _c = nullptr;
 };
 
 Quant& Quant::instance() {

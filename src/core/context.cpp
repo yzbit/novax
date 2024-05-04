@@ -33,10 +33,6 @@ void Context::update_fund( const fund_t& f_ ) {
     _fund = f_;
 }
 
-Clock& Context::clock() {
-    return *( QUANT.clock() );
-}
-
 Aspect* Context::load( const code_t& symbol_, const period_t& period_, int count_ ) {
     // return ASP.add( symbol_, period_, count_ );
     // todo

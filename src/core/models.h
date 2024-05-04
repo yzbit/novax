@@ -79,7 +79,7 @@ struct candle_t {
 // real time ticks
 struct quotation_t {
     code_t     code;
-    int        ex;        // 交易所
+    exid_t     ex;        // 交易所
     vol_t      volume;    // 成交仓位
     money_t    turnover;  // 成交额
     vol_t      opi;

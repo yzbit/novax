@@ -63,6 +63,7 @@ struct code_t {
     code_t& operator=( const code_t& c_ );
     bool    operator==( const code_t& c_ );
     bool    operator!=( const code_t& c_ );
+    explicit operator bool() const { return !!_code[ 0 ]; }
 
     operator char*();
     operator const char*() const;
@@ -83,7 +84,7 @@ struct datetime_t {
     int year, month, day, wday, hour, minute, seconds, milli;
 
     static datetime_t now();
-    void              from_unix_time( const time_t& t_ );
+    datetime_t&       from_unix_time( const time_t& t_ );
     time_t            to_unix_time() const;
     bool              is_valid() const;
     void              from_ctp( const char* day_, const char* time_, int milli_ );
@@ -95,7 +96,8 @@ struct time_range_t {
     datetime_t end;
 };
 
-using ex_t = code_t;  // 交易所
+using ex_t   = code_t;  // 交易所
+using exid_t = int;
 
 #define DAY_SECONDS ( 24 * 3600u )
 #define WEEK_SECONDS ( 7 * 24 * 3600u )
@@ -329,7 +331,7 @@ inline datetime_t datetime_t::now() {
     return t;
 }
 
-inline void datetime_t::from_unix_time( const time_t& t_ ) {
+inline datetime_t& datetime_t::from_unix_time( const time_t& t_ ) {
     auto tm = localtime( &t_ );
     year    = tm->tm_year + 1900;
     month   = tm->tm_mon + 1;
@@ -340,6 +342,7 @@ inline void datetime_t::from_unix_time( const time_t& t_ ) {
     seconds = tm->tm_sec;
 
     milli = 0;
+    return *this;
 }
 
 inline time_t datetime_t::to_unix_time() const {

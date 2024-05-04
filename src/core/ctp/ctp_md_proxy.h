@@ -59,7 +59,6 @@ private:
     std::set<code_t> _sub_symbols;
     std::set<code_t> _unsub_symbols;
     bool             _is_svc_online = false;
-    Clock            _clock[ ( int )( extype_t::Count ) ];
     std::mutex       _sub_mtx;
 
 private:
