@@ -34,6 +34,7 @@ void Clock::attach( clockcb_t cb_, exid_t ex_ ) {
 void Clock::tune( const datetime_t& dt_, exid_t ex_ ) {
     if ( !ex_ ) return;
 
+    LOG_TAGGED( "clock", "tune clock, exid=%d, local=%s, exp=%s", ex_, datetime_t().from_unix_time( time( 0 ) ).to_iso().c_str(), dt_.to_iso().c_str() );
     {
         std::unique_lock<std::mutex> lock( _mutex );
         _drifts.try_emplace( ex_, dt_.to_unix_time() - time( 0 ) );
