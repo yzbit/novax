@@ -4,13 +4,12 @@
 #include <future>
 #include <map>
 #include <signal.h>
-#include <stdio.h>
+// #include <stdio.h>
 #include <thread>
 #include <time.h>
 #include <unordered_map>
 
 #include "clock.h"
-
 #include "log.hpp"
 
 NVX_NS_BEGIN
