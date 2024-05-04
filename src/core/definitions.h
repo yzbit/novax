@@ -81,7 +81,7 @@ struct code_hash_t {
 };
 
 struct datetime_t {
-    int year, month, day, wday, hour, minute, seconds, milli;
+    int year, month, day, wday, hour, minute, second, milli;
 
     static datetime_t now();
     datetime_t&       from_unix_time( const time_t& t_ );
@@ -89,6 +89,7 @@ struct datetime_t {
     bool              is_valid() const;
     void              from_ctp( const char* day_, const char* time_, int milli_ );
     string_t          to_iso() const;
+    void              print( const char* prefix = "", FILE* fp_ = nullptr ) const;
 };
 
 struct time_range_t {
@@ -339,7 +340,7 @@ inline datetime_t& datetime_t::from_unix_time( const time_t& t_ ) {
     wday    = tm->tm_wday;
     hour    = tm->tm_hour;
     minute  = tm->tm_min;
-    seconds = tm->tm_sec;
+    second  = tm->tm_sec;
 
     milli = 0;
     return *this;
@@ -352,7 +353,7 @@ inline time_t datetime_t::to_unix_time() const {
     t.tm_mday = day;
     t.tm_hour = hour;
     t.tm_min  = minute;
-    t.tm_sec  = seconds;
+    t.tm_sec  = second;
 
     return mktime( &t );
 }
@@ -363,6 +364,14 @@ inline bool datetime_t::is_valid() const {
 
 #define TK_DIFF ( 1000 + 100 + 10 + 1 ) * '0'
 #define H_DIFF ( 10 + 1 ) * '0'
+
+inline void datetime_t::print( const char* prefix_, FILE* fp_ ) const {
+    if ( !fp_ ) {
+        fp_ = stdout;
+    }
+
+    fprintf( fp_, "%s %s\n", prefix_, to_iso().c_str() );
+}
 
 // YYYYMMDD，HH:MM:SS，MILLI ctp独有的格式
 inline void datetime_t::from_ctp( const char* day_, const char* time_, int milli_ ) {
@@ -376,9 +385,9 @@ inline void datetime_t::from_ctp( const char* day_, const char* time_, int milli
     // hour    = ( time_[ 0 ] - '0' ) * 10 + ( time_[ 1 ] - '0' );
     // minute  = ( time_[ 3 ] - '0' ) * 10 + ( time_[ 4 ] - '0' );
     // seconds = ( time_[ 6 ] - '0' ) * 10 + ( time_[ 7 ] - '0' );
-    hour    = time_[ 0 ] * 10 + time_[ 1 ] - H_DIFF;
-    minute  = time_[ 3 ] * 10 + time_[ 4 ] - H_DIFF;
-    seconds = time_[ 6 ] * 10 + time_[ 7 ] - H_DIFF;
+    hour   = time_[ 0 ] * 10 + time_[ 1 ] - H_DIFF;
+    minute = time_[ 3 ] * 10 + time_[ 4 ] - H_DIFF;
+    second = time_[ 6 ] * 10 + time_[ 7 ] - H_DIFF;
 
     milli = milli_;
     // w=y+[y/4]+[c/4]-2c+[26(m+1)/10]+d-1
@@ -388,7 +397,7 @@ inline void datetime_t::from_ctp( const char* day_, const char* time_, int milli
 
 inline std::string datetime_t::to_iso() const {
     char fmt[ 64 ];
-    sprintf( fmt, "%04d-%02d-%02d %02d:%02d:%02d.%03dZ", year, month, day, hour, minute, seconds, milli );
+    sprintf( fmt, "%04d-%02d-%02d %02d:%02d:%02d.%03dZ", year, month, day, hour, minute, second, milli );
 
     return fmt;
 }

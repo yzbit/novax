@@ -20,7 +20,7 @@ struct Clock final {
 
     static Clock& instance();
 
-    void   attach( clockcb_t cb_, exid_t ex_ );
+    void   attach( clockcb_t cb_, exid_t ex_ = -1 );
     void   tune( const datetime_t& dt_, exid_t ex_ );
     time_t now( exid_t ex_ = -1 );
 
@@ -47,6 +47,6 @@ private:
 
 NVX_NS_END
 
-#define CLOCK Clock::instance()
+#define CLOCK NVX_NS::Clock::instance()
 
 #endif /* B87362DF_37FD_4B6A_9F1E_768AAFEA5563 */

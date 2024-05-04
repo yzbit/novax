@@ -1,8 +1,11 @@
 #include <event2/event.h>
 #include <event2/event_struct.h>
 #include <event2/util.h>
+#include <future>
 #include <map>
 #include <signal.h>
+#include <stdio.h>
+#include <thread>
 #include <time.h>
 #include <unordered_map>
 
@@ -13,7 +16,9 @@
 NVX_NS_BEGIN
 
 Clock::Clock() {
-    start();
+    //  [[maybe_unused]] auto fut = std::async( std::launch::async, &Clock::start, this );
+    //  printf( "task started\n" );
+    std::thread( [ & ]() { this->start(); } ).detach();
 }
 
 Clock& Clock::instance() {
@@ -54,6 +59,8 @@ void Clock::handle_tick() {
 }
 
 void Clock::fired( evutil_socket_t fd, short event_, void* arg ) {
+    // printf( "clck fired\n" );
+
     Clock* c = ( Clock* )arg;
     c->handle_tick();
 
