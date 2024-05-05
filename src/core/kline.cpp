@@ -6,23 +6,25 @@
 #define BAR_TRACK 0
 NVX_NS_BEGIN
 
-Kline::Kline( const code_t& code_, const period_t& p_, int series_count_ )
-    : _count( series_count_ )
-    , _symbol( code_ )
+Kline::Kline( const code_t& code_, const period_t& p_, size_t series_count_ )
+    : _symbol( code_ )
     , _period( p_ )
-    , _curr_bar( 0 ) {
-    init();
-}
-
-void Kline::init() {
-    _bars = new BarSeries( _count );
+    , _bars( new BarSeries( series_count_ ) ) {
 }
 
 candle_t& Kline::bar( int index_ ) {
     return _bars->get( index_ );
 }
 
-quotation_t& Kline::qut() {
+period_t Kline::period() const {
+    return _period;
+}
+
+const code_t& Kline::symbol() const {
+    return _symbol;
+}
+
+const quotation_t& Kline::qut() const {
     return _qut;
 }
 

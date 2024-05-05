@@ -10,25 +10,22 @@
 NVX_NS_BEGIN
 
 struct Kline : IAlgo {
-    Kline( const code_t& code_, const period_t& p_, int series_count_ );
+    Kline( const code_t& code_, const period_t& p_, size_t series_count_ );
 
     void calc( const quotation_t& q_, int bar_count_ ) override;
 
-    candle_t&    bar( int index_ = 0 );
-    quotation_t& qut();
-
-private:
-    void init();
+    candle_t&          bar( int index_ = 0 );
+    const quotation_t& qut() const;
+    period_t           period() const;
+    const code_t&      symbol() const;
 
 private:
     bool is_new_bar( const quotation_t& q_ );
 
 private:
     quotation_t _qut;
-    int         _count;
     code_t      _symbol;
     period_t    _period;
-    int         _curr_bar;
     datetime_t  _curr_start;  // 当前k的起始时间
 
 private:

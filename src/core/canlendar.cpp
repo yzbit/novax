@@ -2,27 +2,28 @@
 
 NVX_NS_BEGIN
 
-int Canlendar::load_schedule( const variety_t& v_ ) {
-    return 0;
-}
-
 bool Canlendar::is_trade_day() {
     return true;
 }
 
-bool Canlendar::is_trade_day( const datetime_t& dt_ ) {
-    return true;
+int Canlendar::load_schedule( const char* cal_file_ ) {
+    return 0;
 }
 
-time_range_t Canlendar::trade_time( const code_t& c_ = "" ) {
-
-    return time_range_t();
+bool is_trade_day() {
+    return false;
 }
 
+bool is_trade_day( const datespec_t& date_ ) {
+    return false;
+}
 
-Canlendar& instance() {
-    static Canlendar can;
-    return can;
+bool is_trade_time( const timespec_t& time_ ) {
+    return false;
+}
+
+bool is_weekend( const datetime_t& dt_ ) {
+    return false;
 }
 
 NVX_NS_END

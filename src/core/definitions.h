@@ -80,8 +80,17 @@ struct code_hash_t {
     }
 };
 
+struct datespec_t {
+    int year, month, day, wday;
+};
+
+struct timespec_t {
+    int hour, minute, second, milli;
+};
+
 struct datetime_t {
-    int year, month, day, wday, hour, minute, second, milli;
+    datespec_t d;
+    timespec_t t;
 
     static datetime_t now();
     datetime_t&       from_unix_time( const time_t& t_ );
@@ -333,33 +342,33 @@ inline datetime_t datetime_t::now() {
 }
 
 inline datetime_t& datetime_t::from_unix_time( const time_t& t_ ) {
-    auto tm = localtime( &t_ );
-    year    = tm->tm_year + 1900;
-    month   = tm->tm_mon + 1;
-    day     = tm->tm_mday;
-    wday    = tm->tm_wday;
-    hour    = tm->tm_hour;
-    minute  = tm->tm_min;
-    second  = tm->tm_sec;
+    auto tm  = localtime( &t_ );
+    d.year   = tm->tm_year + 1900;
+    d.month  = tm->tm_mon + 1;
+    d.day    = tm->tm_mday;
+    d.wday   = tm->tm_wday;
+    t.hour   = tm->tm_hour;
+    t.minute = tm->tm_min;
+    t.second = tm->tm_sec;
+    t.milli  = 0;
 
-    milli = 0;
     return *this;
 }
 
 inline time_t datetime_t::to_unix_time() const {
-    struct tm t;
-    t.tm_year = year - 1900;
-    t.tm_mon  = month - 1;
-    t.tm_mday = day;
-    t.tm_hour = hour;
-    t.tm_min  = minute;
-    t.tm_sec  = second;
+    struct tm t0;
+    t0.tm_year = d.year - 1900;
+    t0.tm_mon  = d.month - 1;
+    t0.tm_mday = d.day;
+    t0.tm_hour = t.hour;
+    t0.tm_min  = t.minute;
+    t0.tm_sec  = t.second;
 
-    return mktime( &t );
+    return mktime( &t0 );
 }
 
 inline bool datetime_t::is_valid() const {
-    return day != 0;
+    return d.day != 0;
 }
 
 #define TK_DIFF ( 1000 + 100 + 10 + 1 ) * '0'
@@ -378,18 +387,17 @@ inline void datetime_t::from_ctp( const char* day_, const char* time_, int milli
     // year  = ( day_[ 0 ] - '0' ) * 1000 + ( day_[ 1 ] - '0' ) * 100 + ( day_[ 2 ] - '0' ) * 10 + ( day_[ 3 ] - '0' );
     // month = ( day_[ 4 ] - '0' ) * 10 + ( day_[ 5 ] - '0' );
     // day   = ( day_[ 6 ] - '0' ) * 10 + ( day_[ 7 ] - '0' );
-    year  = day_[ 0 ] * 1000 + day_[ 1 ] * 100 + day_[ 2 ] * 10 + day_[ 3 ] - TK_DIFF;
-    month = day_[ 4 ] * 10 + day_[ 5 ] - H_DIFF;
-    day   = day_[ 6 ] * 10 + day_[ 7 ] - H_DIFF;
+    d.year  = day_[ 0 ] * 1000 + day_[ 1 ] * 100 + day_[ 2 ] * 10 + day_[ 3 ] - TK_DIFF;
+    d.month = day_[ 4 ] * 10 + day_[ 5 ] - H_DIFF;
+    d.day   = day_[ 6 ] * 10 + day_[ 7 ] - H_DIFF;
 
     // hour    = ( time_[ 0 ] - '0' ) * 10 + ( time_[ 1 ] - '0' );
     // minute  = ( time_[ 3 ] - '0' ) * 10 + ( time_[ 4 ] - '0' );
     // seconds = ( time_[ 6 ] - '0' ) * 10 + ( time_[ 7 ] - '0' );
-    hour   = time_[ 0 ] * 10 + time_[ 1 ] - H_DIFF;
-    minute = time_[ 3 ] * 10 + time_[ 4 ] - H_DIFF;
-    second = time_[ 6 ] * 10 + time_[ 7 ] - H_DIFF;
-
-    milli = milli_;
+    t.hour   = time_[ 0 ] * 10 + time_[ 1 ] - H_DIFF;
+    t.minute = time_[ 3 ] * 10 + time_[ 4 ] - H_DIFF;
+    t.second = time_[ 6 ] * 10 + time_[ 7 ] - H_DIFF;
+    t.milli  = milli_;
     // w=y+[y/4]+[c/4]-2c+[26(m+1)/10]+d-1
     // 2049: y=49, c=20,-0 星期日
     // wday = ( year % 100 + ( year % 100 ) / 4 + ( year / 100 ) / 4 - 2 * ( year / 100 ) + 26 * ( month + 1 ) / 10 + day - 1 ) % 7;
@@ -397,7 +405,7 @@ inline void datetime_t::from_ctp( const char* day_, const char* time_, int milli
 
 inline std::string datetime_t::to_iso() const {
     char fmt[ 64 ];
-    sprintf( fmt, "%04d-%02d-%02d %02d:%02d:%02d.%03dZ", year, month, day, hour, minute, second, milli );
+    sprintf( fmt, "%04d-%02d-%02d %02d:%02d:%02d.%03dZ", d.year, d.month, d.day, t.hour, t.minute, t.second, t.milli );
 
     return fmt;
 }

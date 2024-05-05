@@ -14,6 +14,7 @@ SET(SRC
     ut.series.cpp
     ut.ordermgmt.cpp
     ut.clock.cpp
+    ut.kline.cpp
 )
 
 #ut coverage
