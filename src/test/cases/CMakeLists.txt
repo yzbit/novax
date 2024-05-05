@@ -38,8 +38,8 @@ PRIVATE
 
 target_link_libraries(${PROJECT_NAME} 
 PRIVATE 
-    pthread
     novax
+    pthread
     atomic
     gtest
     gmock
