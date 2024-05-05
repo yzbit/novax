@@ -28,8 +28,8 @@ PRIVATE
 
 
 target_link_libraries(${PROJECT_NAME} PRIVATE 
-    pthread
     novax
+    pthread
     event
     atomic
     thosttraderapi_se.so
