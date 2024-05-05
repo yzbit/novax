@@ -2,3 +2,5 @@ build/
 
 *.log
 *.con
+
+output/

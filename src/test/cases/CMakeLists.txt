@@ -48,3 +48,5 @@ PRIVATE
     thostmduserapi_se.so
     LinuxDataCollect.so
 )
+
+install (TARGETS ${PROJECT_NAME} DESTINATION bin)
