@@ -1,25 +1,25 @@
 {
-    "common": {},
-    "proxies": [
-        {
-            "enabled": false,
-            "flow_path": "",
-            "name": "ctp-yongan",
-            "frontend": "tcp://180.169.124.109:41213",
-            "user_name": "202101141",
-            "passwordd": "176599",
-            "broker": "20000",
-            "description": "ctp fu"
-        },
-        {
-            "enabled": true,
-            "flow_path": "",
-            "name": "ctp-simulation",
-            "frontend": "tcp://180.168.146.187:10211",
-            "user_name": "111974",
-            "password": "yaozinan90!",
-            "broker": "9999",
-            "description": "ctp fu"
-        }
-    ]
+  "common": {},
+  "proxies": [
+    {
+      "enabled": false,
+      "flow_path": "",
+      "name": "ctp-yongan",
+      "frontend": "tcp://180.169.124.109:41213",
+      "user_name": "202101141",
+      "passwordd": "176599",
+      "broker": "20000",
+      "description": "ctp fu"
+    },
+    {
+      "enabled": true,
+      "flow_path": "",
+      "name": "ctp-simulation",
+      "frontend": "tcp://180.168.146.187:10211",
+      "user_name": "111974",
+      "password": "yaozinan90!",
+      "broker": "9999",
+      "description": "ctp fu"
+    }
+  ]
 }
