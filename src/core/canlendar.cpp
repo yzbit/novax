@@ -37,7 +37,8 @@ SOFTWARE.
 NVX_NS_BEGIN
 
 bool Calendar::is_trade_day() {
-    return is_trade_day( datetime().now().d );
+    return false;
+    //is_trade_day( datetime().now().d );
 }
 
 bool Calendar::is_trade_day( const datespec_t& date_ ) {
