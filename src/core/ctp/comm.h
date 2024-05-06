@@ -1,7 +1,7 @@
 /************************************************************************************
-MIT License
+The MIT License
 
-Copyright (c) 2024 [YaoZinan zinan@outlook.com nvx-quant.com]
+Copyright (c) 2024 YaoZinan  [zinan@outlook.com, nvx-quant.com]
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -21,9 +21,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-*@init: Yaozn
-*@contributors:Yaozn
-*@update: 2024
+* \author: yaozn(zinan@outlook.com)
+* \date: 2024
 **********************************************************************************/
 
 #ifndef B43732C7_EA9D_4138_8023_E0627CD66A48
