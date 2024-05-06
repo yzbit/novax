@@ -7,6 +7,7 @@
 #include <assert.h>
 #include <chrono>
 #include <cstdint>
+#include <ctype.h>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -51,32 +52,46 @@ enum class pricetype_t {
 };
 
 struct code_t {
-    static constexpr int kMaxCodeLength = 16;
+    static constexpr int kMaxCodeLength = 8;
 
     code_t( const char* code_ );
-    code_t( const std::string& str_ );
+    code_t( const string_t& str_ );
     code_t( int c_ );
     code_t() = default;
-    const char* c_str() const;
+    char*  c_str() const;
+    size_t length() const;
 
     bool    empty() const;
     code_t& operator=( const code_t& c_ );
-    bool    operator==( const code_t& c_ );
-    bool    operator!=( const code_t& c_ );
-    explicit operator bool() const { return !!_code[ 0 ]; }
 
-    operator char*();
-    operator const char*() const;
+    bool operator==( const code_t& c_ ) const;
+    bool operator!=( const code_t& c_ ) const;
+    bool operator!=( const char* c_ ) const;
+    bool operator==( const char* c_ ) const;
+    bool operator<( const code_t& c_ ) const;
+
+    operator bool() const { return !!_code[ 0 ]; }
 
 private:
-    char _code[ kMaxCodeLength ] = { 0 };
+    char _code[ kMaxCodeLength + 1 ] = { 0 };
 };
+
+using ins_t = code_t;
+inline ins_t code2ins( const code_t& c_ ) {
+    char ins[ code_t::kMaxCodeLength + 1 ] = { 0 };
+
+    const char* sz  = c_.c_str();
+    char*       dst = ins;
+    while ( *sz && !std::isdigit( *sz ) )
+        *dst++ = *sz++;
+
+    return ins_t( ins );
+}
 
 struct code_hash_t {
     std::size_t operator()( const code_t& c_ ) const {
-        // todo?
-        static_assert( sizeof( code_t ) == 16, "bad code size ,not 16" );
-        return std::hash<uint64_t>()( *( uint64_t* )&c_[ 0 ] ) ^ std::hash<uint64_t>()( *( uint64_t* )&c_[ 8 ] );
+        static_assert( sizeof( code_t ) == 9, "bad code size ,not 8" );
+        return std::hash<uint64_t>()( *( uint64_t* )&c_.c_str()[ 0 ] );
     }
 };
 
@@ -216,16 +231,24 @@ struct arg_binding_t {
 };
 
 //--inlines------------------------------------------------------------------------
+inline bool code_t::operator<( const code_t& c_ ) const {
+    return strncmp( _code, c_._code, sizeof( _code ) );
+}
+
 inline code_t::code_t( const char* code_ )
     : _code{ 0 } {
     memcpy( _code, code_, std::min( sizeof( _code ) - 1, strlen( code_ ) ) );
 }
 
-inline const char* code_t::c_str() const {
-    return _code;
+inline char* code_t::c_str() const {
+    return const_cast<char*>( _code );
 }
 
-inline code_t::code_t( const std::string& str_ )
+inline size_t code_t::length() const {
+    return strlen( _code );
+}
+
+inline code_t::code_t( const string_t& str_ )
     : code_t{ str_.c_str() } {
 }
 
@@ -242,14 +265,24 @@ inline code_t& code_t::operator=( const code_t& c_ ) {
     return *this;
 }
 
-inline bool code_t::operator==( const code_t& c_ ) {
-    return memcmp( _code, c_._code, sizeof( _code ) ) == 0;
+inline bool code_t::operator==( const char* c_ ) const {
+    if ( length() != strlen( c_ ) ) return false;
+    return *this == code_t( c_ );
 }
 
-inline bool code_t::operator!=( const code_t& c_ ) {
+inline bool code_t::operator!=( const char* c_ ) const {
+    if ( length() != strlen( c_ ) ) return true;
+    return *this != code_t( c_ );
+}
+
+inline bool code_t::operator==( const code_t& c_ ) const {
+    return ( this == &c_ ) || strncmp( _code, c_._code, sizeof( _code ) ) == 0;
+}
+
+inline bool code_t::operator!=( const code_t& c_ ) const {
     return !( *this == c_ );
 }
-
+#if 0
 inline code_t::operator char*() {
     return _code;
 }
@@ -257,6 +290,7 @@ inline code_t::operator char*() {
 inline code_t::operator const char*() const {
     return _code;
 }
+#endif
 //
 // todo note: 注意：如果t=year，rep > 1是没有意义的
 inline period_t::period_t( const type_t& t_, int r_ )

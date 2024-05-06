@@ -79,7 +79,7 @@ std::unique_ptr<char*[]> CtpExMd::set2arr( std::set<code_t>& s ) {
     int  n   = 0;
 
     for ( auto& s : s ) {
-        arr[ n++ ] = const_cast<char*>( ( const char* )( s ) );
+        arr[ n++ ] = s.c_str();
         // fprintf( stderr, "#### %s\n", arr[ n - 1 ] );
     }
 
@@ -87,12 +87,12 @@ std::unique_ptr<char*[]> CtpExMd::set2arr( std::set<code_t>& s ) {
 }
 
 int CtpExMd::sub( code_t& code_ ) {
-    char* c = code_;
+    char* c = code_.c_str();
     return _api->SubscribeMarketData( &c, 1 );
 }
 
 int CtpExMd::unsub( code_t& code_ ) {
-    char* c = code_;
+    char* c = code_.c_str();
     return _api->UnSubscribeMarketData( &c, 1 );
 }
 

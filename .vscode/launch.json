@@ -8,7 +8,7 @@
             "name": "sf_car", // 配置名称，将会在启动配置的下拉菜单中显示
             "type": "cppdbg", // ++
             "request": "launch",
-            "program": "/home/yaozn/data/code/novax/build/src/test/cases/novax.ut", // 调试程序的位置及程序名称
+            "program": "/home/yaozn/data/code/novax/output/bin/novax.ut", // 调试程序的位置及程序名称
             //"program": "/home/ubuntu/code/cub/build/src/reactor/cub_reactor", // 调试程序的位置及程序名称
             "args": [ // 传送进来的参数，像C函数中的argc个的args
             ],

@@ -145,7 +145,7 @@ int CtpTrader::put( const order_t& o_ ) {
     CThostFtdcInputOrderField field = { 0 };
     CTP_COPY_SAFE( field.BrokerID, _settings.i.broker.c_str() );
     CTP_COPY_SAFE( field.InvestorID, _settings.i.id.c_str() );
-    memcpy( field.InstrumentID, o_.code, sizeof( o_.code ) );
+    memcpy( field.InstrumentID, o_.code.c_str(), o_.code.length() );
 
     // todo 如果是平仓，还需要给id吗?
     if ( assign_ref( o_.id ) < 0 ) {
@@ -290,7 +290,7 @@ int CtpTrader::assign_ref( oid_t id_ ) {
     for ( ; i > j; --i ) {
         if ( _ss.init_ref[ i ] == '9' ) {
             _ss.init_ref[ i ] = '0';
-            carry = 1;
+            carry             = 1;
         }
         else {
             _ss.init_ref[ i ] += 1;
