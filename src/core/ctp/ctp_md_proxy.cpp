@@ -43,7 +43,7 @@ CtpExMd::CtpExMd( IData* d_ )
     : IMarket( d_ ) {
 }
 
-int CtpExMd::subscribe( const code_t& code_ ) {
+nvx_st CtpExMd::subscribe( const code_t& code_ ) {
     std::unique_lock<std::mutex> lock{ _sub_mtx };
 
     LOG_TAGGED( "ctp",
@@ -60,10 +60,10 @@ int CtpExMd::subscribe( const code_t& code_ ) {
         sub( const_cast<code_t&>( code_ ) );
     }
 
-    return 0;
+    return NVX_OK;
 }
 
-int CtpExMd::unsubscribe( const code_t& code_ ) {
+nvx_st CtpExMd::unsubscribe( const code_t& code_ ) {
     std::unique_lock<std::mutex> lock{ _sub_mtx };
 
     LOG_TAGGED( "ctp",
@@ -73,7 +73,7 @@ int CtpExMd::unsubscribe( const code_t& code_ ) {
                 ( int )_sub_symbols.size(),
                 ( int )_unsub_symbols.size() );
 
-    if ( _sub_symbols.count( code_ ) == 0 ) return 0;
+    if ( _sub_symbols.count( code_ ) == 0 ) return NVX_OK;
 
     _sub_symbols.erase( code_ );
     _unsub_symbols.insert( code_ );
@@ -82,20 +82,20 @@ int CtpExMd::unsubscribe( const code_t& code_ ) {
         unsub( const_cast<code_t&>( code_ ) );
     }
 
-    return 0;
+    return NVX_OK;
 }
 
-int CtpExMd::sub() {
-    if ( _sub_symbols.empty() ) return 0;
+nvx_st CtpExMd::sub() {
+    if ( _sub_symbols.empty() ) return NVX_OK;
 
     auto arr = set2arr( _sub_symbols );
 
     return _api->SubscribeMarketData( arr.get(), _sub_symbols.size() );
 }
 
-int CtpExMd::unsub() {
+nvx_st CtpExMd::unsub() {
     return 0;
-    if ( _sub_symbols.empty() ) return 0;
+    if ( _sub_symbols.empty() ) return NVX_OK;
 
     auto arr = set2arr( _sub_symbols );
     return _api->UnSubscribeMarketData( arr.get(), _unsub_symbols.size() );
@@ -113,12 +113,12 @@ std::unique_ptr<char*[]> CtpExMd::set2arr( std::set<code_t>& s ) {
     return arr;
 }
 
-int CtpExMd::sub( code_t& code_ ) {
+nvx_st CtpExMd::sub( code_t& code_ ) {
     char* c = code_.c_str();
     return _api->SubscribeMarketData( &c, 1 );
 }
 
-int CtpExMd::unsub( code_t& code_ ) {
+nvx_st CtpExMd::unsub( code_t& code_ ) {
     char* c = code_.c_str();
     return _api->UnSubscribeMarketData( &c, 1 );
 }
@@ -128,7 +128,7 @@ id_t CtpExMd::session_id() {
     return ++_rid;
 }
 
-int CtpExMd::login() {
+nvx_st CtpExMd::login() {
     CThostFtdcReqUserLoginField login_req = { 0 };
 
     CTP_COPY_SAFE( login_req.BrokerID, _settings.i.broker.c_str() );
@@ -140,35 +140,35 @@ int CtpExMd::login() {
     int rt = this->_api->ReqUserLogin( &login_req, session );
     if ( !rt ) {
         LOG_INFO( "i> LqSvcMarket::xLogin sucessfully, sess=%u\n", ( unsigned )session );
-        return 0;
+        return NVX_OK;
     }
     else {
         LOG_INFO( "c> LqSvcMarket::xLogin failed\n" );
-        return -1;
+        return NVX_Fail;
     }
 
     return 0;
 }
 
-int CtpExMd::start() {
+nvx_st CtpExMd::start() {
     LOG_TAGGED( "ctp", "start to run ,state=%d", _running );
-    if ( _running ) return 0;
+    if ( _running ) return NVX_OK;
     _running = true;
 
     return init();
 }
 
-int CtpExMd::stop() {
+nvx_st CtpExMd::stop() {
     LOG_TAGGED( "ctp", "stop running ,[do NOTHING] state=%d", _running );
-    return 0;
+    return NVX_OK;
 }
 
-int CtpExMd::init() {
+nvx_st CtpExMd::init() {
     LOG_TAGGED( "ctp", "init begin" );
 
     if ( _settings.load( CTP_MD_SETTING_FILE ) < 0 ) {
         LOG_INFO( "#ERR,read ctp setings failed" );
-        return -1;
+        return NVX_Fail;
     }
 
     LOG_INFO( "ctp md init,flow=%s,font=%s", _settings.flow_path.c_str(), _settings.frontend[ 0 ].c_str() );
@@ -187,7 +187,7 @@ int CtpExMd::init() {
         LOG_TAGGED( "ctp", "md api exit with code=%d", rc );
     } ).detach();
 
-    return 0;
+    return NVX_OK;
 }
 
 // ctp overrides

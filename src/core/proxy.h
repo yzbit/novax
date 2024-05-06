@@ -54,10 +54,10 @@ struct IBroker {
     IBroker( ITrader* tr_ );
     virtual ~IBroker();
 
-    virtual int start()                     = 0;
-    virtual int stop()                      = 0;
-    virtual int put( const order_t& o_ )    = 0;
-    virtual int cancel( const order_t& o_ ) = 0;
+    virtual nvx_st start()                     = 0;
+    virtual nvx_st stop()                      = 0;
+    virtual nvx_st put( const order_t& o_ )    = 0;
+    virtual nvx_st cancel( const order_t& o_ ) = 0;
 
 protected:
     ITrader* delegator();
@@ -82,10 +82,10 @@ private:
 struct IMarket {
     IMarket( IData* dt_ );
 
-    virtual int start()                            = 0;
-    virtual int stop()                             = 0;
-    virtual int subscribe( const code_t& code_ )   = 0;
-    virtual int unsubscribe( const code_t& code_ ) = 0;
+    virtual nvx_st start()                            = 0;
+    virtual nvx_st stop()                             = 0;
+    virtual nvx_st subscribe( const code_t& code_ )   = 0;
+    virtual nvx_st unsubscribe( const code_t& code_ ) = 0;
 
     virtual ~IMarket();
 

@@ -50,17 +50,17 @@ struct OrderMgmt : ITrader {
     OrderMgmt();
     ~OrderMgmt();
 
-    int start();
-    int stop();
+    nvx_st start();
+    nvx_st stop();
 
-    oid_t buylong( const code_t& code_, const vol_t qty_, const price_t price_ = 0, const otype_t mode_ = otype_t::market, const price_t sl_ = 0, const price_t tp_ = 0, const text_t& remark = "open buy" );
-    int   sell( const code_t& code_, const vol_t qty_ = 0, const price_t price_ = 0, const otype_t mode_ = otype_t::market, const text_t& remark = "close buy" );
-    oid_t sellshort( const code_t& code_, const vol_t qty_, const price_t price_ = 0, const otype_t mode_ = otype_t::market, const price_t sl_ = 0, const price_t tp_ = 0, const text_t& remark = "open short" );
-    int   buy( const code_t& code_, const vol_t qty_ = 0, const price_t price_ = 0, const otype_t mode_ = otype_t::market, const text_t& remark = "close short" );
+    oid_t  buylong( const code_t& code_, const vol_t qty_, const price_t price_ = 0, const otype_t mode_ = otype_t::market, const price_t sl_ = 0, const price_t tp_ = 0, const text_t& remark = "open buy" );
+    nvx_st sell( const code_t& code_, const vol_t qty_ = 0, const price_t price_ = 0, const otype_t mode_ = otype_t::market, const text_t& remark = "close buy" );
+    oid_t  sellshort( const code_t& code_, const vol_t qty_, const price_t price_ = 0, const otype_t mode_ = otype_t::market, const price_t sl_ = 0, const price_t tp_ = 0, const text_t& remark = "open short" );
+    nvx_st buy( const code_t& code_, const vol_t qty_ = 0, const price_t price_ = 0, const otype_t mode_ = otype_t::market, const text_t& remark = "close short" );
 
-    int cancel( oid_t id_ );
-    int close( oid_t id_ );
-    int close( const code_t code_ );
+    nvx_st cancel( oid_t id_ );
+    nvx_st close( oid_t id_ );
+    nvx_st close( const code_t code_ );
 
     void update_ord( oid_t id_, ostatus_t status_ ) override;
     void update_ord( const order_t& o_ ) override;
@@ -73,10 +73,10 @@ struct OrderMgmt : ITrader {
     vol_t long_position( const code_t& code_ );
 
 private:
-    void  herge( order_t& src_, const order_t& update_ );
-    void  accum( order_t& src_, const order_t& update_ );
-    int   close( const order_t& r_ );
-    oid_t put( const odir_t& dir_, const code_t& code_, const vol_t qty_, const price_t price_, const otype_t mode_, const price_t sl_, const price_t tp_, const text_t& remark_ );
+    void   herge( order_t& src_, const order_t& update_ );
+    void   accum( order_t& src_, const order_t& update_ );
+    nvx_st close( const order_t& r_ );
+    oid_t  put( const odir_t& dir_, const code_t& code_, const vol_t qty_, const price_t price_, const otype_t mode_, const price_t sl_, const price_t tp_, const text_t& remark_ );
 
 private:
     oid_t oid();

@@ -70,7 +70,7 @@ Quant& Quant::instance() {
 }
 
 //--处理输入,命令等
-int QuantImpl::execute( IStrategy* s_ ) {
+nvx_st QuantImpl::execute( IStrategy* s_ ) {
     _s = s_;
 
     _s->init();
@@ -86,7 +86,7 @@ int QuantImpl::execute( IStrategy* s_ ) {
         ::sleep( 1 );
 
     delete this;
-    return 0;
+    return NVX_OK;
 }
 
 /*

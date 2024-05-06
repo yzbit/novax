@@ -57,13 +57,13 @@ struct Data : IData {
     Data();
     ~Data();
 
-    void update( const quotation_t& tick_ ) override;
-    int  start();
-    int  stop();
+    void   update( const quotation_t& tick_ ) override;
+    nvx_st start();
+    nvx_st stop();
 
     Aspect* attach( const code_t& symbol_, const period_t& period_, int count_ );
-    int     attach( Aspect* a_ );
-    int     dettach( Aspect* a_ );
+    nvx_st  attach( Aspect* a_ );
+    nvx_st  dettach( Aspect* a_ );
 
 private:
     void process();

@@ -47,12 +47,11 @@ NVX_NS_BEGIN
 struct DcClient : IMarket {
     DcClient( IData* data_ );
 
-    int start() override;
-    int stop() override;
-    int subscribe( const code_t& code_ ) override;
-    int unsubscribe( const code_t& code_ ) override;
-
-    int run();
+    nvx_st start() override;
+    nvx_st stop() override;
+    nvx_st subscribe( const code_t& code_ ) override;
+    nvx_st unsubscribe( const code_t& code_ ) override;
+    nvx_st run();
 
 private:
     void on_msg( const Msg* m_ );

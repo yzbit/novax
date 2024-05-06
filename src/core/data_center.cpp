@@ -37,15 +37,15 @@ DcClient::DcClient( IData* data_ )
     : IMarket( data_ ) {
 }
 
-int DcClient::start() {
+nvx_st DcClient::start() {
     return send_msg( _bev, StartDcMsg() );
 }
 
-int DcClient::stop() {
+nvx_st DcClient::stop() {
     return send_msg( _bev, StopDcMsg() );
 }
 
-int DcClient::subscribe( const code_t& code_ ) {
+nvx_st DcClient::subscribe( const code_t& code_ ) {
     SubMsg s;
     s.code = code_;
 
@@ -56,7 +56,7 @@ int DcClient::subscribe( const code_t& code_ ) {
     return send_msg( _bev, s );
 }
 
-int DcClient::unsubscribe( const code_t& code_ ) {
+nvx_st DcClient::unsubscribe( const code_t& code_ ) {
     UnsubMsg um;
     um.code = code_;
 
@@ -102,7 +102,7 @@ void DcClient::event_cb( struct bufferevent* bev, short event_, void* ctx ) {
     printf( "dcclient on event" );
 }
 
-int DcClient::run() {
+nvx_st DcClient::run() {
     struct event_base* base = event_base_new();
 
     struct sockaddr_un addr;

@@ -51,24 +51,24 @@ struct CtpTrader : IBroker, CThostFtdcTraderSpi {
     CtpTrader( ITrader* tr_ );
 
 protected:
-    int start() override;
-    int stop() override;
-    int put( const order_t& o_ ) override;
-    int cancel( const order_t& o_ ) override;
+    nvx_st start() override;
+    nvx_st stop() override;
+    nvx_st put( const order_t& o_ ) override;
+    nvx_st cancel( const order_t& o_ ) override;
 
 private:
-    int login();
-    int logout();
-    int auth();
-    int qry_settlement();
-    int confirm_settlement();
-    int qry_fund();
-    int qry_marginrate();
-    int qry_commission();
-    int qry_position();
+    nvx_st login();
+    nvx_st logout();
+    nvx_st auth();
+    nvx_st qry_settlement();
+    nvx_st confirm_settlement();
+    nvx_st qry_fund();
+    nvx_st qry_marginrate();
+    nvx_st qry_commission();
+    nvx_st qry_position();
 
 private:
-    int    assign_ref( oid_t id_ );
+    nvx_st assign_ref( oid_t id_ );
     oid_t  id_of( const TThostFtdcOrderRefType& ref_ );
     odir_t cvt_direction( const TThostFtdcDirectionType& di_, const TThostFtdcCombOffsetFlagType& comb_ );
     odir_t cvt_direction( const TThostFtdcDirectionType& di_, const TThostFtdcOffsetFlagType& comb_ );

@@ -48,18 +48,18 @@ struct CtpExMd : IMarket, CThostFtdcMdSpi {
     CtpExMd( IData* d_ );
 
 protected:
-    int start() override;
-    int stop() override;
-    int subscribe( const code_t& code_ ) override;
-    int unsubscribe( const code_t& code_ ) override;
+    nvx_st start() override;
+    nvx_st stop() override;
+    nvx_st subscribe( const code_t& code_ ) override;
+    nvx_st unsubscribe( const code_t& code_ ) override;
 
 private:
-    int init();
-    int login();
-    int sub();
-    int unsub();
-    int sub( code_t& code_ );
-    int unsub( code_t& code_ );
+    nvx_st init();
+    nvx_st login();
+    nvx_st sub();
+    nvx_st unsub();
+    nvx_st sub( code_t& code_ );
+    nvx_st unsub( code_t& code_ );
 
 private:
     std::unique_ptr<char*[]> set2arr( std::set<code_t>& s );

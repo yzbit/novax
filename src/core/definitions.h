@@ -52,6 +52,7 @@ NVX_NS_BEGIN
 
 #define NVX_ASSERT assert
 
+using nvx_st       = int;
 using id_t         = uint32_t;
 using price_t      = float;
 using vol_t        = int;  // todo double ctp都是整数仓位;
@@ -61,6 +62,9 @@ using stringlist_t = std::vector<std::string>;
 using text_t       = string_t;
 using money_t      = float;
 using kidx_t       = uint32_t;
+
+constexpr nvx_st NVX_OK   = 0;
+constexpr nvx_st NVX_Fail = -1;
 
 constexpr int kBadId = 0;
 #define IS_VALID_ID( _id_ ) ( kBadId != ( _id_ ) )

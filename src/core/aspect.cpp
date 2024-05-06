@@ -58,6 +58,7 @@ const code_t& Aspect::code() const {
 inline bool Aspect::loaded() const {
     return !_symbol.empty();
 }
+
 Aspect::~Aspect() {
     delete _k;
 
@@ -68,7 +69,7 @@ Aspect::~Aspect() {
     _algos.clear();
 }
 
-int Aspect::load( const code_t& code_, const period_t& p_, int count_ ) {
+nvx_st Aspect::load( const code_t& code_, const period_t& p_, int count_ ) {
     if ( loaded() ) return 0;
 
     _symbol = code_;
@@ -76,7 +77,7 @@ int Aspect::load( const code_t& code_, const period_t& p_, int count_ ) {
 
     NVX_ASSERT( _k );
 
-    return 0;
+    return NVX_OK;
 }
 
 void Aspect::update( const quotation_t& q_ ) {
@@ -87,20 +88,20 @@ void Aspect::update( const quotation_t& q_ ) {
     }
 }
 
-int Aspect::addi( IIndicator* i_ ) {
-    if ( !i_ ) return 0;
+nvx_st Aspect::addi( IIndicator* i_ ) {
+    if ( !i_ ) return NVX_OK;
 
     auto itr = std::find_if( _algos.begin(), _algos.end(), [ & ]( const prii_t& pi_ ) { return pi_.i == i_; } );
 
     if ( itr != _algos.end() ) {
         LOG_TAGGED( "asp", "%s already attached. ign", i_->name() );
-        return 0;
+        return NVX_OK;
     }
 
     _algos.push_back( { _ref_prio++, i_ } );
     std::sort( _algos.begin(), _algos.end(), []( auto& a_, auto& b_ ) { return a_.p > b_.p; } );
 
-    return 0;
+    return NVX_OK;
 }
 
 Aspect::Aspect( Data* data_ )

@@ -66,11 +66,11 @@ Aspect* Context::load( const code_t& symbol_, const period_t& period_, int count
     return nullptr;
 }
 
-int Context::open( const code_t& c_, vol_t qty_, price_t sl_, price_t tp_, price_t price_, otype_t mode_ ) {
+oid_t Context::open( const code_t& c_, vol_t qty_, price_t sl_, price_t tp_, price_t price_, otype_t mode_ ) {
     if ( qty_ < 0 )
         return TRADER.sellshort( c_, -qty_, price_, mode_, sl_, tp_ );
     else if ( qty_ > 0 )
-        TRADER.buylong( c_, qty_, price_, mode_ );
+        return TRADER.buylong( c_, qty_, price_, mode_ );
     else {
         assert( false );
         return 0;
@@ -79,7 +79,7 @@ int Context::open( const code_t& c_, vol_t qty_, price_t sl_, price_t tp_, price
     return 0;
 }
 
-int Context::close( const code_t& c_, vol_t qty_, price_t price_, otype_t mode_ ) {
+nvx_st Context::close( const code_t& c_, vol_t qty_, price_t price_, otype_t mode_ ) {
     if ( qty_ < 0 ) {
         return TRADER.buy( c_, -qty_, price_, mode_ );
     }
@@ -90,6 +90,7 @@ int Context::close( const code_t& c_, vol_t qty_, price_t price_, otype_t mode_ 
         return TRADER.close( c_ );
     }
 }
+
 vol_t Context::position() const {
 #if 0
     auto& pf = p();

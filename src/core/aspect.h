@@ -42,9 +42,9 @@ struct Aspect final {
     Aspect( Data* data_ );
     ~Aspect();
 
-    void update( const quotation_t& q_ );
-    int  load( const code_t& code_, const period_t& p_, int count_ );
-    int  addi( IIndicator* i_ );
+    void   update( const quotation_t& q_ );
+    nvx_st load( const code_t& code_, const period_t& p_, int count_ );
+    nvx_st addi( IIndicator* i_ );
 
     const code_t& code() const;
     Kline&        kline( kidx_t index_ = 0 );

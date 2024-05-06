@@ -29,6 +29,7 @@ SOFTWARE.
 #define C4704959_F4BE_4EAA_9C19_9CD09E83DA7D
 #include <functional>
 
+#include "definitions.h"
 #include "ns.h"
 
 NVX_NS_BEGIN
@@ -44,8 +45,8 @@ struct Quant {
     static Quant& instance();
     virtual ~Quant() {}
 
-    virtual int  execute( IStrategy* s_ ) = 0;
-    virtual void invoke()                 = 0;
+    virtual nvx_st execute( IStrategy* s_ ) = 0;
+    virtual void   invoke()                 = 0;
 
     virtual IData*     data()     = 0;
     virtual ITrader*   trader()   = 0;

@@ -36,10 +36,10 @@ namespace ctp {
 CtpTrader::CtpTrader( ITrader* tr_ )
     : IBroker( tr_ ) {}
 
-int CtpTrader::start() {
+nvx_st CtpTrader::start() {
     if ( _settings.load( CTP_TRADE_SETTING_FILE ) < 0 ) {
         LOG_TAGGED( "ctp", "load config failed: %s", CTP_TRADE_SETTING_FILE );
-        return -1;
+        return NVX_Fail;
     }
 
     LOG_INFO( "RegisterSpi@注册ctp交易网关\n" );
@@ -69,36 +69,36 @@ int CtpTrader::start() {
 
     //_api.join
 
-    return 0;
+    return NVX_OK;
 }
 
-int CtpTrader::stop() {
+nvx_st CtpTrader::stop() {
     LOG_INFO( "LqTradeSvc,ReleaseSpi@释放ctp交易网关\n" );
 
     // ctp 手册建议:
     _api->RegisterSpi( nullptr );
     _api->Release();
 
-    return 0;
+    return NVX_OK;
 }
 
-int CtpTrader::qry_fund() {
-    return 0;
+nvx_st CtpTrader::qry_fund() {
+    return NVX_OK;
 }
 
-int CtpTrader::qry_marginrate() {
-    return 0;
+nvx_st CtpTrader::qry_marginrate() {
+    return NVX_OK;
 }
 
-int CtpTrader::qry_commission() {
+nvx_st CtpTrader::qry_commission() {
     CThostFtdcQryInstrumentCommissionRateField field = { 0 };
 
     CTP_COPY_SAFE( field.BrokerID, _settings.i.broker.c_str() );
     CTP_COPY_SAFE( field.InvestorID, _settings.i.id.c_str() );
     // CTP_COPY_SAFE( filed.InstrumentID, _settings..c_str() );
 
-    return !_api->ReqQryInstrumentCommissionRate( &field, req_id() ) ? 0
-                                                                     : -1;
+    return !_api->ReqQryInstrumentCommissionRate( &field, req_id() ) ? NVX_OK
+                                                                     : NVX_Fail;
 }
 
 void CtpTrader::session_changed( const session_t& s_ ) {
@@ -106,11 +106,11 @@ void CtpTrader::session_changed( const session_t& s_ ) {
     assert( 0 );
 }
 
-int CtpTrader::qry_position() {
-    return 0;
+nvx_st CtpTrader::qry_position() {
+    return NVX_OK;
 }
 
-int CtpTrader::cancel( const order_t& o_ ) {
+nvx_st CtpTrader::cancel( const order_t& o_ ) {
     CThostFtdcInputOrderActionField field = { 0 };
 
     CTP_COPY_SAFE( field.BrokerID, _settings.i.broker.c_str() );
@@ -126,7 +126,7 @@ int CtpTrader::cancel( const order_t& o_ ) {
 
     if ( oids == _id_map.end() ) {
         LOG_INFO( "xModifyOrder@试图删除一个不存在订单ID,%d\n", o_ );
-        return -1;
+        return NVX_Fail;
     }
 
     if ( oids->second.eoid.is_valid() ) {
@@ -141,7 +141,7 @@ int CtpTrader::cancel( const order_t& o_ ) {
     }
     else {
         LOG_INFO( "xModifyOrder@试图删除一个不存在订单ID,oid=%d\n", o_ );
-        return -2;
+        return NVX_Fail;
     }
 
     field.ActionFlag = THOST_FTDC_AF_Delete;
@@ -163,10 +163,10 @@ int CtpTrader::cancel( const order_t& o_ ) {
 
     // todo
     // 这里不能这么做，因为用户可能发出很多次req--比如在返回之前多次cancel，put,只能假设用户不会通过其他客户端也在操作
-    return !_api->ReqOrderAction( &field, req_id() ) ? 0 : -1;
+    return !_api->ReqOrderAction( &field, req_id() ) ? NVX_OK : NVX_Fail;
 }
 
-int CtpTrader::put( const order_t& o_ ) {
+nvx_st CtpTrader::put( const order_t& o_ ) {
     LOG_INFO( "xPutOrder@ctp准备下单\n" );
 
     CThostFtdcInputOrderField field = { 0 };
@@ -177,7 +177,7 @@ int CtpTrader::put( const order_t& o_ ) {
     // todo 如果是平仓，还需要给id吗?
     if ( assign_ref( o_.id ) < 0 ) {
         LOG_INFO( "cant gen order ref or id%u", o_.id );
-        return -1;
+        return NVX_Fail;
     }
 
     memcpy( field.OrderRef, _id_map[ o_.id ].ref, sizeof( field.OrderRef ) );
@@ -192,7 +192,7 @@ int CtpTrader::put( const order_t& o_ ) {
     switch ( o_.mode ) {
     default:
         LOG_INFO( "不存在的订单模式:%d\n", o_.mode );
-        return -1;
+        return NVX_Fail;
 
     case otype_t::market:
         field.OrderPriceType  = THOST_FTDC_OPT_AnyPrice;
@@ -226,7 +226,7 @@ int CtpTrader::put( const order_t& o_ ) {
     switch ( o_.dir ) {
     default:
         LOG_INFO( "bad order direction: %d", o_.dir );
-        return -1;
+        return NVX_Fail;
 
     case odir_t::p_long:
         field.Direction           = THOST_FTDC_D_Buy;
@@ -283,18 +283,18 @@ int CtpTrader::put( const order_t& o_ ) {
 
     if ( !_api ) {
         LOG_INFO( "##ctp, not inited" );
-        return -1;
+        return NVX_Fail;
     }
 
-    return !_api->ReqOrderInsert( &field, field.RequestID ) ? 0 : -1;
+    return !_api->ReqOrderInsert( &field, field.RequestID ) ? NVX_OK : NVX_Fail;
 }
 
-int CtpTrader::assign_ref( oid_t id_ ) {
+nvx_st CtpTrader::assign_ref( oid_t id_ ) {
     NVX_ASSERT( id_ );
 
     if ( _id_map.find( id_ ) != _id_map.end() ) {
         LOG_INFO( "band order id" );
-        return -1;
+        return NVX_Fail;
     }
 
     order_ids_t ids;
@@ -328,10 +328,10 @@ int CtpTrader::assign_ref( oid_t id_ ) {
     ids.id = id_;
     _id_map.emplace( id_, ids );
 
-    return 0;
+    return NVX_OK;
 }
 
-int CtpTrader::login() {
+nvx_st CtpTrader::login() {
     LOG_INFO( "xLogin@登录交易网关:%s %s\n", _settings.i.broker.c_str(), _settings.i.name.c_str() );
 
     CThostFtdcReqUserLoginField field = { 0 };
@@ -340,16 +340,16 @@ int CtpTrader::login() {
     CTP_COPY_SAFE( field.UserID, _settings.i.name.c_str() );
     CTP_COPY_SAFE( field.Password, _settings.i.password.c_str() );
 
-    return !this->_api->ReqUserLogin( &field, req_id() ) ? 0 : -1;
+    return !this->_api->ReqUserLogin( &field, req_id() ) ? NVX_OK : NVX_Fail;
 }
 
-int CtpTrader::logout() {
+nvx_st CtpTrader::logout() {
     CThostFtdcUserLogoutField field = { 0 };
 
     CTP_COPY_SAFE( field.BrokerID, _settings.i.broker.c_str() );
     CTP_COPY_SAFE( field.UserID, _settings.i.name.c_str() );
 
-    return !_api->ReqUserLogout( &field, req_id() ) ? 0 : -1;
+    return !_api->ReqUserLogout( &field, req_id() ) ? NVX_OK : NVX_Fail;
 }
 
 void CtpTrader::OnRtnBulletin( CThostFtdcBulletinField* pBulletin ) {
@@ -358,7 +358,7 @@ void CtpTrader::OnRtnBulletin( CThostFtdcBulletinField* pBulletin ) {
 void CtpTrader::OnRtnTradingNotice( CThostFtdcTradingNoticeInfoField* pTradingNoticeInfo ) {
 }
 
-int CtpTrader::auth() {
+nvx_st CtpTrader::auth() {
     LOG_INFO( "xReqAuth@auth client:%s %s %s\n", _settings.c.auth.c_str(), _settings.c.appid.c_str(), _settings.c.token.c_str() );
 
     CThostFtdcReqAuthenticateField field = { 0 };
@@ -368,7 +368,7 @@ int CtpTrader::auth() {
     CTP_COPY_SAFE( field.AppID, _settings.c.appid.c_str() );
     CTP_COPY_SAFE( field.AuthCode, _settings.c.token.c_str() );
 
-    return !_api->ReqAuthenticate( &field, req_id() ) ? 0 : -1;
+    return !_api->ReqAuthenticate( &field, req_id() ) ? NVX_OK : NVX_Fail;
 }
 
 void CtpTrader::OnFrontConnected() {
@@ -376,7 +376,7 @@ void CtpTrader::OnFrontConnected() {
     auth();
 }
 
-int CtpTrader::qry_settlement() {
+nvx_st CtpTrader::qry_settlement() {
     CThostFtdcQrySettlementInfoField field = { 0 };
     CTP_COPY_SAFE( field.BrokerID, _settings.i.broker.c_str() );
     CTP_COPY_SAFE( field.InvestorID, _settings.i.id.c_str() );
@@ -390,16 +390,16 @@ int CtpTrader::qry_settlement() {
         return confirm_settlement();
     }
 
-    return -1;
+    return NVX_Fail;
 }
 
-int CtpTrader::confirm_settlement() {
+nvx_st CtpTrader::confirm_settlement() {
     CThostFtdcSettlementInfoConfirmField field = { 0 };
 
     CTP_COPY_SAFE( field.BrokerID, _settings.i.broker.c_str() );
     CTP_COPY_SAFE( field.InvestorID, _settings.i.id.c_str() );
 
-    return _api->ReqSettlementInfoConfirm( &field, req_id() ) != 0 ? 0 : -1;
+    return _api->ReqSettlementInfoConfirm( &field, req_id() ) != 0 ? NVX_OK : NVX_Fail;
 }
 
 void CtpTrader::OnRspAuthenticate( CThostFtdcRspAuthenticateField* pRspAuthenticateField, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) {

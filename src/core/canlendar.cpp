@@ -37,7 +37,7 @@ NVX_NS_BEGIN
 
 bool Calendar::is_trade_day() {
     return false;
-    //is_trade_day( datetime().now().d );
+    // is_trade_day( datetime().now().d );
 }
 
 bool Calendar::is_trade_day( const datespec_t& date_ ) {
@@ -112,7 +112,7 @@ bool Calendar::is_trade_time( const code_t& c_, const timespec_t& time_ ) {
     return false;
 }
 
-int Calendar::load_schedule( const char* cal_file_ ) {
+nvx_st Calendar::load_schedule( const char* cal_file_ ) {
     // set defalut value src/core/ctp/ctp.cal.json
     if ( cal_file_ == nullptr ) {
         cal_file_ = "ctp/ctp.cal.json";
@@ -131,7 +131,7 @@ int Calendar::load_schedule( const char* cal_file_ ) {
     _holidays = doc[ "holidays" ];
     _sessions = doc[ "sessions" ];
 
-    return 0;
+    return NVX_OK;
 }
 
 bool Calendar::is_weekend( const datetime_t& dt_ ) {

@@ -49,22 +49,22 @@ void Data::update( const quotation_t& tick_ ) {
     _cv.notify_one();
 }
 
-int Data::start() {
+nvx_st Data::start() {
     return market()->start();
 }
 
-int Data::stop() {
+nvx_st Data::stop() {
     return market()->stop();
 }
 
-int Data::attach( Aspect* a_ ) {
+nvx_st Data::attach( Aspect* a_ ) {
     _aspects.push_back( a_ );
 
     return 0;
 }
 
-int Data::dettach( Aspect* a_ ) {
-    if ( !a_ ) return -1;
+nvx_st Data::dettach( Aspect* a_ ) {
+    if ( !a_ ) return NVX_Fail;
     return market()->unsubscribe( a_->code() );
 }
 

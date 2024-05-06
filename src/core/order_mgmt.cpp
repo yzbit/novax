@@ -51,11 +51,11 @@ oid_t OrderMgmt::oid() {
     return ++_init_id;
 }
 
-int OrderMgmt::start() {
+nvx_st OrderMgmt::start() {
     return ib()->start();
 }
 
-int OrderMgmt::stop() {
+nvx_st OrderMgmt::stop() {
     return ib()->stop();
 }
 
@@ -83,10 +83,10 @@ oid_t OrderMgmt::put( const odir_t& dir_,
     return r.id;
 }
 
-int OrderMgmt::close( const code_t code_ ) {
+nvx_st OrderMgmt::close( const code_t code_ ) {
     NVX_ASSERT( 0 );
 
-    return 0;
+    return NVX_OK;
 }
 
 oid_t OrderMgmt::sellshort( const code_t& code_,
@@ -111,12 +111,12 @@ oid_t OrderMgmt::buylong( const code_t& code_,
     return put( odir_t::p_long, code_, qty_, price_, mode_, sl_, tp_, remark_ );
 }
 
-int OrderMgmt::cancel( oid_t id_ ) {
+nvx_st OrderMgmt::cancel( oid_t id_ ) {
     LOG_TAGGED( "om", "del order: %u", id_ );
     auto o = get( id_ );
     if ( !o ) {
         LOG_TAGGED( "om", "cannot find order: %u", id_ );
-        return -1;
+        return NVX_Fail;
     }
 
     auto& r = o.value().get();
@@ -125,7 +125,7 @@ int OrderMgmt::cancel( oid_t id_ ) {
               && r.status != ostatus_t::partial_dealed
               && r.status != ostatus_t::patial_canelled ) ) {
         LOG_TAGGED( "om", "can not cancel order, id=%u status=%d", id_, r.status );
-        return -1;
+        return NVX_Fail;
     }
 
     return ib()->cancel( r );
@@ -278,11 +278,11 @@ void OrderMgmt::update_ord( const order_t& o_ ) {
     }
 }
 
-int OrderMgmt::sell( const code_t& code_,
-                     const vol_t   qty_,
-                     const price_t price_,
-                     const otype_t mode_,
-                     const text_t& remark_ ) {
+nvx_st OrderMgmt::sell( const code_t& code_,
+                        const vol_t   qty_,
+                        const price_t price_,
+                        const otype_t mode_,
+                        const text_t& remark_ ) {
     LOG_TAGGED( "om", "sell: code=%s qty=%d price=%.2f, mode=%d, r=%s", code_.c_str(), qty_, price_, ( int )mode_, remark_.c_str() );
 
     order_t r( code_, qty_, price_, mode_, odir_t::sell );
@@ -292,11 +292,11 @@ int OrderMgmt::sell( const code_t& code_,
     return close( r );
 }
 
-int OrderMgmt::buy( const code_t& code_,
-                    const vol_t   qty_,
-                    const price_t price_,
-                    const otype_t mode_,
-                    const text_t& remark_ ) {
+nvx_st OrderMgmt::buy( const code_t& code_,
+                       const vol_t   qty_,
+                       const price_t price_,
+                       const otype_t mode_,
+                       const text_t& remark_ ) {
     LOG_TAGGED( "om", "buy: code=%s qty=%d price=%.2f, mode=%d, r=%s", code_.c_str(), qty_, price_, ( int )mode_, remark_.c_str() );
     order_t r( code_, qty_, price_, mode_, odir_t::cover );
     r.id = oid();
@@ -310,7 +310,7 @@ rb2410 short    2
 
 todo 总仓位是 2，那么此时关闭的是什么，关闭净仓? 使用参数决定,我们目前只支持单腿
 */
-int OrderMgmt::close( const order_t& r_ ) {
+nvx_st OrderMgmt::close( const order_t& r_ ) {
     NVX_ASSERT( r_.dir == odir_t::sell || r_.dir == odir_t::cover );
 
     if ( r_.qty == 0 ) {
@@ -323,7 +323,7 @@ int OrderMgmt::close( const order_t& r_ ) {
 
     if ( 0 >= pv ) {
         LOG_INFO( "no position of [%s] , close ign", r_.code.c_str() );
-        return -2;
+        return NVX_Fail;
     }
 
     if ( pv > r_.qty && r_.qty > 0 ) pv = r_.qty;
@@ -332,18 +332,18 @@ int OrderMgmt::close( const order_t& r_ ) {
 
     if ( 0 != ib()->put( r_ ) ) {
         LOG_INFO( "close position failed,id=%u ,sym=%s", r_.id, r_.code.c_str() );
-        return -1;
+        return NVX_Fail;
     }
 
     // todo
     //_book.emplace( order.code, order );
 
-    return 0;
+    return NVX_OK;
 }
 
-int OrderMgmt::close( oid_t id_ ) {
+nvx_st OrderMgmt::close( oid_t id_ ) {
 
-    return 0;
+    return NVX_OK;
 }
 
 NVX_NS_END
