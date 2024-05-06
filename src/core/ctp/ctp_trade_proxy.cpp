@@ -196,13 +196,6 @@ int CtpTrader::put( const order_t& o_ ) {
 
     LOG_INFO( "order direction: %d", o_.dir );
 
-    /*上期所的持仓分今仓（当日开仓）和昨仓（历史持仓），平仓时需要指定是平今仓还是昨仓。
-     若 对 上 期 所 的 持 仓 直 接 使 用 THOST_FTDC_OF_Close ， 则 效 果 同 使 用 THOST_FTDC_OF_CloseYesterday 。
-     若 对 其 他 交 易 所 的 持 仓 使 用 了 THOST_FTDC_OF_CloseToday 或 THOST_FTDC_OF_CloseYesterday，则效果同使用 THOST_FTDC_OF_Close。
-
-     但是从ctp的手册中看，如果上期所只用close，他只是优先平昨仓，然后再平今（平仓顺序例子）
-     另外,根据仓位查询章节可以知道： YdPosition 表示昨日收盘时持仓数量（≠ 当前的昨仓数量，静态，日间不随着开平仓而变化）
-     */
     switch ( o_.dir ) {
     default:
         LOG_INFO( "bad order direction: %d", o_.dir );
@@ -229,10 +222,10 @@ int CtpTrader::put( const order_t& o_ ) {
         break;
     }
 
-    field.CombHedgeFlag[ 0 ] = THOST_FTDC_HF_Speculation;     /// 组合投机套保标志
-    field.ForceCloseReason   = THOST_FTDC_FCC_NotForceClose;  /// 强平原因: 非强平
-    field.IsAutoSuspend      = 0;                             /// 自动挂起标志: 否
-    field.UserForceClose     = 0;                             /// 用户强评标志: 否
+    field.CombHedgeFlag[ 0 ] = THOST_FTDC_HF_Speculation;
+    field.ForceCloseReason   = THOST_FTDC_FCC_NotForceClose;
+    field.IsAutoSuspend      = 0;
+    field.UserForceClose     = 0;
 
     LOG_INFO( "---------------------------ctp下单参数------------------------------------------\n" );
     LOG_INFO( "\nbroker=%s\ninvestor=%s\ncode=%s\nref=%s\n\
@@ -429,19 +422,6 @@ void CtpTrader::OnRspQrySettlementInfo( CThostFtdcSettlementInfoField* pSettleme
     CTP_SYNC.update( nRequestID, pSettlementInfo, sizeof( CThostFtdcSettlementInfoField ), bIsLast );
 }
 
-// ctp文档：
-// 报单录入请求响应，当执行ReqOrderInsert后有字段填写不对之类的CTP报错则通过此接口返回
-
-// 实测:
-/*报单录入--实际上就是委托成功  OnRspOrderInsert
-fak fok好像不会到这里来；这两种模式会直接撤单，并且返回status='a' unkonwn
-*/
-// 理解： 只用该函数来处理错误即可
-// 报单录入请求响应，当执行ReqOrderInsert后有字段填写不对之类的CTP报错则通过此接口返回
-//
-// 被ctp拒单后
-// OnRspOrderInsert是当前报单者收到的回调，OnErrRtnOrderInsert是该客户名下所有的链接都会收到的回调。
-// 而被交易所拒单后只会回调 OnRtnOrder
 void CtpTrader::OnRspOrderInsert( CThostFtdcInputOrderField* f_, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) {
     LOG_INFO( "订单被ctp前置拒绝,req=%d, id=%d, msg=%s", nRequestID, pRspInfo->ErrorID, pRspInfo->ErrorMsg );
     auto id = id_of( f_->OrderRef );
@@ -454,7 +434,6 @@ void CtpTrader::OnRspOrderInsert( CThostFtdcInputOrderField* f_, CThostFtdcRspIn
     delegator()->update_ord( id, ostatus_t::cancelled );
 }
 
-// 报单操作请求响应，当执行ReqOrderAction后有字段填写不对之类的CTP报错则通过此接口返回
 void CtpTrader::OnRspOrderAction( CThostFtdcInputOrderActionField* pInputOrderAction, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) {
     LOG_INFO( "撤单被ctp前置拒绝,req=%d, id=%d, msg=%s", nRequestID, pRspInfo->ErrorID, pRspInfo->ErrorMsg );
 
@@ -496,29 +475,6 @@ oid_t CtpTrader::id_of( const ex_oid_t& exoid_, const TThostFtdcOrderRefType& re
     return id;
 }
 
-/////////////////////////////////////////////////////////////////////////
-/// 开仓TThostFtdcOffsetFlagType
-// #define THOST_FTDC_OF_Open '0'
-/// 平仓
-// #define THOST_FTDC_OF_Close '1'
-/// 强平
-// #define THOST_FTDC_OF_ForceClose '2'
-/// 平今
-// #define THOST_FTDC_OF_CloseToday '3'
-/// 平昨
-// #define THOST_FTDC_OF_CloseYesterday '4'
-/// 强减
-// #define THOST_FTDC_OF_ForceOff '5'
-/// 本地强平
-// #define THOST_FTDC_OF_LocalForceClose '6'
-
-// TThostFtdcDirectionType
-/////买
-// #define THOST_FTDC_D_Buy '0'
-/// 卖
-// #define THOST_FTDC_D_Sell '1'
-
-// TThostFtdcCombOffsetFlagType 为多腿组合订单，单腿只用[0]
 odir_t CtpTrader::cvt_direction( const TThostFtdcDirectionType& di_, const TThostFtdcCombOffsetFlagType& comb_ ) {
     if ( di_ == THOST_FTDC_D_Buy && comb_[ 0 ] == '0' )
         return odir_t::p_long;
@@ -547,7 +503,6 @@ odir_t CtpTrader::cvt_direction( const TThostFtdcDirectionType& di_, const TThos
         return odir_t::none;
 }
 
-// 撤单的时候,前置通过校验会返回一次; 交易中心通过会再返回一次
 void CtpTrader::OnRtnOrder( CThostFtdcOrderField* f_ ) {
     LOG_INFO( "[ctp] OnOrderRtn[1]@front=%d sess=%d ref=%s exid=%s sysid=%s\n", f_->FrontID, f_->SessionID, f_->OrderRef, f_->ExchangeID, f_->OrderSysID );
 
@@ -572,32 +527,29 @@ void CtpTrader::OnRtnOrder( CThostFtdcOrderField* f_ ) {
               f_->VolumeTraded,
               f_->VolumeTotal );
 
-    // 说明，单子的终止状态包括 0(全部成交)，2(部分成交)， 5(全部主动撤单，或为系统判断为废单)
-    // 思考：单子的状态是单线程推送，时间先后顺序应该有保障的！
     // https://www.cnblogs.com/leijiangtao/p/5379133.html
-
     switch ( f_->OrderStatus ) {
     default:
-    case THOST_FTDC_OST_NoTradeQueueing:     // 已经报到交易所，但是未成交，注意，如果报到交易所并且立即成交，第二个RtnOrder回调状态也是unkonwn
-    case THOST_FTDC_OST_NotTouched:          // 预埋单尚未触发
-    case THOST_FTDC_OST_NoTradeNotQueueing:  // 还未发往交易所是不是最终状态?
-    case THOST_FTDC_OST_Touched:             //
-    case THOST_FTDC_OST_Unknown:             // 收到保单后第一次返回，表示ctp接受订单，通过ctp的风控检查
+    case THOST_FTDC_OST_NoTradeQueueing:
+    case THOST_FTDC_OST_NotTouched:
+    case THOST_FTDC_OST_NoTradeNotQueueing:
+    case THOST_FTDC_OST_Touched:
+    case THOST_FTDC_OST_Unknown:
         return delegator()->update_ord( oid, ostatus_t::pending );
 
-    case THOST_FTDC_OST_PartTradedQueueing:       // 还会有成交--我们会同步过程不能在这里结束
-    case THOST_FTDC_OST_AllTraded:                // ctpman-最终状态（1）
-    case THOST_FTDC_OST_PartTradedNotQueueing: {  // todo 最终状态（2）已经不在队列中--剩余部分已经撤单---订单已完成标志?---
+    case THOST_FTDC_OST_PartTradedQueueing:
+    case THOST_FTDC_OST_AllTraded:
+    case THOST_FTDC_OST_PartTradedNotQueueing: {  // todo
         order_t o;
 
         o.id     = oid;
-        o.qty    = f_->VolumeTraded;  // o.qty准备返回结果//f->VolumeTotal，这是剩余数量
+        o.qty    = f_->VolumeTraded;
         o.remark = f_->StatusMsg;
 
-        o.datetime.from_ctp( f_->InsertDate, f_->InsertTime, 0 );  // inserttime 是ctp本地时间或者交易所时间（返回后）
+        o.datetime.from_ctp( f_->InsertDate, f_->InsertTime, 0 );
         o.code = f_->InstrumentID;
 
-        o.status = ostatus_t::dealt;  // note! OrderSubmitStatus：CTP内部使用，普通投资者可以忽略
+        o.status = ostatus_t::dealt;
         LOG_INFO( "order dir %d %s", f_->Direction, f_->CombOffsetFlag );
 
         o.dir = cvt_direction( f_->Direction, f_->CombOffsetFlag );
@@ -616,13 +568,6 @@ void CtpTrader::OnRtnOrder( CThostFtdcOrderField* f_ ) {
     }
 }
 
-/*-------------------------------------------------------------------------
-    如果该报单由交易所进行了撮合成交，交易所再次返回该报单的状态（已成交）。并通过此函数返回该笔成
-    交。报单成交之后，一个报单回报（OnRtnOrder）和一个成交回报（OnRtnTrade）会被发送到客户端，报单回报
-    中报单的状态为“已成交”。但是仍然建议客户端将成交回报作为报单成交的标志，因为 CTP 的交易核心在
-    收到 OnRtnTrade 之后才会更新该报单的状态。如果客户端通过报单回报来判断报单成交与否并立即平仓，
-    有极小的概率会出现在平仓指令到达 CTP 交易核心时该报单的状态仍未更新，就会导致无法平仓。
-----------------------------------------------------------------------------*/
 void CtpTrader::OnRtnTrade( CThostFtdcTradeField* f_ ) {
     auto id = id_of( f_->OrderRef );
 
@@ -660,7 +605,6 @@ void CtpTrader::OnErrRtnOrderInsert( CThostFtdcInputOrderField* f_, CThostFtdcRs
     delegator()->update_ord( id, ostatus_t::error );
 }
 
-// 删除失败对现有的订单没有任何影响(no update)，但是要通知算法
 void CtpTrader::OnErrRtnOrderAction( CThostFtdcOrderActionField* pOrderAction, CThostFtdcRspInfoField* pRspInfo ) {
     LOG_INFO( "order action error: {frontid=%d ,sessionid=%d, oref=%d} ,{ex=%s sysid=%s} , instument=%s, msg=%s, req=%d",
               pOrderAction->FrontID,
