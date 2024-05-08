@@ -73,6 +73,10 @@ inline uint64_t now_ms() {
     return std::chrono::duration_cast<std::chrono::milliseconds>( std::chrono::steady_clock::now().time_since_epoch() ).count();
 }
 
+inline bool is_nil( const char* sz_ ) {
+    return !sz_ || 0 == sz_[ 0 ];
+}
+
 enum class pricetype_t {
     open,
     close,

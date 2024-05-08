@@ -20,6 +20,7 @@ SET(SRC
     ctp/ctp_trade_proxy.cpp
     proxy.cpp
     quant.cpp
+    dbagent.cpp
     #algos/ma.cpp
 )
 

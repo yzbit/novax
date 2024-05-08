@@ -169,10 +169,10 @@ nvx_st CtpTrader::cancel( const order_t& o_ ) {
 nvx_st CtpTrader::put( const order_t& o_ ) {
     LOG_INFO( "xPutOrder@ctp准备下单\n" );
 
-    CThostFtdcInputOrderField field = { 0 };
-    CTP_COPY_SAFE( field.BrokerID, _settings.i.broker.c_str() );
-    CTP_COPY_SAFE( field.InvestorID, _settings.i.id.c_str() );
-    memcpy( field.InstrumentID, o_.code.c_str(), o_.code.length() );
+    if ( !_api ) {
+        LOG_INFO( "##ctp, not inited" );
+        return NVX_Fail;
+    }
 
     // todo 如果是平仓，还需要给id吗?
     if ( assign_ref( o_.id ) < 0 ) {
@@ -180,13 +180,24 @@ nvx_st CtpTrader::put( const order_t& o_ ) {
         return NVX_Fail;
     }
 
-    memcpy( field.OrderRef, _id_map[ o_.id ].ref, sizeof( field.OrderRef ) );
+    CThostFtdcInputOrderField field = { 0 };
+    CTP_COPY_SAFE( field.BrokerID, _settings.i.broker.c_str() );
+    CTP_COPY_SAFE( field.InvestorID, _settings.i.id.c_str() );
+    CTP_COPY_SAFE( field.UserID, _settings.i.id.c_str() );
 
-    field.MinVolume           = 0;                               /// 最小成交量: 1-fak--!!
-    field.ContingentCondition = THOST_FTDC_CC_Immediately;       /// 触发条件: 立即
-    field.VolumeTotalOriginal = ( TThostFtdcVolumeType )o_.qty;  /// 数量:1
+    memcpy( field.InstrumentID, o_.code.c_str(), o_.code.length() );
+    field.IsSwapOrder         = 0;
+    field.ForceCloseReason    = THOST_FTDC_FCC_NotForceClose;
+    field.MinVolume           = 0;
+    field.ContingentCondition = THOST_FTDC_CC_Immediately;
+    field.VolumeTotalOriginal = ( TThostFtdcVolumeType )o_.qty;
     field.LimitPrice          = o_.price;
+    field.CombHedgeFlag[ 0 ]  = THOST_FTDC_HF_Speculation;
+    field.ForceCloseReason    = THOST_FTDC_FCC_NotForceClose;
+    field.IsAutoSuspend       = 0;
+    field.UserForceClose      = 0;
 
+    memcpy( field.OrderRef, _id_map[ o_.id ].ref, sizeof( field.OrderRef ) );
     LOG_INFO( "order mode:%d\n", o_.mode );
 
     switch ( o_.mode ) {
@@ -210,7 +221,7 @@ nvx_st CtpTrader::put( const order_t& o_ ) {
 
     case otype_t::fok:
         field.OrderPriceType  = THOST_FTDC_OPT_LimitPrice;
-        field.TimeCondition   = THOST_FTDC_TC_IOC;  //! 立即成交否则撤单
+        field.TimeCondition   = THOST_FTDC_TC_IOC;
         field.VolumeCondition = THOST_FTDC_VC_CV;
         break;
 
@@ -249,11 +260,6 @@ nvx_st CtpTrader::put( const order_t& o_ ) {
         break;
     }
 
-    field.CombHedgeFlag[ 0 ] = THOST_FTDC_HF_Speculation;
-    field.ForceCloseReason   = THOST_FTDC_FCC_NotForceClose;
-    field.IsAutoSuspend      = 0;
-    field.UserForceClose     = 0;
-
     LOG_INFO( "---------------------------ctp下单参数------------------------------------------\n" );
     LOG_INFO( "\nbroker=%s\ninvestor=%s\ncode=%s\nref=%s\n\
     LimitPrice=%lf\nVolumeTotalOriginal=%d\nContingentCondition=%d\n\
@@ -280,11 +286,6 @@ nvx_st CtpTrader::put( const order_t& o_ ) {
               field.UserForceClose );
 
     field.RequestID = req_id();
-
-    if ( !_api ) {
-        LOG_INFO( "##ctp, not inited" );
-        return NVX_Fail;
-    }
 
     return !_api->ReqOrderInsert( &field, field.RequestID ) ? NVX_OK : NVX_Fail;
 }
