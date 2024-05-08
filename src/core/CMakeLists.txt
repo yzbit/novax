@@ -9,7 +9,7 @@ set(REPO_ROOT "${MODULE_ROOT}/../..")
 
 SET(SRC 
     aspect.cpp
-    canlendar.cpp
+    calendar.cpp
     clock.cpp
     context.cpp
     data_center.cpp

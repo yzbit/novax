@@ -28,6 +28,8 @@ SOFTWARE.
 #ifndef BB813C61_80B5_4C65_966A_8F423BC7ECEA
 #define BB813C61_80B5_4C65_966A_8F423BC7ECEA
 #include <rapidjson/document.h>
+#include <map>
+#include <string>
 
 #include "definitions.h"
 #include "models.h"
@@ -35,19 +37,30 @@ SOFTWARE.
 
 NVX_NS_BEGIN
 
+constexpr int kMaxSessCnt = 5;
+struct sess_t{
+    int start,end;
+};
+using InsSessionPeriod = std::array<sess_t,kMaxSessCnt>;
+using InsSession = std::map<std::string,InsSessionPeriod>;
+using InsHoliday = std::map<std::string,std::vector<int>>;
+
+
 struct Calendar {
     nvx_st load_schedule( const char* cal_file_ );
     bool   is_trade_day();
     bool   is_trade_day( const datespec_t& date_ );
     bool   is_trade_time( const code_t& c_, const timespec_t& time_ );
     bool   is_weekend( const datetime_t& dt_ );
+    bool   is_trade_datetime(const code_t& c_ );
+    bool   is_trade_datetime( const code_t& c_,const datetime_t& datetime_ );
 
 private:
     datespec_t       previous_day( const datespec_t& date_ );
     bool             is_leap_year( int year_ );
     int              month_days( int m_ );
-    rapidjson::Value _holidays;
-    rapidjson::Value _sessions;
+    InsHoliday      _holidays;
+    InsSession      _sessions;
 };
 
 NVX_NS_END

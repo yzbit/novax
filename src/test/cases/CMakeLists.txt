@@ -16,6 +16,7 @@ SET(SRC
     ut.clock.cpp
     ut.kline.cpp
     ut.code.cpp
+    ut.calendar.cpp
 )
 
 #ut coverage
