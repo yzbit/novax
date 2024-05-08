@@ -2,25 +2,28 @@
 
 #### 介绍
 
-交易新星~~~~~~
+c++ 交易框架 .支持ctp
 
 #### 软件架构
 
-软件架构说明
 
 #### 安装教程
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+1.  git clone 
+2.  ./build.sh
 
 #### 使用说明
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+1.  交易所扩展
+略
+2.  新建指标
+略
+3.  新建策略
+略
 
 #### 参与贡献
+
+想参与项目请联系  zinan@outlook.com
 
 1.  Fork 本仓库
 2.  新建 Feat_xxx 分支
@@ -28,10 +31,3 @@
 4.  新建 Pull Request
 
 #### 特技
-
-1.  使用 Readme_XXX.md 来支持不同的语言，例如 Readme_en.md, Readme_zh.md
-2.  Gitee 官方博客 [blog.gitee.com](https://blog.gitee.com)
-3.  你可以 [https://gitee.com/explore](https://gitee.com/explore) 这个地址来了解 Gitee 上的优秀开源项目
-4.  [GVP](https://gitee.com/gvp) 全称是 Gitee 最有价值开源项目，是综合评定出的优秀开源项目
-5.  Gitee 官方提供的使用手册 [https://gitee.com/help](https://gitee.com/help)
-6.  Gitee 封面人物是一档用来展示 Gitee 会员风采的栏目 [https://gitee.com/gitee-stars/](https://gitee.com/gitee-stars/)
