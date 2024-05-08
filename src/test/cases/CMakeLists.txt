@@ -30,6 +30,7 @@ PRIVATE
     ${REPO_ROOT}/lib/gtest/include
     ${REPO_ROOT}/include
     ${REPO_ROOT}/src
+    ${REPO_ROOT}/lib
 )
 
 target_link_directories( ${PROJECT_NAME} 
