@@ -24,6 +24,13 @@ c++ 交易框架 .支持ctp
 #### 参与贡献
 
 想参与项目请联系  zinan@outlook.com
+commit message fmt:
+    feat:新功能
+    fix: issue号
+    doc:更新文档
+    chore: 其它更新
+    refact:重构
+    ut: 单元测试
 
 1.  Fork 本仓库
 2.  新建 Feat_xxx 分支
