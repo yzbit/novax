@@ -32,4 +32,12 @@ target_include_directories(${PROJECT_NAME}
     ${REPO_ROOT}/lib
 )
 
+
+SET(CFGS
+    ${REPO_ROOT}/src/core/ctp/md.json 
+    ${REPO_ROOT}/src/core/ctp/cal.json 
+    ${REPO_ROOT}/src/core/ctp/trade.json 
+)
+
 install (TARGETS ${PROJECT_NAME} DESTINATION lib)
+install (FILES  ${CFGS} DESTINATION conf.d/ctp)
