@@ -52,4 +52,4 @@ PRIVATE
     LinuxDataCollect.so
 )
 
-install (TARGETS ${PROJECT_NAME} DESTINATION bin)
+install (TARGETS ${PROJECT_NAME} DESTINATION .)

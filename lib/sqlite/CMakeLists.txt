@@ -7,4 +7,5 @@ set(CMAKE_C_FLAGS "${CMAKE_CX_FLAGS}  -g -Wall")
 add_library(${PROJECT_NAME} SHARED sqlite3.c) 
 
 #pthread dl
-install (TARGETS ${PROJECT_NAME} DESTINATION lib)
+#install (TARGETS ${PROJECT_NAME} DESTINATION lib)
+install (TARGETS ${PROJECT_NAME} DESTINATION .)
