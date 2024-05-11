@@ -44,11 +44,13 @@ bool Calendar::is_trade_day() {
     return is_trade_day( datetime_t().now().d );
 }
 
-datespec_t Calendar::previous_day( const datespec_t& date_ ) {
-    return datespec_t();
+datespec_t Calendar::previous_day( const datetime_t& dt_ ) {
+    return datetime_t().from_unix_time( dt_.to_unix_time() - 1 * 24 * 60 * 60 ).d;
 }
 
 bool Calendar::is_trade_day( const datespec_t& date_ ) {
+    if ( is_weekend( date_ ) ) return false;
+
     // todo: check if _holiday is empty
 
     // compare date_ with _holidays
@@ -68,7 +70,6 @@ bool Calendar::is_trade_time( const code_t& c_, const timespec_t& time_ ) {
     std::string hour   = hour_ss.str();
     std::string minute = minute_ss.str();
 
-    std::cout << c_.c_str() << " " << code2ins( c_ ).c_str() << std::endl;
     auto it = _sessions.find( code2ins( c_ ) );
     if ( it == _sessions.end() ) return false;
 
@@ -159,15 +160,7 @@ void Calendar::parse_sess( const CalSheet& sh_ ) {
 
         assert( periods.size() <= kMaxSessCnt );
 
-        std::cout << "code: " << code.c_str() << std::endl;
-        for ( auto& period : periods ) {
-            std::cout << "start: " << period.start << ", end: " << period.end << std::endl;
-        }
-        // _sessions.try_emplace( code, periods );
-        _sessions.insert_or_assign( code, periods );
-
-        auto tp = _sessions.find( code );
-        std::cout << tp->first.c_str() << std::endl;
+        _sessions.try_emplace( code, periods );
     }
 }
 
@@ -196,19 +189,11 @@ nvx_st Calendar::load_schedule( const char* cal_file_ ) {
     parse_hol( doc );
     parse_sess( doc );
 
-    // print every item in _sessions
-    for ( auto& [ code, periods ] : _sessions ) {
-        std::cout << "code: " << code.c_str() << std::endl;
-        for ( auto& period : periods ) {
-            std::cout << "start: " << period.start << ", end: " << period.end << std::endl;
-        }
-    }
-
     return NVX_OK;
 }
 
-bool Calendar::is_weekend( const datetime_t& dt_ ) {
-    int wday = dt_.d.wday;
+bool Calendar::is_weekend( const datespec_t& d_ ) {
+    int wday = d_.wday;
 
     return wday == 0 || wday == 6;
 }
@@ -230,13 +215,13 @@ int Calendar::month_days( int y_, int m_ ) {
         return is_leap_year( y_ ) ? 29 : 38;
 }
 
-bool Calendar::is_trade_datetime( const code_t& c_, const datetime_t& datetime_ ) {
-    int hour = datetime_.t.hour;
+bool Calendar::is_trade_datetime( const code_t& c_, const datetime_t& dt_ ) {
+    int hour = dt_.t.hour;
 
-    datetime_t dt = datetime_t().from_unix_time( datetime_.to_unix_time() );
+    datetime_t dt = datetime_t().from_unix_time( dt_.to_unix_time() );
 
     if ( hour < 4 ) {
-        dt.d = previous_day( dt.d );
+        dt.d = previous_day( dt_ );
     }
 
     return is_trade_day( dt.d ) && is_trade_time( c_, dt.t );

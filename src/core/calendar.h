@@ -57,14 +57,14 @@ struct Calendar {
     bool   is_trade_day();
     bool   is_trade_day( const datespec_t& date_ );
     bool   is_trade_time( const code_t& c_, const timespec_t& time_ );
-    bool   is_weekend( const datetime_t& dt_ );
+    bool   is_weekend( const datespec_t& d_ );
     bool   is_trade_datetime( const code_t& c_ );
-    bool   is_trade_datetime( const code_t& c_, const datetime_t& datetime_ );
+    bool   is_trade_datetime( const code_t& c_, const datetime_t& dt_ );
 
     Calendar();
 
 private:
-    datespec_t previous_day( const datespec_t& date_ );
+    datespec_t previous_day( const datetime_t& dt_ );
     bool       is_leap_year( int year_ );
     int        month_days( int y_, int m_ );
 
