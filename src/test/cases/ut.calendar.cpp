@@ -33,5 +33,25 @@ TEST( Calendar, Basic ) {
     NVX_NS::Calendar c;
     c.load_schedule( nullptr );
 
-    ASSERT_FALSE( c.is_trade_day() );
+    NVX_NS::datespec_t date;
+    date.year  = 2024;
+    date.month = 5;
+    date.day   = 6;
+    date.wday  = 1;
+
+    NVX_NS::timespec_t time;
+    time.hour   = 1;
+    time.minute = 29;
+    time.second = 10;
+    time.milli  = 399;
+
+    NVX_NS::datetime_t dt;
+    dt.d = date;
+    dt.t = time;
+
+    NVX_NS::code_t code = "sc2410";
+
+    ASSERT_TRUE( c.is_trade_day( date ) );
+    ASSERT_TRUE( c.is_trade_time( code, time ) );
+    ASSERT_FALSE( c.is_trade_datetime( code, dt ) );
 }

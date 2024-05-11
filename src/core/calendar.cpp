@@ -26,6 +26,7 @@ SOFTWARE.
 **********************************************************************************/
 
 #include <fstream>
+#include <iostream>
 #include <rapidjson/istreamwrapper.h>
 #include <sstream>
 
@@ -48,8 +49,8 @@ bool Calendar::is_trade_day( const datespec_t& date_ ) {
 
     // compare date_ with _holidays
     auto it = _holidays.find( date_.month );
-    return it != _holidays.end()
-           && std::find( it->second.begin(), it->second.end(), date_.day ) != it->second.end();
+    return it == _holidays.end()
+           || std::find( it->second.begin(), it->second.end(), date_.day ) == it->second.end();
 }
 
 // 注意：只看trade_day和trade_time不能判断是否交易时间，比如周一凌晨1点day和time都true但不是交易时间，因为这边day和time分开判断的
@@ -63,6 +64,7 @@ bool Calendar::is_trade_time( const code_t& c_, const timespec_t& time_ ) {
     std::string hour   = hour_ss.str();
     std::string minute = minute_ss.str();
 
+    std::cout << c_.c_str() << " " << code2ins( c_ ).c_str() << std::endl;
     auto it = _sessions.find( code2ins( c_ ) );
     if ( it == _sessions.end() ) return false;
 
@@ -78,10 +80,15 @@ bool Calendar::is_trade_time( const code_t& c_, const timespec_t& time_ ) {
 nvx_st Calendar::load_schedule( const char* cal_file_ ) {
     // set defalut value src/core/ctp/ctp.cal.json
     if ( cal_file_ == nullptr ) {
-        cal_file_ = "ctp/ctp.cal.json";
+        cal_file_ = "output/conf.d/ctp/cal.json";
     }
 
-    std::ifstream             ifs( cal_file_ );
+    std::ifstream ifs( cal_file_ );
+    if ( !ifs.is_open() ) {
+        LOG_TAGGED( "cal", "open json file failed" );
+        return -1;
+    }
+
     rapidjson::IStreamWrapper isw( ifs );
     rapidjson::Document       doc;
     doc.ParseStream( isw );
@@ -98,7 +105,7 @@ nvx_st Calendar::load_schedule( const char* cal_file_ ) {
         for ( auto day = it->value.Begin(); day != it->value.End() && i < Calendar::kMaxHol; ++day ) {
             days[ i++ ] = day->GetInt();
         }
-        _holidays.try_emplace( it->name.GetInt(), days );
+        _holidays.try_emplace( std::stoi( std::string( it->name.GetString() ) ), days );
     }
 
     for ( auto it = doc[ "sessions" ].MemberBegin(); it != doc[ "sessions" ].MemberEnd(); ++it ) {
@@ -138,8 +145,23 @@ nvx_st Calendar::load_schedule( const char* cal_file_ ) {
                 i++;
             }
         }
+        std::cout << "code: " << code.c_str() << std::endl;
+        for ( auto& period : periods ) {
+            std::cout << "start: " << period.start << ", end: " << period.end << std::endl;
+        }
+        // _sessions.try_emplace( code, periods );
+        _sessions.insert_or_assign( code, periods );
 
-        _sessions.try_emplace( code2ins( code ), periods );
+        auto tp = _sessions.find( code );
+        std::cout << tp->first.c_str() << std::endl;
+    }
+
+    // print every item in _sessions
+    for ( auto& [ code, periods ] : _sessions ) {
+        std::cout << "code: " << code.c_str() << std::endl;
+        for ( auto& period : periods ) {
+            std::cout << "start: " << period.start << ", end: " << period.end << std::endl;
+        }
     }
 
     return NVX_OK;
