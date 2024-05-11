@@ -57,6 +57,10 @@ TEST( REF, basic ) {
 
     ctp::ref_t r4 = r3 + 1;
     ASSERT_TRUE( strcmp( "0000000001170", r4.str_val() ) == 0 );
+
+    TThostFtdcOrderRefType ref;
+    r4.copy( ref );
+    ASSERT_TRUE( strncmp( "0000000001170", ref, 13 ) == 0 );
 }
 
 #endif /* C1DE8F61_B7D0_4C2B_82B7_DEB95AACC4B7 */

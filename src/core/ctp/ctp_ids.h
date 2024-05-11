@@ -93,6 +93,9 @@ unsigned ref_t::int_val() const {
     return std::atoi( _data );
 }
 
+void ref_t::copy( TThostFtdcOrderRefType& ref_ ) {
+    memcpy( ref_, _data, sizeof( TThostFtdcOrderRefType ) );
+}
 };  // namespace ctp
 
 #endif /* EBC2EDD7_C2AC_4519_9357_CE387B50513F */
