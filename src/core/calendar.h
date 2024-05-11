@@ -40,17 +40,17 @@ SOFTWARE.
 NVX_NS_BEGIN
 
 struct Calendar {
-    static constexpr int kMaxSessCnt = 5;
+    static constexpr int kMaxSessCnt = 10;
     static constexpr int kMaxHol     = 31;
 
     struct sess_t {
         int start, end;
     };
 
-    using InsSession  = std::array<sess_t, kMaxSessCnt>;
+    using InsSession  = std::vector<sess_t>;
     using SessionRepo = std::map<ins_t, InsSession>;
 
-    using Holiday     = std::array<int, kMaxHol>;
+    using Holiday     = std::vector<int>;
     using HolidayRepo = std::map<int, Holiday>;
 
     nvx_st load_schedule( const char* cal_file_ );
@@ -61,12 +61,21 @@ struct Calendar {
     bool   is_trade_datetime( const code_t& c_ );
     bool   is_trade_datetime( const code_t& c_, const datetime_t& datetime_ );
 
+    Calendar();
+
 private:
     datespec_t previous_day( const datespec_t& date_ );
     bool       is_leap_year( int year_ );
-    int        month_days( int m_ );
+    int        month_days( int y_, int m_ );
 
 private:
+    using CalSheet = rapidjson::Document;
+    void parse_year( const CalSheet& sh_ );
+    void parse_hol( const CalSheet& sh_ );
+    void parse_sess( const CalSheet& sh_ );
+
+private:
+    int         _year;
     HolidayRepo _holidays;
     SessionRepo _sessions;
 };

@@ -36,6 +36,10 @@ SOFTWARE.
 
 NVX_NS_BEGIN
 
+Calendar::Calendar() {
+    _year = datetime_t::now().d.year;
+}
+
 bool Calendar::is_trade_day() {
     return is_trade_day( datetime_t().now().d );
 }
@@ -77,6 +81,96 @@ bool Calendar::is_trade_time( const code_t& c_, const timespec_t& time_ ) {
     return false;
 }
 
+void Calendar::parse_year( const CalSheet& sh_ ) {
+    _year = sh_.HasMember( "year" ) ? sh_[ "year" ].GetInt() : _year;
+    LOG_TAGGED( "cal", "get year from calendar: %d", _year );
+}
+
+void Calendar::parse_hol( const CalSheet& sh_ ) {
+    if ( !sh_.HasMember( "holidays" ) ) {
+        LOG_TAGGED( "cal", "no holiday defined" );
+        return;
+    }
+
+    for ( auto it = sh_[ "holidays" ].MemberBegin(); it != sh_[ "holidays" ].MemberEnd(); ++it ) {
+        Holiday days;
+
+        int month = std::stoi( it->name.GetString() );
+        int i     = 0;
+
+        for ( auto day = it->value.Begin(); day != it->value.End() && i++ < month_days( _year, month ); ++day ) {
+            days.emplace_back( day->GetInt() );
+        }
+
+        _holidays.try_emplace( month, days );
+    }
+}
+
+void Calendar::parse_sess( const CalSheet& sh_ ) {
+    if ( !sh_.HasMember( "sessions" ) ) {
+        LOG_TAGGED( "cal", "no sessions defined" );
+        return;
+    }
+
+    for ( auto it = sh_[ "sessions" ].MemberBegin(); it != sh_[ "sessions" ].MemberEnd(); ++it ) {
+        ins_t code = it->name.GetString();
+
+        InsSession periods;
+        periods.reserve( kMaxSessCnt );
+
+        for ( auto sess = it->value.Begin(); sess != it->value.End(); ++sess ) {
+            std::string session = sess->GetString();
+            auto        pos     = session.find( "-" );
+            if ( !session.empty() && std::string::npos == pos ) {
+                LOG_TAGGED( "cal", "!!bad session time defined, %s", session.c_str() );
+                continue;
+            }
+
+            std::string start = session.substr( 0, pos );
+            std::string end   = session.substr( pos + 1 );
+
+            if ( start.empty() || end.empty() || std::string::npos == start.find( ":" ) || std::string::npos == end.find( ":" ) ) {
+                LOG_TAGGED( "cal", "!!bad session time defined, start=%s,end=%s", start.c_str(), end.c_str() );
+                continue;
+            }
+
+            std::string start_hour_str   = start.substr( 0, start.find( ":" ) );
+            std::string start_minute_str = start.substr( start.find( ":" ) + 1 );
+            std::string end_hour_str     = end.substr( 0, end.find( ":" ) );
+            std::string end_minute_str   = end.substr( end.find( ":" ) + 1 );
+
+            // if end time is another day (end < start), then split the period
+            unsigned temp_start = std::stoi( start_hour_str ) * 100 + std::stoi( start_minute_str );
+            unsigned temp_end   = std::stoi( end_hour_str ) * 100 + std::stoi( end_minute_str );
+
+            if ( temp_start / 100 > 23 || temp_start % 100 > 59 || temp_end / 100 > 23 || temp_end % 100 > 59 ) {
+                LOG_TAGGED( "cal", "!!bad session time defined, start=%u,end=%u", temp_start, temp_end );
+                continue;
+            }
+
+            if ( temp_end < temp_start ) {
+                periods.push_back( { ( int )temp_start, 2359 } );
+                periods.push_back( { 0, ( int )temp_end } );
+            }
+            else {
+                periods.push_back( { ( int )temp_start, ( int )temp_end } );
+            }
+        }
+
+        assert( periods.size() <= kMaxSessCnt );
+
+        std::cout << "code: " << code.c_str() << std::endl;
+        for ( auto& period : periods ) {
+            std::cout << "start: " << period.start << ", end: " << period.end << std::endl;
+        }
+        // _sessions.try_emplace( code, periods );
+        _sessions.insert_or_assign( code, periods );
+
+        auto tp = _sessions.find( code );
+        std::cout << tp->first.c_str() << std::endl;
+    }
+}
+
 nvx_st Calendar::load_schedule( const char* cal_file_ ) {
     // set defalut value src/core/ctp/ctp.cal.json
     if ( cal_file_ == nullptr ) {
@@ -98,63 +192,9 @@ nvx_st Calendar::load_schedule( const char* cal_file_ ) {
         return -1;
     }
 
-    for ( auto it = doc[ "holidays" ].MemberBegin(); it != doc[ "holidays" ].MemberEnd(); ++it ) {
-        Holiday days;
-
-        int i = 0;
-        for ( auto day = it->value.Begin(); day != it->value.End() && i < Calendar::kMaxHol; ++day ) {
-            days[ i++ ] = day->GetInt();
-        }
-        _holidays.try_emplace( std::stoi( std::string( it->name.GetString() ) ), days );
-    }
-
-    for ( auto it = doc[ "sessions" ].MemberBegin(); it != doc[ "sessions" ].MemberEnd(); ++it ) {
-        ins_t      code = it->name.GetString();
-        InsSession periods;
-        int        i = 0;
-        for ( auto sess = it->value.Begin(); sess != it->value.End(); ++sess ) {
-            std::string session = sess->GetString();
-            auto        pos     = session.find( "-" );
-            if ( pos == std::string::npos ) {
-                continue;
-            }
-
-            std::string start = session.substr( 0, pos );
-            std::string end   = session.substr( pos + 1 );
-
-            std::string start_hour_str   = start.substr( 0, start.find( ":" ) );
-            std::string start_minute_str = start.substr( start.find( ":" ) + 1 );
-            std::string end_hour_str     = end.substr( 0, end.find( ":" ) );
-            std::string end_minute_str   = end.substr( end.find( ":" ) + 1 );
-
-            // if end time is another day (end < start), then split the period
-            int temp_start = std::stoi( start_hour_str ) * 100 + std::stoi( start_minute_str );
-            int temp_end   = std::stoi( end_hour_str ) * 100 + std::stoi( end_minute_str );
-            if ( temp_end < temp_start ) {
-                periods[ i ].start = temp_start;
-                periods[ i ].end   = 2359;
-                i++;
-                periods[ i ].start = 0;
-                periods[ i ].end   = temp_end;
-                i++;
-                continue;
-            }
-            else {
-                periods[ i ].start = temp_start;
-                periods[ i ].end   = temp_end;
-                i++;
-            }
-        }
-        std::cout << "code: " << code.c_str() << std::endl;
-        for ( auto& period : periods ) {
-            std::cout << "start: " << period.start << ", end: " << period.end << std::endl;
-        }
-        // _sessions.try_emplace( code, periods );
-        _sessions.insert_or_assign( code, periods );
-
-        auto tp = _sessions.find( code );
-        std::cout << tp->first.c_str() << std::endl;
-    }
+    parse_year( doc );
+    parse_hol( doc );
+    parse_sess( doc );
 
     // print every item in _sessions
     for ( auto& [ code, periods ] : _sessions ) {
@@ -175,6 +215,19 @@ bool Calendar::is_weekend( const datetime_t& dt_ ) {
 
 bool Calendar::is_trade_datetime( const code_t& c_ ) {
     return is_trade_datetime( c_, datetime_t().now() );
+}
+
+bool Calendar::is_leap_year( int year_ ) {
+    return ( 0 == year_ % 100 && 0 == year_ % 400 ) || ( 0 != year_ % 100 && 0 == year_ % 4 );
+}
+
+int Calendar::month_days( int y_, int m_ ) {
+    if ( 1 == m_ || 3 == m_ || 5 == m_ || 7 == m_ || 8 == m_ || 10 == m_ || 12 == m_ )
+        return 31;
+    else if ( 4 == m_ || 6 == m_ || 9 == m_ || 11 == m_ )
+        return 30;
+    else
+        return is_leap_year( y_ ) ? 29 : 38;
 }
 
 bool Calendar::is_trade_datetime( const code_t& c_, const datetime_t& datetime_ ) {
