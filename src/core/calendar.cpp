@@ -189,7 +189,7 @@ bool Calendar::is_trade_datetime( const code_t& c_ ) {
 }
 
 bool Calendar::is_leap_year( int year_ ) {
-    return ( 0 == year_ % 100 && 0 == year_ % 400 ) || ( 0 != year_ % 100 && 0 == year_ % 4 );
+    return ( 0 == year_ % 100 && 0 == year_ % 400 ) || 0 == year_ % 4;
 }
 
 int Calendar::month_days( int y_, int m_ ) {
