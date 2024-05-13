@@ -31,7 +31,9 @@ SOFTWARE.
 
 TEST( Calendar, Basic ) {
     NVX_NS::Calendar c;
-    c.load_schedule( nullptr );
+    ASSERT_TRUE( c.load_schedule( 0 ) < 0 );
+
+    ASSERT_TRUE( c.load_schedule( "conf.d/ctp/cal.json" ) == 0 );
 
     NVX_NS::datespec_t date;
     date.year  = 2024;
