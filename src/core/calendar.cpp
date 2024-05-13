@@ -51,6 +51,9 @@ datespec_t Calendar::previous_day( const datetime_t& dt_ ) {
 bool Calendar::is_trade_day( const datespec_t& date_ ) {
     if ( is_weekend( date_ ) ) return false;
 
+    // todo: check if _holiday is empty
+
+    // compare date_ with _holidays
     auto it = _holidays.find( date_.month );
     return it == _holidays.end()
            || std::find( it->second.begin(), it->second.end(), date_.day ) == it->second.end();
@@ -58,6 +61,15 @@ bool Calendar::is_trade_day( const datespec_t& date_ ) {
 
 // 注意：只看trade_day和trade_time不能判断是否交易时间，比如周一凌晨1点day和time都true但不是交易时间，因为这边day和time分开判断的
 bool Calendar::is_trade_time( const code_t& c_, const timespec_t& time_ ) {
+    // todo: check if _sessions is empty
+
+    // compare time_ with _sessions
+    std::stringstream hour_ss, minute_ss;
+    hour_ss << time_.hour;
+    minute_ss << time_.minute;
+    std::string hour   = hour_ss.str();
+    std::string minute = minute_ss.str();
+
     auto it = _sessions.find( code2ins( c_ ) );
     if ( it == _sessions.end() ) return false;
 
@@ -189,7 +201,7 @@ bool Calendar::is_trade_datetime( const code_t& c_ ) {
 }
 
 bool Calendar::is_leap_year( int year_ ) {
-    return ( 0 == year_ % 100 && 0 == year_ % 400 ) || 0 == year_ % 4;
+    return ( 0 == year_ % 100 && 0 == year_ % 400 ) || ( 0 != year_ % 100 && 0 == year_ % 4 );
 }
 
 int Calendar::month_days( int y_, int m_ ) {
