@@ -9,7 +9,7 @@ set(REPO_ROOT "${MODULE_ROOT}/../..")
 
 SET(SRC 
     aspect.cpp
-    canlendar.cpp
+    calendar.cpp
     clock.cpp
     context.cpp
     data_center.cpp
@@ -32,4 +32,18 @@ target_include_directories(${PROJECT_NAME}
     ${REPO_ROOT}/lib
 )
 
+SET(CFGS
+    ${REPO_ROOT}/src/core/ctp/md.json 
+    ${REPO_ROOT}/src/core/ctp/cal.json 
+    ${REPO_ROOT}/src/core/ctp/trade.json 
+)
+
+SET(DEPS
+    ${REPO_ROOT}/lib/ctp/libLinuxDataCollect.so
+    ${REPO_ROOT}/lib/ctp/libthostmduserapi_se.so
+    ${REPO_ROOT}/lib/ctp/libthosttraderapi_se.so
+)
+
 install (TARGETS ${PROJECT_NAME} DESTINATION lib)
+install (FILES  ${CFGS} DESTINATION conf.d/ctp)
+install (FILES  ${DEPS} DESTINATION .)

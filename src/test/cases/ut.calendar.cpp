@@ -21,35 +21,37 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-* \author: yaozn(zinan@outlook.com) , qianq(695997058@qq.com)
+* \author: qianq(695997058@qq.com)
 * \date: 2024
 **********************************************************************************/
 
-#ifndef BB813C61_80B5_4C65_966A_8F423BC7ECEA
-#define BB813C61_80B5_4C65_966A_8F423BC7ECEA
-#include <rapidjson/document.h>
+#include <gtest/gtest.h>
+#include <novax.h>
+#include <stdio.h>
 
-#include "definitions.h"
-#include "models.h"
-#include "ns.h"
+TEST( Calendar, Basic ) {
+    NVX_NS::Calendar c;
+    c.load_schedule( nullptr );
 
-NVX_NS_BEGIN
+    NVX_NS::datespec_t date;
+    date.year  = 2024;
+    date.month = 5;
+    date.day   = 6;
+    date.wday  = 1;
 
-struct Calendar {
-    nvx_st load_schedule( const char* cal_file_ );
-    bool   is_trade_day();
-    bool   is_trade_day( const datespec_t& date_ );
-    bool   is_trade_time( const code_t& c_, const timespec_t& time_ );
-    bool   is_weekend( const datetime_t& dt_ );
+    NVX_NS::timespec_t time;
+    time.hour   = 1;
+    time.minute = 29;
+    time.second = 10;
+    time.milli  = 399;
 
-private:
-    datespec_t       previous_day( const datespec_t& date_ );
-    bool             is_leap_year( int year_ );
-    int              month_days( int m_ );
-    rapidjson::Value _holidays;
-    rapidjson::Value _sessions;
-};
+    NVX_NS::datetime_t dt;
+    dt.d = date;
+    dt.t = time;
 
-NVX_NS_END
+    NVX_NS::code_t code = "sc2410";
 
-#endif /* BB813C61_80B5_4C65_966A_8F423BC7ECEA */
+    ASSERT_TRUE( c.is_trade_day( date ) );
+    ASSERT_TRUE( c.is_trade_time( code, time ) );
+    ASSERT_FALSE( c.is_trade_datetime( code, dt ) );
+}

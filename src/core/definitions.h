@@ -267,7 +267,7 @@ struct arg_binding_t {
 
 //--inlines------------------------------------------------------------------------
 inline bool code_t::operator<( const code_t& c_ ) const {
-    return strncmp( _code, c_._code, sizeof( _code ) );
+    return strncmp( _code, c_._code, sizeof( _code ) ) < 0;
 }
 
 inline code_t::code_t( const char* code_ )

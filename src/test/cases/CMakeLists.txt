@@ -16,7 +16,7 @@ SET(SRC
     ut.clock.cpp
     ut.kline.cpp
     ut.code.cpp
-    ut.ctpid.cpp
+    ut.calendar.cpp
 )
 
 #ut coverage
@@ -52,4 +52,4 @@ PRIVATE
     LinuxDataCollect.so
 )
 
-install (TARGETS ${PROJECT_NAME} DESTINATION bin)
+install (TARGETS ${PROJECT_NAME} DESTINATION .)
