@@ -25,6 +25,8 @@ SOFTWARE.
 * \date: 2024
 **********************************************************************************/
 
+#include <condition_variable>
+#include <mutex>
 #include <unistd.h>
 
 #include "quant.h"
@@ -32,7 +34,7 @@ SOFTWARE.
 #include "clock.h"
 #include "context.h"
 #include "data.h"
-#include "order_mgmt.h"
+#include "ordermgmt.h"
 #include "strategy.h"
 
 NVX_NS_BEGIN
@@ -51,6 +53,7 @@ struct QuantImpl : Quant {
         delete _d;
     }
 
+private:
     int        execute( IStrategy* s_ ) override;
     void       invoke() override { _s->invoke( context() ); }
     IData*     data() override { return _d; }
@@ -58,15 +61,28 @@ struct QuantImpl : Quant {
     Context*   context() override { return _c; }
     IStrategy* strategy() override { return _s; }
 
+private:
+    static void thread_fun( QuantImpl& q_ );
+
+private:
     IData*     _d = nullptr;
     ITrader*   _t = nullptr;
     IStrategy* _s = nullptr;
     Context*   _c = nullptr;
+
+private:
+    std::mutex              _mutex;
+    std::condition_variable _cv;
 };
 
 Quant& Quant::instance() {
     static QuantImpl _impl;
     return _impl;
+}
+
+void QuantImpl::thread_fun( QuantImpl& q_ ) {
+    for ( ;; ) {
+    }
 }
 
 //--处理输入,命令等

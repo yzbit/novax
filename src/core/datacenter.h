@@ -45,7 +45,7 @@ SOFTWARE.
 NVX_NS_BEGIN
 
 struct DcClient : IMarket {
-    DcClient( IData* data_ );
+    DcClient( IPub* data_ );
 
     nvx_st start() override;
     nvx_st stop() override;

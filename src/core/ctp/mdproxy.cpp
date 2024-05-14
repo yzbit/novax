@@ -27,7 +27,7 @@ SOFTWARE.
 
 #include <filesystem>
 
-#include "ctp_md_proxy.h"
+#include "mdproxy.h"
 
 #include "../log.hpp"
 #include "../models.h"
@@ -39,8 +39,8 @@ NVX_NS_BEGIN
 namespace ctp {
 namespace fs = std::filesystem;
 
-CtpExMd::CtpExMd( IData* d_ )
-    : IMarket( d_ ) {
+CtpExMd::CtpExMd( IPub* p_ )
+    : IMarket( p_ ) {
 }
 
 nvx_st CtpExMd::subscribe( const code_t& code_ ) {
@@ -274,46 +274,49 @@ void CtpExMd::OnRspUserLogout( CThostFtdcUserLogoutField* pUserLogout, CThostFtd
 
 void CtpExMd::OnRtnDepthMarketData( CThostFtdcDepthMarketDataField* f ) {
     // fprintf( stderr, "r quote\n" );
-    quotation_t q;
-    q.time.from_ctp( f->TradingDay, f->UpdateTime, f->UpdateMillisec );
-    q.ex       = cvt_ex( f->ExchangeID );  // 模拟盘是[\0]
-    q.last     = f->LastPrice;
-    q.volume   = f->Volume;
-    q.code     = f->InstrumentID;
-    q.opi      = f->OpenInterest;
-    q.ask      = f->AskPrice1;
-    q.askvol   = f->AskVolume1;
-    q.bid      = f->BidPrice1;
-    q.bidvol   = f->BidVolume1;
-    q.highest  = f->HighestPrice;
-    q.lowest   = f->LowestPrice;
-    q.avgprice = f->AveragePrice;
-    q.turnover = f->Turnover;
-    q.open     = f->OpenPrice;
-    q.close    = q.last;  //->ClosePrice;  // 今收盘价格，盘中是一个错误的值，不太有意义  PreClosePrice 昨收盘
+    // quotation_t q;
+    tick_msg_t m;
 
-    delegator()->update( q );
+    m.q.time.from_ctp( f->TradingDay, f->UpdateTime, f->UpdateMillisec );
+    m.q.ex       = cvt_ex( f->ExchangeID );  // 模拟盘是[\0]
+    m.q.last     = f->LastPrice;
+    m.q.volume   = f->Volume;
+    m.q.code     = f->InstrumentID;
+    m.q.opi      = f->OpenInterest;
+    m.q.ask      = f->AskPrice1;
+    m.q.askvol   = f->AskVolume1;
+    m.q.bid      = f->BidPrice1;
+    m.q.bidvol   = f->BidVolume1;
+    m.q.highest  = f->HighestPrice;
+    m.q.lowest   = f->LowestPrice;
+    m.q.avgprice = f->AveragePrice;
+    m.q.turnover = f->Turnover;
+    m.q.open     = f->OpenPrice;
+    m.q.close    = m.q.last;  //->ClosePrice;  // 今收盘价格，盘中是一个错误的值，不太有意义  PreClosePrice 昨收盘
+
+    // tick_msg_t m( q );
+    PUB_MSG( m );
 
     fprintf( stderr,
              "\tdate=%s time=%s ms=%u ex=%d\n\tlast=%.0lf vol=%d code=%s opi=%u \n\task=%.0lf askv=%u bid=%.0lf bidv=%u higest=%.0lf lowest=%.0lf \n\tavg=%.0lf turnover=%.0lf open=%.0lf close=%d\n",
              f->TradingDay,
              f->UpdateTime,
              f->UpdateMillisec,
-             q.ex,
-             q.last,
-             q.volume,
-             q.code.c_str(),
-             q.opi,
-             q.ask,
-             q.askvol,
-             q.bid,
-             q.bidvol,
-             q.highest,
-             q.lowest,
-             q.avgprice,
-             q.turnover,
-             q.open,
-             ( int )q.close );
+             m.q.ex,
+             m.q.last,
+             m.q.volume,
+             m.q.code.c_str(),
+             m.q.opi,
+             m.q.ask,
+             m.q.askvol,
+             m.q.bid,
+             m.q.bidvol,
+             m.q.highest,
+             m.q.lowest,
+             m.q.avgprice,
+             m.q.turnover,
+             m.q.open,
+             ( int )m.q.close );
 
     /*
     鉴于夜盘交易时间非常混乱，我们不使用服务器时间（日期），和常用的交易软件时间划分类似

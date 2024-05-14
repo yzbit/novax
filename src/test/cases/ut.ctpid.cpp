@@ -31,9 +31,10 @@ SOFTWARE.
 #include <novax.h>
 
 #include "../../core/ctp/ctp_ids.h"
+USE_NVX_NS
 
 TEST( REF, basic ) {
-    ctp::ref_t r( 168 );
+    ctp::order_ref_t r( 168 );
 
     ASSERT_TRUE( r.int_val() == 168 );
     ASSERT_TRUE( strlen( r.str_val() ) == strlen( "1234567890123" ) );
@@ -46,21 +47,23 @@ TEST( REF, basic ) {
     r += 1000;
     ASSERT_TRUE( strcmp( "0000000001169", r.str_val() ) == 0 );
 
-    ctp::ref_t r2( r );
+    ctp::order_ref_t r2( r );
     ASSERT_TRUE( strcmp( "0000000001169", r2.str_val() ) == 0 );
 
-    ctp::ref_t r3;
+    ctp::order_ref_t r3;
     ASSERT_TRUE( strcmp( "0000000000000", r3.str_val() ) == 0 );
     r3 = r2;
 
     ASSERT_TRUE( strcmp( "0000000001169", r3.str_val() ) == 0 );
 
-    ctp::ref_t r4 = r3 + 1;
+    ctp::order_ref_t r4 = r3 + 1;
     ASSERT_TRUE( strcmp( "0000000001170", r4.str_val() ) == 0 );
 
     TThostFtdcOrderRefType ref;
     r4.copy( ref );
     ASSERT_TRUE( strncmp( "0000000001170", ref, 13 ) == 0 );
+
+    ASSERT_TRUE( r4 == 1170 );
 }
 
 #endif /* C1DE8F61_B7D0_4C2B_82B7_DEB95AACC4B7 */

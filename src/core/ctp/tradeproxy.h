@@ -34,21 +34,19 @@ SOFTWARE.
 #include "../definitions.h"
 #include "../models.h"
 #include "../ns.h"
-#include "../order_mgmt.h"
+#include "../ordermgmt.h"
 #include "../proxy.h"
 #include "comm.h"
+#include "ctpids.h"
 
 NVX_NS_BEGIN
 
 #define CTP_TRADE_SETTING_FILE "/home/data/code/cub/src/core/ctp/ctp_trade.json"
 
-#define IS_VALID_REF( _ref_ ) ( _ref_[ sizeof( _ref_ ) - 1 ] != '\0' )
-#define IS_EQUAL_REF( _a_, _b_ ) ( 0 == memcmp( _a_, _b_, sizeof _a_ ) )
-
 namespace ctp {
 
 struct CtpTrader : IBroker, CThostFtdcTraderSpi {
-    CtpTrader( ITrader* tr_ );
+    CtpTrader( IPub* tr_ );
 
 protected:
     nvx_st start() override;
@@ -68,8 +66,6 @@ private:
     nvx_st qry_position();
 
 private:
-    nvx_st assign_ref( oid_t id_ );
-    oid_t  id_of( const TThostFtdcOrderRefType& ref_ );
     odir_t cvt_direction( const TThostFtdcDirectionType& di_, const TThostFtdcCombOffsetFlagType& comb_ );
     odir_t cvt_direction( const TThostFtdcDirectionType& di_, const TThostFtdcOffsetFlagType& comb_ );
 
@@ -77,43 +73,16 @@ private:
     CThostFtdcTraderApi* _api;
 
 private:
-    struct session_t {
-        TThostFtdcFrontIDType   front;
-        TThostFtdcSessionIDType sess;
-        TThostFtdcOrderRefType  init_ref;  // 因为这个字段是从右边对齐，为了处理方便，我们可以先给他一个很大的值，比如'1000000000'，这样每次只需要处理进位即可
+    void session_changed( const session_t& s_ );
 
-        session_t() = default;
-        session_t( TThostFtdcFrontIDType f_, TThostFtdcSessionIDType s_, const TThostFtdcOrderRefType& r_ );
-    };
-    struct ex_oid_t {
-        TThostFtdcExchangeIDType ex;
-        TThostFtdcOrderSysIDType oid;
-
-        ex_oid_t();
-        ex_oid_t( const TThostFtdcExchangeIDType& ex_, const TThostFtdcOrderSysIDType& oid_ );
-
-        bool is_valid() const;
-        bool operator==( const ex_oid_t& eoid_ ) const;
-    };
-    struct order_ids_t {
-        oid_t                  id;
-        ex_oid_t               eoid;
-        TThostFtdcOrderRefType ref;
-
-        void set_ref( const TThostFtdcOrderRefType& ref_ );
-        order_ids_t() = default;
-        order_ids_t( oid_t id_, const ex_oid_t& ex_oid_, const TThostFtdcOrderRefType& ref_ );
-    };
-
-    oid_t id_of( const ex_oid_t& eoid_ );
-    void  session_changed( const session_t& s_ );
-    oid_t id_of( const ex_oid_t& exoid_, const TThostFtdcOrderRefType& ref_ );
+    order_id_t* id_of( const fsr_t& ref_ );
+    order_id_t* id_of( const sys_order_t& sys_ );
+    order_id_t* id_of( const oid_t& oid_ );
 
 private:
-    using IdMap = std::unordered_map<oid_t, order_ids_t>;
-
+    using IdVec = std::vector<order_id_t>;
     setting_t _settings;
-    IdMap     _id_map;
+    IdVec     _ids;
     session_t _ss;
 
 private:
@@ -146,40 +115,6 @@ private:
     void OnRspQryInstrumentCommissionRate( CThostFtdcInstrumentCommissionRateField* pInstrumentCommissionRate, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) override;  // 手续费
 };
 
-inline CtpTrader::session_t::session_t( TThostFtdcFrontIDType f_, TThostFtdcSessionIDType s_, const TThostFtdcOrderRefType& r_ )
-    : front( f_ )
-    , sess( s_ ) {
-    memcpy( init_ref, r_, sizeof( init_ref ) );
-}
-
-inline CtpTrader::ex_oid_t::ex_oid_t() {
-    memset( ex, 0x00, sizeof( ex ) );
-    memset( oid, 0x00, sizeof( oid ) );
-}
-
-inline bool CtpTrader::ex_oid_t::is_valid() const {
-    return ex[ 0 ] != '\0' && oid[ 0 ] != '\0';
-}
-
-inline CtpTrader::ex_oid_t::ex_oid_t( const TThostFtdcExchangeIDType& ex_, const TThostFtdcOrderSysIDType& oid_ ) {
-    memcpy( ex, ex_, sizeof( ex ) );
-    memcpy( oid, oid_, sizeof( oid ) );
-}
-
-inline bool CtpTrader::ex_oid_t::operator==( const ex_oid_t& eoid_ ) const {
-    return 0 == memcmp( eoid_.oid, oid, sizeof( eoid_.oid ) )
-           && 0 == memcmp( eoid_.ex, ex, sizeof( ex ) );
-}
-
-inline CtpTrader::order_ids_t::order_ids_t( oid_t id_, const ex_oid_t& ex_oid_, const TThostFtdcOrderRefType& ref_ ) {
-    id = id_;
-    memcpy( &eoid, &ex_oid_, sizeof( eoid ) );
-    memcpy( ref, ref_, sizeof( ref ) );
-}
-
-inline void CtpTrader::order_ids_t::set_ref( const TThostFtdcOrderRefType& ref_ ) {
-    memcpy( ref, ref_, sizeof( ref ) );
-}
 }  // namespace ctp
 
 NVX_NS_END

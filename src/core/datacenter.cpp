@@ -28,13 +28,13 @@ SOFTWARE.
 #include <mutex>
 #include <stdio.h>
 
-#include "data_center.h"
+#include "datacenter.h"
 
 #include "msg.h"
 
 NVX_NS_BEGIN
-DcClient::DcClient( IData* data_ )
-    : IMarket( data_ ) {
+DcClient::DcClient( IPub* p_ )
+    : IMarket( p_ ) {
 }
 
 nvx_st DcClient::start() {
@@ -87,7 +87,8 @@ void DcClient::on_ack( mid_t req_, char rc_ ) {
 }
 
 void DcClient::on_tick( const quotation_t& qut_ ) {
-    delegator()->update( qut_ );
+    // todo
+    // delegator()->update( qut_ );
 }
 
 void DcClient::read_cb( struct bufferevent* bev_, void* ctx ) {

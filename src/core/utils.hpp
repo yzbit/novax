@@ -28,12 +28,63 @@ SOFTWARE.
 #ifndef A0091236_F594_4A70_BDCB_927CD411D38C
 #define A0091236_F594_4A70_BDCB_927CD411D38C
 #include <functional>
+#include <iostream>
+#include <memory>
+#include <mutex>
 #include <stdint.h>
 #include <stdio.h>
+#include <unistd.h>
+#include <vector>
 
 #include "ns.h"
 
 NVX_NS_BEGIN
+
+#if 0
+struct ILockable {
+    virtual void lock() { _mutex.lock(); }
+    virtual void unlock() { _mutex.unlock(); }
+    ~ILockable() {}
+
+private:
+    std::mutex _mutex;
+};
+#endif
+
+using ILockable = std::mutex;
+
+#if 0
+template <typename... L>
+struct Lockhelper {
+    Lockhelper( L*... ls ) {
+        _all.reserve( sizeof...( ls ) );
+        ( [ & ] { _all.emplace_back( ls ); }(), ... );
+
+        for ( auto& l : _all ) {
+            std::cout << std::this_thread::get_id() << std::endl;
+            printf( "lock %lx\n", ( intptr_t )l );
+            l->lock();
+            printf( "locked" );
+
+            //            std::lock( _all.begin(), _all.end() );
+            // std::lock( _all );
+        }
+    }
+
+    ~Lockhelper() {
+        for ( auto& l : _all ) {
+
+            std::cout << std::this_thread::get_id() << std::endl;
+            printf( "ulock %lx\n", ( intptr_t )l );
+            l->unlock();
+            printf( "unlocked" );
+        }
+    }
+
+private:
+    std::vector<ILockable*> _all;
+};
+#endif
 
 inline void dumpHex(
     const uint8_t*                          data_,

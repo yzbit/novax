@@ -24,35 +24,37 @@ SOFTWARE.
 * \author: yaozn(zinan@outlook.com)
 * \date: 2024
 **********************************************************************************/
+#include <gtest/gtest.h>
+#include <novax.h>
+#include <stdio.h>
+#include <thread>
 
-#include "proxy.h"
+#include "../../core/utils.hpp"
+USE_NVX_NS
 
-#include "ctp/mdproxy.h"
-#include "ctp/tradeproxy.h"
-#include "datacenter.h"
+struct LockObj : ILockable {
+};
 
-NVX_NS_BEGIN
+TEST( lock, Basic ) {
+    LockObj lo1, lo2;
 
-int ISubject::post( const msg_t& m_ ) {
-    return _pub ? _pub->post( m_ ) : -1;
+    int i = 0;
+    int j = 0;
+
+    // std::lock( lo1, lo2 );
+    std::thread t1( [ & ]() {
+        // Lockhelper lck( &lo1, &lo2 );
+        std::scoped_lock( lo1, lo2 );
+        ++i;
+    } );
+    t1.join();
+
+    std::thread t2( [ & ]() {
+        std::scoped_lock( lo2, lo1 );
+        ++j;
+    } );
+    t2.join();
+
+    ::sleep( 1 );
+    ASSERT_TRUE( i == 1 && j == 1 );
 }
-
-IBroker::IBroker( IPub* pub_ )
-    : ISubject( pub_ ){};
-
-IMarket::IMarket( IPub* pub_ )
-    : ISubject( pub_ ) {
-}
-
-ITrader::~ITrader() {}
-IData::~IData() {}
-
-IMarket* create_market( IPub* p_ ) {
-    return new DcClient( p_ );
-}
-
-IBroker* create_broker( IPub* p_ ) {
-    return new ctp::CtpTrader( p_ );
-}
-
-NVX_NS_END

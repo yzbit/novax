@@ -27,10 +27,10 @@ SOFTWARE.
 
 #include <memory>
 
-#include "order_mgmt.h"
+#include "ordermgmt.h"
 
 #include "context.h"
-#include "ctp/ctp_trade_proxy.h"
+#include "ctp/tradeproxy.h"
 #include "log.hpp"
 #include "proxy.h"
 #include "quant.h"
