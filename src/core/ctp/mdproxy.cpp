@@ -27,7 +27,7 @@ SOFTWARE.
 
 #include <filesystem>
 
-#include "ctp_md_proxy.h"
+#include "mdproxy.h"
 
 #include "../log.hpp"
 #include "../models.h"
@@ -39,8 +39,8 @@ NVX_NS_BEGIN
 namespace ctp {
 namespace fs = std::filesystem;
 
-CtpExMd::CtpExMd( IData* d_ )
-    : IMarket( d_ ) {
+CtpExMd::CtpExMd( IPub* p_ )
+    : IMarket( p_ ) {
 }
 
 nvx_st CtpExMd::subscribe( const code_t& code_ ) {
@@ -274,7 +274,8 @@ void CtpExMd::OnRspUserLogout( CThostFtdcUserLogoutField* pUserLogout, CThostFtd
 
 void CtpExMd::OnRtnDepthMarketData( CThostFtdcDepthMarketDataField* f ) {
     // fprintf( stderr, "r quote\n" );
-    quotation_t q;
+    pub::tick_msg_t q;
+
     q.time.from_ctp( f->TradingDay, f->UpdateTime, f->UpdateMillisec );
     q.ex       = cvt_ex( f->ExchangeID );  // 模拟盘是[\0]
     q.last     = f->LastPrice;
@@ -292,7 +293,8 @@ void CtpExMd::OnRtnDepthMarketData( CThostFtdcDepthMarketDataField* f ) {
     q.open     = f->OpenPrice;
     q.close    = q.last;  //->ClosePrice;  // 今收盘价格，盘中是一个错误的值，不太有意义  PreClosePrice 昨收盘
 
-    delegator()->update( q );
+    // tick_msg_t m( q );
+    PUB( q );
 
     fprintf( stderr,
              "\tdate=%s time=%s ms=%u ex=%d\n\tlast=%.0lf vol=%d code=%s opi=%u \n\task=%.0lf askv=%u bid=%.0lf bidv=%u higest=%.0lf lowest=%.0lf \n\tavg=%.0lf turnover=%.0lf open=%.0lf close=%d\n",

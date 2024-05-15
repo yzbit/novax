@@ -28,12 +28,33 @@ SOFTWARE.
 #ifndef A0091236_F594_4A70_BDCB_927CD411D38C
 #define A0091236_F594_4A70_BDCB_927CD411D38C
 #include <functional>
+#include <iostream>
+#include <memory>
+#include <mutex>
 #include <stdint.h>
 #include <stdio.h>
+#include <unistd.h>
+#include <vector>
 
 #include "ns.h"
 
 NVX_NS_BEGIN
+template <typename... T>
+struct MaxTypeSize;
+
+template <>
+struct MaxTypeSize<> {
+    enum {
+        value = 0
+    };
+};
+
+template <typename T, typename... R>
+struct MaxTypeSize<T, R...> {
+    enum {
+        value = sizeof( T ) > ( MaxTypeSize<R...>::value ) ? sizeof( T ) : ( MaxTypeSize<R...>::value )
+    };
+};
 
 inline void dumpHex(
     const uint8_t*                          data_,

@@ -25,7 +25,7 @@ SOFTWARE.
 * \date: 2024
 **********************************************************************************/
 
-#include "ctp_trade_proxy.h"
+#include "tradeproxy.h"
 
 #include "../log.hpp"
 #include "comm.h"
@@ -33,8 +33,8 @@ SOFTWARE.
 NVX_NS_BEGIN
 namespace ctp {
 
-CtpTrader::CtpTrader( ITrader* tr_ )
-    : IBroker( tr_ ) {}
+CtpTrader::CtpTrader( IPub* p_ )
+    : IBroker( p_ ) {}
 
 nvx_st CtpTrader::start() {
     if ( _settings.load( CTP_TRADE_SETTING_FILE ) < 0 ) {
@@ -122,27 +122,24 @@ nvx_st CtpTrader::cancel( const order_t& o_ ) {
     如果单子还在CTP就要用FrontID+SessionID+OrderRef撤，因为送到exchange前还没有OrderSysID.
     如果单子已经送到Exchange,那既可以用 FrontID+SessionID+OrderRef撤，也可以用ExchangeID+OrderSysID撤。
     */
-    auto oids = _id_map.find( o_.id );
+    auto id = id_of( o_.id );
 
-    if ( oids == _id_map.end() ) {
+    if ( !id ) {
         LOG_INFO( "xModifyOrder@试图删除一个不存在订单ID,%d\n", o_ );
         return NVX_Fail;
     }
 
-    if ( oids->second.eoid.is_valid() ) {
-        memcpy( field.OrderSysID, oids->second.eoid.oid, sizeof( field.OrderSysID ) );
-        memcpy( field.ExchangeID, oids->second.eoid.ex, sizeof( field.ExchangeID ) );
-    }
-    else if ( IS_VALID_REF( oids->second.ref ) ) {
-        memcpy( field.OrderRef, oids->second.ref, sizeof( field.OrderRef ) );
-        field.FrontID   = _ss.front;
-        field.SessionID = _ss.sess;
-        CTP_COPY_SAFE( field.InstrumentID, o_.code.c_str() );
+    if ( id->has_sysid() ) {
+        memcpy( field.OrderSysID, id->sysid.order_id, sizeof( field.OrderSysID ) );
+        memcpy( field.ExchangeID, id->sysid.ex_id, sizeof( field.ExchangeID ) );
     }
     else {
-        LOG_INFO( "xModifyOrder@试图删除一个不存在订单ID,oid=%d\n", o_ );
-        return NVX_Fail;
+        id->fsr.ref.copy( field.OrderRef );
+        field.FrontID   = _ss.front;
+        field.SessionID = _ss.sess;
     }
+
+    CTP_COPY_SAFE( field.InstrumentID, o_.code.c_str() );
 
     field.ActionFlag = THOST_FTDC_AF_Delete;
 
@@ -174,13 +171,13 @@ nvx_st CtpTrader::put( const order_t& o_ ) {
         return NVX_Fail;
     }
 
-    // todo 如果是平仓，还需要给id吗?
-    if ( assign_ref( o_.id ) < 0 ) {
-        LOG_INFO( "cant gen order ref or id%u", o_.id );
-        return NVX_Fail;
-    }
+    order_id_t id;
+    id.fsr = fsr_t( _ss.front, _ss.sess, order_ref_t( o_.id ) );
+    _ids.emplace_back( id );
 
     CThostFtdcInputOrderField field = { 0 };
+
+    id.fsr.ref.copy( field.OrderRef );
     CTP_COPY_SAFE( field.BrokerID, _settings.i.broker.c_str() );
     CTP_COPY_SAFE( field.InvestorID, _settings.i.id.c_str() );
     CTP_COPY_SAFE( field.UserID, _settings.i.id.c_str() );
@@ -197,7 +194,6 @@ nvx_st CtpTrader::put( const order_t& o_ ) {
     field.IsAutoSuspend       = 0;
     field.UserForceClose      = 0;
 
-    memcpy( field.OrderRef, _id_map[ o_.id ].ref, sizeof( field.OrderRef ) );
     LOG_INFO( "order mode:%d\n", o_.mode );
 
     switch ( o_.mode ) {
@@ -288,48 +284,6 @@ nvx_st CtpTrader::put( const order_t& o_ ) {
     field.RequestID = req_id();
 
     return !_api->ReqOrderInsert( &field, field.RequestID ) ? NVX_OK : NVX_Fail;
-}
-
-nvx_st CtpTrader::assign_ref( oid_t id_ ) {
-    NVX_ASSERT( id_ );
-
-    if ( _id_map.find( id_ ) != _id_map.end() ) {
-        LOG_INFO( "band order id" );
-        return NVX_Fail;
-    }
-
-    order_ids_t ids;
-
-    int i = sizeof( TThostFtdcOrderRefType ) - 1;
-    int j = 0;
-
-    while ( _ss.init_ref[ j ] == '0' )
-        ++j;
-    --j;
-
-    int carry = 0;
-    for ( ; i > j; --i ) {
-        if ( _ss.init_ref[ i ] == '9' ) {
-            _ss.init_ref[ i ] = '0';
-            carry             = 1;
-        }
-        else {
-            _ss.init_ref[ i ] += 1;
-            carry = 0;
-            break;
-        }
-    }
-
-    if ( carry ) {
-        NVX_ASSERT( i == j );
-        _ss.init_ref[ i ] = '1';
-    }
-
-    ids.set_ref( _ss.init_ref );
-    ids.id = id_;
-    _id_map.emplace( id_, ids );
-
-    return NVX_OK;
 }
 
 nvx_st CtpTrader::login() {
@@ -452,55 +406,29 @@ void CtpTrader::OnRspQrySettlementInfo( CThostFtdcSettlementInfoField* pSettleme
 
 void CtpTrader::OnRspOrderInsert( CThostFtdcInputOrderField* f_, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) {
     LOG_INFO( "订单被ctp前置拒绝,req=%d, id=%d, msg=%s", nRequestID, pRspInfo->ErrorID, pRspInfo->ErrorMsg );
-    auto id = id_of( f_->OrderRef );
+    auto id = id_of( { _ss.front, _ss.sess, order_ref_t( f_->OrderRef ) } );
 
-    if ( !IS_VALID_ID( id ) ) {
+    if ( !id ) {
         LOG_INFO( "can not reg order ref: %s", f_->OrderRef );
         return;
     }
 
-    delegator()->update_ord( id, ostatus_t::cancelled );
+    // todo
+    // delegator()->update_ord( id->fsr.ref.int_val(), ostatus_t::cancelled );
 }
 
-void CtpTrader::OnRspOrderAction( CThostFtdcInputOrderActionField* pInputOrderAction, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) {
+void CtpTrader::OnRspOrderAction( CThostFtdcInputOrderActionField* f_, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) {
     LOG_INFO( "撤单被ctp前置拒绝,req=%d, id=%d, msg=%s", nRequestID, pRspInfo->ErrorID, pRspInfo->ErrorMsg );
 
-    auto id = id_of( pInputOrderAction->OrderRef );
+    auto id = id_of( { _ss.front, _ss.sess, order_ref_t( f_->OrderRef ) } );
 
-    if ( !IS_VALID_ID( id ) ) {
+    if ( !id ) {
         LOG_INFO( "rtn trade, cannot reg order id" );
         return;
     }
 
-    delegator()->update_ord( id, ostatus_t::aborted );
-}
-
-oid_t CtpTrader::id_of( const TThostFtdcOrderRefType& ref_ ) {
-    auto itr = std::find_if( _id_map.begin(), _id_map.end(), [ & ]( auto& pair_ ) {
-        return 0 == memcmp( ref_, pair_.second.ref, sizeof( ref_ ) );
-    } );
-
-    return itr == _id_map.end() ? kBadId : itr->second.id;
-}
-
-oid_t CtpTrader::id_of( const ex_oid_t& eoid_ ) {
-    auto itr = std::find_if( _id_map.begin(), _id_map.end(), [ & ]( auto& pair_ ) {
-        return eoid_ == pair_.second.eoid;
-    } );
-
-    return itr == _id_map.end() ? kBadId : itr->second.id;
-}
-
-oid_t CtpTrader::id_of( const ex_oid_t& exoid_, const TThostFtdcOrderRefType& ref_ ) {
-    oid_t id = kBadId;
-
-    if ( IS_VALID_REF( ref_ ) )
-        id = id_of( ref_ );
-
-    if ( !IS_VALID_ID( id ) && exoid_.is_valid() )
-        id = id_of( exoid_ );
-
-    return id;
+    // todo
+    //  delegator()->update_ord( id->fsr.ref.int_val(), ostatus_t::aborted );
 }
 
 odir_t CtpTrader::cvt_direction( const TThostFtdcDirectionType& di_, const TThostFtdcCombOffsetFlagType& comb_ ) {
@@ -531,14 +459,36 @@ odir_t CtpTrader::cvt_direction( const TThostFtdcDirectionType& di_, const TThos
         return odir_t::none;
 }
 
+order_id_t* CtpTrader::id_of( const oid_t& oid_ ) {
+    return 0;
+}
+
+order_id_t* CtpTrader::id_of( const fsr_t& ref_ ) {
+    // auto oid = std::find( _ids.begin(), _ids.end(), [ & ]( const auto& id_ ) { return id_.fsr.ref == ref_; } );
+    // return oid == _ids.end() ? nullptr : &( *oid );
+    return 0;
+}
+
+order_id_t* CtpTrader::id_of( const sys_order_t& sys_ ) {
+    // auto oid = std::find( _ids.begin(), _ids.end(), [ & ]( const auto& id_ ) { return id_.sysid == sys_; } );
+    // return oid == _ids.end() ? nullptr : &( *oid );
+    return 0;
+}
+
 void CtpTrader::OnRtnOrder( CThostFtdcOrderField* f_ ) {
     LOG_INFO( "[ctp] OnOrderRtn[1]@front=%d sess=%d ref=%s exid=%s sysid=%s\n", f_->FrontID, f_->SessionID, f_->OrderRef, f_->ExchangeID, f_->OrderSysID );
 
-    auto oid = id_of( { f_->ExchangeID, f_->OrderSysID }, f_->OrderRef ) == 0;
-    if ( !IS_VALID_ID( oid ) ) {
-        LOG_INFO( "cannot reg order id ex= %s syso=%d ref=%s", f_->ExchangeID, f_->OrderSysID, f_->OrderRef );
+    order_id_t* id = f_->RelativeOrderSysID[ 0 ] != 0
+                         ? id_of( { f_->ExchangeID, f_->RelativeOrderSysID } )
+                         : id_of( { f_->FrontID, f_->SessionID, order_ref_t( f_->OrderRef ) } );
+
+    if ( !id ) {
+        LOG_INFO( "cannot reg order id ex= %s syso=%d ref=%s rel=%s", f_->ExchangeID, f_->OrderSysID, f_->OrderRef, f_->RelativeOrderSysID );
         return;
     }
+
+    oid_t oid = id->fsr.ref.int_val();
+    LOG_INFO( "act id=%u", oid );
 
     LOG_INFO( "RTN status: code=%s {front=%d sess=%d ref=%s} \n{exid=%s sysid=%s}, \n{sum status=%d, status=%d ,day=%s time=%s}, \n{limitprice=%lf voltraded=%d vaolremain=%d}",
               f_->InstrumentID,
@@ -563,7 +513,9 @@ void CtpTrader::OnRtnOrder( CThostFtdcOrderField* f_ ) {
     case THOST_FTDC_OST_NoTradeNotQueueing:
     case THOST_FTDC_OST_Touched:
     case THOST_FTDC_OST_Unknown:
-        return delegator()->update_ord( oid, ostatus_t::pending );
+        // todo
+        // return delegator()->update_ord( oid, ostatus_t::pending );
+        return;
 
     case THOST_FTDC_OST_PartTradedQueueing:
     case THOST_FTDC_OST_AllTraded:
@@ -587,25 +539,30 @@ void CtpTrader::OnRtnOrder( CThostFtdcOrderField* f_ ) {
 
         o.price = f_->LimitPrice;
 
-        return delegator()->update_ord( o );
+        // todo
+        // return delegator()->update_ord( o );
+        return;
     } break;
 
     case THOST_FTDC_OST_Canceled:
         LOG_INFO( "撤单原因: %d", f_->OrderSubmitStatus );
-        return delegator()->update_ord( oid, ostatus_t::cancelled );
+        // todo
+        // return delegator()->update_ord( oid, ostatus_t::cancelled );
+        return;
     }
 }
 
 void CtpTrader::OnRtnTrade( CThostFtdcTradeField* f_ ) {
-    auto id = id_of( f_->OrderRef );
+    auto id = id_of( { _ss.front, _ss.sess, order_ref_t( f_->OrderRef ) } );
 
-    if ( !IS_VALID_ID( id ) ) {
+    if ( !id ) {
         LOG_INFO( "rtn trade, cannot reg order id" );
         return;
     }
 
     order_t o;
-    o.id = id;
+
+    o.id = id->fsr.ref.int_val();
     o.datetime.from_ctp( f_->TradeDate, f_->TradeTime, 0 );
     o.qty   = f_->Volume;
     o.code  = f_->InstrumentID;
@@ -616,44 +573,47 @@ void CtpTrader::OnRtnTrade( CThostFtdcTradeField* f_ ) {
         LOG_INFO( "bad order direction'" );
     }
 
-    delegator()->update_ord( id, ostatus_t::finished );
+    // todo
+    // delegator()->update_ord( id->fsr.ref.int_val(), ostatus_t::finished );
     qry_fund();
 }
 
 void CtpTrader::OnErrRtnOrderInsert( CThostFtdcInputOrderField* f_, CThostFtdcRspInfoField* pRspInfo ) {
     LOG_INFO( "INSERT ERROR,errid=%d msg=%s", pRspInfo->ErrorID, pRspInfo->ErrorMsg );
 
-    auto id = id_of( f_->OrderRef );
+    auto id = id_of( { _ss.front, _ss.sess, order_ref_t( f_->OrderRef ) } );
 
-    if ( !IS_VALID_ID( id ) ) {
+    if ( !id ) {
         LOG_INFO( "errrtn insert, cannot reg order id" );
         return;
     }
 
-    delegator()->update_ord( id, ostatus_t::error );
+    // todo
+    // delegator()->update_ord( id->fsr.ref.int_val(), ostatus_t::error );
 }
 
-void CtpTrader::OnErrRtnOrderAction( CThostFtdcOrderActionField* pOrderAction, CThostFtdcRspInfoField* pRspInfo ) {
+void CtpTrader::OnErrRtnOrderAction( CThostFtdcOrderActionField* f_, CThostFtdcRspInfoField* pRspInfo ) {
     LOG_INFO( "order action error: {frontid=%d ,sessionid=%d, oref=%d} ,{ex=%s sysid=%s} , instument=%s, msg=%s, req=%d",
-              pOrderAction->FrontID,
-              pOrderAction->SessionID,
-              pOrderAction->OrderRef,
-              pOrderAction->ExchangeID,
-              pOrderAction->OrderSysID,
-              pOrderAction->InstrumentID,
+              f_->FrontID,
+              f_->SessionID,
+              f_->OrderRef,
+              f_->ExchangeID,
+              f_->OrderSysID,
+              f_->InstrumentID,
               pRspInfo->ErrorID,
               pRspInfo->ErrorMsg );
 
     LOG_INFO( "撤单被交易所拒绝, 原因: [ %d %s ]", pRspInfo->ErrorID, pRspInfo->ErrorMsg );
 
-    auto id = id_of( pOrderAction->OrderRef );
+    auto id = id_of( { _ss.front, _ss.sess, order_ref_t( f_->OrderRef ) } );
 
-    if ( !IS_VALID_ID( id ) ) {
+    if ( !id ) {
         LOG_INFO( "rtn trade, cannot reg order id" );
         return;
     }
 
-    delegator()->update_ord( id, ostatus_t::aborted );
+    // todo
+    // delegator()->update_ord( id->fsr.ref.int_val(), ostatus_t::aborted );
 }
 
 void CtpTrader::OnRspQryInstrument( CThostFtdcInstrumentField* pInstrument, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) {
@@ -661,7 +621,7 @@ void CtpTrader::OnRspQryInstrument( CThostFtdcInstrumentField* pInstrument, CTho
 
 void CtpTrader::OnRspQryTradingAccount( CThostFtdcTradingAccountField* pTradingAccount, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) {
     LOG_INFO( "qry account,errid=%d msg=%s", pRspInfo->ErrorID, pRspInfo->ErrorMsg );
-    fund_t f;
+    pub::fund_msg_t f;
 
     f.available  = pTradingAccount->Available;
     f.commission = pTradingAccount->Commission;
@@ -669,7 +629,7 @@ void CtpTrader::OnRspQryTradingAccount( CThostFtdcTradingAccountField* pTradingA
     f.cprofit    = pTradingAccount->CloseProfit;
     f.pprofit    = pTradingAccount->PositionProfit;
 
-    delegator()->update_fund( f );
+    PUB( f );
 }
 
 void CtpTrader::OnRspQryOrder( CThostFtdcOrderField* pOrder, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) {

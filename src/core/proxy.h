@@ -31,10 +31,31 @@ SOFTWARE.
 #include "definitions.h"
 #include "models.h"
 #include "ns.h"
-
+#include "pub.h"
 NVX_NS_BEGIN
 
-struct IBroker;
+struct ISubject {
+    ISubject( IPub* pub_ )
+        : _pub( pub_ ) {}
+
+    virtual ~ISubject() {}
+
+protected:
+    int post( const pub::msg_t& m_ );
+
+private:
+    IPub* _pub = nullptr;
+};
+
+struct IBroker : ISubject {
+    IBroker( IPub* pub_ );
+
+    virtual nvx_st start()                     = 0;
+    virtual nvx_st stop()                      = 0;
+    virtual nvx_st put( const order_t& o_ )    = 0;
+    virtual nvx_st cancel( const order_t& o_ ) = 0;
+};
+
 struct ITrader {
     virtual void update_ord( oid_t id_, ostatus_t status_ ) = 0;
     virtual void update_ord( const order_t& o_ )            = 0;
@@ -50,23 +71,14 @@ private:
     friend IBroker;
 };
 
-struct IBroker {
-    IBroker( ITrader* tr_ );
-    virtual ~IBroker();
-
-    virtual nvx_st start()                     = 0;
-    virtual nvx_st stop()                      = 0;
-    virtual nvx_st put( const order_t& o_ )    = 0;
-    virtual nvx_st cancel( const order_t& o_ ) = 0;
-
-protected:
-    ITrader* delegator();
-
-private:
-    ITrader* _tr = nullptr;
+struct IMarket : ISubject {
+    IMarket( IPub* pub_ );
+    virtual nvx_st start()                            = 0;
+    virtual nvx_st stop()                             = 0;
+    virtual nvx_st subscribe( const code_t& code_ )   = 0;
+    virtual nvx_st unsubscribe( const code_t& code_ ) = 0;
 };
 
-struct IMarket;
 struct IData {
     virtual void update( const quotation_t& tick_ ) = 0;
     virtual ~IData();
@@ -77,23 +89,6 @@ protected:
 private:
     IMarket* _m;
     friend IMarket;
-};
-
-struct IMarket {
-    IMarket( IData* dt_ );
-
-    virtual nvx_st start()                            = 0;
-    virtual nvx_st stop()                             = 0;
-    virtual nvx_st subscribe( const code_t& code_ )   = 0;
-    virtual nvx_st unsubscribe( const code_t& code_ ) = 0;
-
-    virtual ~IMarket();
-
-protected:
-    IData* delegator();
-
-private:
-    IData* _dt = nullptr;
 };
 
 NVX_NS_END

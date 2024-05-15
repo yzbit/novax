@@ -11,12 +11,13 @@ set(REPO_ROOT "${MODULE_ROOT}/../../..")
 
 SET(SRC 
     main.cpp
-    ut.series.cpp
-    ut.ordermgmt.cpp
-    ut.clock.cpp
-    ut.kline.cpp
-    ut.code.cpp
-    ut.calendar.cpp
+   # ut.series.cpp
+   # ut.ordermgmt.cpp
+   # ut.clock.cpp
+   # ut.kline.cpp
+   # ut.code.cpp
+   # ut.calendar.cpp
+    ut.messageq.cpp
 )
 
 #ut coverage

@@ -45,7 +45,7 @@ NVX_NS_BEGIN
 
 namespace ctp {
 struct CtpExMd : IMarket, CThostFtdcMdSpi {
-    CtpExMd( IData* d_ );
+    CtpExMd( IPub* p_ );
 
 protected:
     nvx_st start() override;

@@ -27,40 +27,32 @@ SOFTWARE.
 
 #include "proxy.h"
 
-#include "ctp/ctp_md_proxy.h"
-#include "ctp/ctp_trade_proxy.h"
-#include "data_center.h"
+#include "ctp/mdproxy.h"
+#include "ctp/tradeproxy.h"
+#include "datacenter.h"
 
 NVX_NS_BEGIN
 
+int ISubject::post( const pub::msg_t& m_ ) {
+    return _pub ? _pub->post( m_ ) : -1;
+}
+
+IBroker::IBroker( IPub* pub_ )
+    : ISubject( pub_ ){};
+
+IMarket::IMarket( IPub* pub_ )
+    : ISubject( pub_ ) {
+}
+
 ITrader::~ITrader() {}
-
-IBroker::IBroker( ITrader* tr_ )
-    : _tr( tr_ ) {
-    tr_->_ib = this;
-};
-
-IBroker::~IBroker() {}
-
-ITrader* IBroker::delegator() { return _tr; }
-
 IData::~IData() {}
 
-IMarket::IMarket( IData* dt_ )
-    : _dt( dt_ ) {
-    dt_->_m = this;
+IMarket* create_market( IPub* p_ ) {
+    return new DcClient( p_ );
 }
 
-IMarket::~IMarket() {}
-
-IData* IMarket::delegator() { return _dt; }
-
-IMarket* create_market( IData* d_ ) {
-    return new DcClient( d_ );
-}
-
-IBroker* create_broker( ITrader* t_ ) {
-    return new ctp::CtpTrader( t_ );
+IBroker* create_broker( IPub* p_ ) {
+    return new ctp::CtpTrader( p_ );
 }
 
 NVX_NS_END

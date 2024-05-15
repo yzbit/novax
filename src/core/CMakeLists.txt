@@ -12,12 +12,13 @@ SET(SRC
     calendar.cpp
     clock.cpp
     context.cpp
-    data_center.cpp
+    datacenter0.cpp
+    datacenter1.cpp
     data.cpp
     kline.cpp
-    order_mgmt.cpp
-    ctp/ctp_md_proxy.cpp
-    ctp/ctp_trade_proxy.cpp
+    ordermgmt.cpp
+    ctp/mdproxy.cpp
+    ctp/tradeproxy.cpp
     proxy.cpp
     quant.cpp
     dbagent.cpp

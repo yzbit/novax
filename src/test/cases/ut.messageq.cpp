@@ -21,58 +21,41 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-* \author: yaozn(zinan@outlook.com)
+* \author: qianq(695997058@qq.com)
 * \date: 2024
 **********************************************************************************/
 
-#ifndef B1DEF22C_4715_4F7E_BA26_C2C5DEA96D2D
-#define B1DEF22C_4715_4F7E_BA26_C2C5DEA96D2D
-#include <cstddef>
-#include <event2/buffer.h>
-#include <event2/bufferevent.h>
-#include <event2/event.h>
-#include <map>
-#include <mutex>
+#include <gtest/gtest.h>
+#include <novax.h>
 #include <stdio.h>
-#include <sys/un.h>
 
-#include "models.h"
-#include "msg.h"
-#include "proxy.h"
+#include "../../core/concurrentqueue.h"
 
-#define DC_SERVER_ADDR "unix://tmp/datacenter"
+TEST( concurrentq, basic ) {
+    moodycamel::ConcurrentQueue<NVX_NS::pub::msg_t> q;
 
-NVX_NS_BEGIN
+    NVX_NS::pub::tick_msg_t tick = { 0 };
+    NVX_NS::pub::fund_msg_t fund = { 0 };
 
-struct DcClient : IMarket {
-    DcClient( IData* data_ );
+    tick.ask     = 99;
+    fund.balance = 77;
 
-    nvx_st start() override;
-    nvx_st stop() override;
-    nvx_st subscribe( const code_t& code_ ) override;
-    nvx_st unsubscribe( const code_t& code_ ) override;
-    nvx_st run();
+    q.enqueue( tick );
+    q.enqueue( fund );
 
-private:
-    void on_msg( const Msg* m_ );
-    void on_ack( mid_t req_, char rc_ );
-    void on_tick( const quotation_t& qut_ );
+    NVX_NS::pub::msg_t m;
 
-private:
-    static void read_cb( struct bufferevent* bev, void* ctx );
-    static void event_cb( struct bufferevent* bev, short event_, void* ctx );
+    auto found = q.try_dequeue( m );
 
-private:
-    using book_t = std::map<code_t, bool>;
+    ASSERT_TRUE( found );
 
-    bool _dc_running = false;
-    // book_t _allsubs;//这会导致加锁，非常不划算
+    auto& t = m.get<NVX_NS::pub::tick_msg_t>();
 
-private:
-    struct bufferevent* _bev = nullptr;
-    // std::mutex          _mtx;
-};
+    ASSERT_EQ( t.ask, 99 );
+    found = q.try_dequeue( m );
 
-NVX_NS_END
+    ASSERT_TRUE( found );
 
-#endif /* B1DEF22C_4715_4F7E_BA26_C2C5DEA96D2D */
+    auto& f = m.get<NVX_NS::pub::fund_msg_t>();
+    ASSERT_EQ( f.balance, 77 );
+}

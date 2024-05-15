@@ -35,11 +35,10 @@ SOFTWARE.
 
 #include "definitions.h"
 #include "models.h"
-#include "msg.h"
 #include "ns.h"
 #include "proxy.h"
-#include "ring_buffer.h"
-#include "task_queue.h"
+#include "ringbuffer.h"
+#include "taskqueue.h"
 
 NVX_NS_BEGIN
 struct Aspect;
