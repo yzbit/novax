@@ -33,7 +33,7 @@ SOFTWARE.
 
 NVX_NS_BEGIN
 
-int ISubject::post( const msg_t& m_ ) {
+int ISubject::post( const pub::msg_t& m_ ) {
     return _pub ? _pub->post( m_ ) : -1;
 }
 

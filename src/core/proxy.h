@@ -31,7 +31,6 @@ SOFTWARE.
 #include "definitions.h"
 #include "models.h"
 #include "ns.h"
-
 #include "pub.h"
 NVX_NS_BEGIN
 
@@ -42,7 +41,7 @@ struct ISubject {
     virtual ~ISubject() {}
 
 protected:
-    int post( const msg_t& m_ );
+    int post( const pub::msg_t& m_ );
 
 private:
     IPub* _pub = nullptr;

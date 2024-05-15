@@ -30,34 +30,32 @@ SOFTWARE.
 
 #include "datacenter.h"
 
-#include "msg.h"
-
 NVX_NS_BEGIN
 DcClient::DcClient( IPub* p_ )
     : IMarket( p_ ) {
 }
 
 nvx_st DcClient::start() {
-    return send_msg( _bev, StartDcMsg() );
+    return send_event( _bev, dc::StartDcEvent() );
 }
 
 nvx_st DcClient::stop() {
-    return send_msg( _bev, StopDcMsg() );
+    return send_event( _bev, dc::StopDcEvent() );
 }
 
 nvx_st DcClient::subscribe( const code_t& code_ ) {
-    SubMsg s;
+    dc::SubEvent s;
     s.code = code_;
 
     //    {
     //      std::unique_lock<std::mutex> _lck{ _mtx };
     //    _allsubs.emplace( code_, false );
     //}
-    return send_msg( _bev, s );
+    return send_event( _bev, s );
 }
 
 nvx_st DcClient::unsubscribe( const code_t& code_ ) {
-    UnsubMsg um;
+    dc::UnsubEvent um;
     um.code = code_;
 
     //    {
@@ -65,20 +63,20 @@ nvx_st DcClient::unsubscribe( const code_t& code_ ) {
     //        _allsubs.erase( code_ );
     //   }
 
-    return send_msg( _bev, um );
+    return send_event( _bev, um );
 }
 
-void DcClient::on_msg( const Msg* m_ ) {
+void DcClient::on_event( const dc::Event* m_ ) {
     switch ( m_->id ) {
     default: return;
-    case nvx::mid_t::ack:
-        return on_ack( reinterpret_cast<const AckMsg*>( m_ )->req, reinterpret_cast<const AckMsg*>( m_ )->rc );
-    case nvx::mid_t::data_tick:
-        return on_tick( reinterpret_cast<const QutMsg*>( m_ )->qut );
+    case dc::event_t::ack:
+        return on_ack( reinterpret_cast<const dc::AckEvent*>( m_ )->req, reinterpret_cast<const dc::AckEvent*>( m_ )->rc );
+    case dc::event_t::data_tick:
+        return on_tick( reinterpret_cast<const dc::QutEvent*>( m_ )->qut );
     }
 }
 
-void DcClient::on_ack( mid_t req_, char rc_ ) {
+void DcClient::on_ack( dc::event_t req_, char rc_ ) {
     // if ( req_ == mid_t::sub_data && 0 == rc_ ) {
     // }
     if ( rc_ != 0 ) {
@@ -91,16 +89,26 @@ void DcClient::on_tick( const quotation_t& qut_ ) {
     // delegator()->update( qut_ );
 }
 
-void DcClient::read_cb( struct bufferevent* bev_, void* ctx ) {
-    auto msg = recv_msg( bev_ );
+void IEndpoint::read_cb( struct bufferevent* bev_, void* ctx ) {
+    auto msg = dc::recv_event( bev_ );
     if ( !msg ) return;
 
-    DcClient* cli = reinterpret_cast<DcClient*>( ctx );
-    cli->on_msg( msg );
+    IEndpoint* cli = reinterpret_cast<IEndpoint*>( ctx );
+    cli->on_event( msg );
 }
 
-void DcClient::event_cb( struct bufferevent* bev, short event_, void* ctx ) {
+void IEndpoint::event_cb( struct bufferevent* bev, short event_, void* ctx ) {
     printf( "dcclient on event" );
+}
+
+void IEndpoint::attach( struct bufferevent* bev_ ) {
+    _bev = bev_;
+
+    bufferevent_setcb( _bev, &IEndpoint::read_cb, nullptr, &IEndpoint::event_cb, this );
+    bufferevent_enable( _bev, EV_READ | EV_WRITE );
+}
+
+IEndpoint::IEndpoint() {
 }
 
 nvx_st DcClient::run() {
@@ -116,10 +124,11 @@ nvx_st DcClient::run() {
 
     struct bufferevent* bev = bufferevent_socket_new( base, sock, BEV_OPT_CLOSE_ON_FREE );
 
-    bufferevent_setcb( bev, &DcClient::read_cb, nullptr, &DcClient::event_cb, this );
-    bufferevent_enable( bev, EV_READ | EV_WRITE );
+    attach( bev );
+    // bufferevent_setcb( bev, &DcClient::read_cb, nullptr, &DcClient::event_cb, this );
+    // bufferevent_enable( bev, EV_READ | EV_WRITE );
 
-    bufferevent_write( bev, "subscribe", 9 );
+    // bufferevent_write( bev, "subscribe", 9 );
 
     return event_base_dispatch( base );
 }

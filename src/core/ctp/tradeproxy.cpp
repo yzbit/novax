@@ -621,7 +621,7 @@ void CtpTrader::OnRspQryInstrument( CThostFtdcInstrumentField* pInstrument, CTho
 
 void CtpTrader::OnRspQryTradingAccount( CThostFtdcTradingAccountField* pTradingAccount, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) {
     LOG_INFO( "qry account,errid=%d msg=%s", pRspInfo->ErrorID, pRspInfo->ErrorMsg );
-    fund_t f;
+    pub::fund_msg_t f;
 
     f.available  = pTradingAccount->Available;
     f.commission = pTradingAccount->Commission;
@@ -629,10 +629,7 @@ void CtpTrader::OnRspQryTradingAccount( CThostFtdcTradingAccountField* pTradingA
     f.cprofit    = pTradingAccount->CloseProfit;
     f.pprofit    = pTradingAccount->PositionProfit;
 
-    fund_msg_t m;
-    m.f = f;
-
-    PUB_MSG( m );
+    PUB( f );
 }
 
 void CtpTrader::OnRspQryOrder( CThostFtdcOrderField* pOrder, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) {

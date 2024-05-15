@@ -21,40 +21,41 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-* \author: yaozn(zinan@outlook.com)
+* \author: qianq(695997058@qq.com)
 * \date: 2024
 **********************************************************************************/
+
 #include <gtest/gtest.h>
 #include <novax.h>
 #include <stdio.h>
-#include <thread>
 
-#include "../../core/utils.hpp"
-USE_NVX_NS
+#include "../../core/concurrentqueue.h"
 
-struct LockObj : ILockable {
-};
+TEST( concurrentq, basic ) {
+    moodycamel::ConcurrentQueue<NVX_NS::pub::msg_t> q;
 
-TEST( lock, Basic ) {
-    LockObj lo1, lo2;
+    NVX_NS::pub::tick_msg_t tick = { 0 };
+    NVX_NS::pub::fund_msg_t fund = { 0 };
 
-    int i = 0;
-    int j = 0;
+    tick.ask     = 99;
+    fund.balance = 77;
 
-    // std::lock( lo1, lo2 );
-    std::thread t1( [ & ]() {
-        // Lockhelper lck( &lo1, &lo2 );
-        std::scoped_lock( lo1, lo2 );
-        ++i;
-    } );
-    t1.join();
+    q.enqueue( tick );
+    q.enqueue( fund );
 
-    std::thread t2( [ & ]() {
-        std::scoped_lock( lo2, lo1 );
-        ++j;
-    } );
-    t2.join();
+    NVX_NS::pub::msg_t m;
 
-    ::sleep( 1 );
-    ASSERT_TRUE( i == 1 && j == 1 );
+    auto found = q.try_dequeue( m );
+
+    ASSERT_TRUE( found );
+
+    auto& t = m.get<NVX_NS::pub::tick_msg_t>();
+
+    ASSERT_EQ( t.ask, 99 );
+    found = q.try_dequeue( m );
+
+    ASSERT_TRUE( found );
+
+    auto& f = m.get<NVX_NS::pub::fund_msg_t>();
+    ASSERT_EQ( f.balance, 77 );
 }

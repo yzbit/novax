@@ -35,7 +35,6 @@ SOFTWARE.
 
 #include "definitions.h"
 #include "models.h"
-#include "msg.h"
 #include "ns.h"
 #include "proxy.h"
 #include "ringbuffer.h"

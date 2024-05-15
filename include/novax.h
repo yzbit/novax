@@ -35,6 +35,7 @@ SOFTWARE.
 #include "models.h"
 #include "ns.h"
 #include "proxy.h"
+#include "pub.h"
 #include "quant.h"
 #include "strategy.h"
 
