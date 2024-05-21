@@ -188,46 +188,26 @@ using odir_t    = order_t::dir_t;
 using otype_t   = order_t::type_t;
 using ostatus_t = order_t::status_t;
 
-// todo.note 订单和仓位不要搞混,部分平仓的时候是可以计算利润的
-struct position_t {
+struct order_update_t {
+    oid_t     id;
+    vol_t     qty;
+    price_t   price;
+    odir_t    dir;
+    ostatus_t status;
+};
+
+struct pos_item_t {
     code_t  symbol;
-    price_t price;  // avg
+    price_t price;
     price_t last_price;
-    money_t profit;        // todo:浮盈-- 暂且不考虑手续费
-    money_t close_profit;  // 平仓利润
-    money_t value;         // 合约当杠杆总"价值"  = price * qty
+    money_t profit;
+    money_t close_profit;
+    money_t value;
     vol_t   qty;
     odir_t  dir;
 
     datetime_t update_time;
 };
-
-#if 0
-struct position_t {
-    code_t     symbol;
-    price_t    price;
-    odir_t     direction;
-    ostatus_t  status;
-    vol_t      open_qty; /*负数表示做空，就不需要方向字段*/
-    vol_t      close_qty;//这些属于统计信息，和position关系也不是特别大
-    money_t    open_amt;
-    money_t    close_amt;
-    money_t    used_margin;  // 这些和position没有太大关系
-    vol_t      margin_vol;   // by qty or by amount
-    money_t    margin_amt;
-    vol_t      position;       // 今仓--按照合约查询，今仓左仓可能合并查到的
-    vol_t      last_position;  // 昨仓
-    money_t    commission;
-    money_t    close_profit;  // close profit
-    money_t    open_cost;     // 开仓成本
-    money_t    cost;          // 持仓成本，目前还不知道区别
-    money_t    profit;        // pzt profit
-    money_t    frz_margin;    // 冻结的现金和保证金,和position关系不大，属于fund
-    money_t    frz_cash;
-    string_t   magic;
-    datetime_t datetime;
-};
-#endif
 
 struct performance_t {
     int     records;  // 交易多少次

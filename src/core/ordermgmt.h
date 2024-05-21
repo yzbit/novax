@@ -28,44 +28,99 @@ SOFTWARE.
 #ifndef A0120CD0_E1AB_40A0_93BC_9BE6188CDA2A
 #define A0120CD0_E1AB_40A0_93BC_9BE6188CDA2A
 
-#include <atomic>
-#include <mutex>
-#include <optional>
-#include <unordered_map>
+#include <algorithm>
+#include <vector>
 
 #include "definitions.h"
 #include "models.h"
 #include "ns.h"
+#include "positionimpl.h"
 #include "proxy.h"
 
-#define LONG_POSITION 0
-#define SHORT_POSITION 1
-
+// order mgmt  只管理订单和仓位，其他的不负责，甚至订单都可以不用管理
 NVX_NS_BEGIN
-struct Quant;
+struct IPosition;
+struct IBroker;
 
-// 接口的设计：实际交易的过程中，按照订单平仓的可能性其实蛮小的，应该还是按照合约名称+仓位 平仓的可能性更大
-// 高频交易可能下单，撤单，平仓快速发生，此时oid显然是用的
-struct OrderMgmt : ITrader {
-    OrderMgmt();
+struct Portfolio {
+    enum class dist_t : char {
+        netlong,
+        netshort
+    };
+
+    using PosRepo = std::vector<PositionImpl*>;
+
+    Portfolio();
+
+    nvx_st        update( const order_update_t& upt_ );
+    PositionImpl* pos( const code_t& code_, dist_t d_ );
+    PositionImpl* add( const code_t& code_, dist_t d_ );
+
+private:
+    PosRepo _repo;
+};
+
+// todo. sync to disk.
+struct OrderBook {
+    OrderBook( oid_t init_id_ );
+    ~OrderBook();
+
+    order_t* find( oid_t id_ );
+    order_t* append();
+
+private:
+    void persist() {
+        // todo
+    }
+
+private:
+    std::unordered_map<oid_t, order_t> _ords;
+
+    oid_t _start_id;
+};
+
+//--------------------------
+struct OrderMgmt {
+    OrderMgmt( IBroker* ib_, oid_t id_start_ );
     ~OrderMgmt();
 
     nvx_st start();
     nvx_st stop();
 
-    oid_t  buylong( const code_t& code_, const vol_t qty_, const price_t price_ = 0, const otype_t mode_ = otype_t::market, const price_t sl_ = 0, const price_t tp_ = 0, const text_t& remark = "open buy" );
-    nvx_st sell( const code_t& code_, const vol_t qty_ = 0, const price_t price_ = 0, const otype_t mode_ = otype_t::market, const text_t& remark = "close buy" );
-    oid_t  sellshort( const code_t& code_, const vol_t qty_, const price_t price_ = 0, const otype_t mode_ = otype_t::market, const price_t sl_ = 0, const price_t tp_ = 0, const text_t& remark = "open short" );
-    nvx_st buy( const code_t& code_, const vol_t qty_ = 0, const price_t price_ = 0, const otype_t mode_ = otype_t::market, const text_t& remark = "close short" );
+    //-price=0 use market
+    oid_t  buylong( const code_t& code_,
+                    vol_t         qty_,
+                    price_t       price_,
+                    otype_t       mode_,
+                    const text_t& remark );
+    nvx_st sell( const code_t& code_,
+                 vol_t         qty_,
+                 price_t       price_,
+                 otype_t       mode_,
+                 const text_t& remark );
+    oid_t  sellshort( const code_t& code_,
+                      vol_t         qty_,
+                      price_t       price_,
+                      otype_t       mode_,
+                      const text_t& remark );
+    nvx_st buy( const code_t& code_,
+                vol_t         qty_,
+                price_t       price_,
+                otype_t       mode_,
+                const text_t& remark );
 
+    // 这里不能用oid好像，因为order id最终会转化为position,当然因为我们其实是记得自己的订单有多少转为了position的
+    // 可以先只支持单腿操作，也就是如果既有空单又有多单，那么选择合适的
+    // 有没有可能一个价格同时是多单和空单的止损单，多单价格p1，空单价格p0，多单的止损必须是小于p1，空单的止损是大于p0，只要p1>p>p0，就成立, 此时你很难讲p是给谁做止损的
+    nvx_st stop( const code_t& code_, vol_t qty_, price_t price_ );
+    nvx_st profit( const code_t& code_, vol_t qty_, price_t price_ );
     nvx_st cancel( oid_t id_ );
     nvx_st close( oid_t id_ );
-    nvx_st close( const code_t code_ );
+    nvx_st close( const code_t& code_ );
 
-    void update_ord( oid_t id_, ostatus_t status_ ) override;
-    void update_ord( const order_t& o_ ) override;
-    void update_fund( const fund_t& f_ ) override;
-    void update_position() override;
+    IPosition* position( const code_t& code_, bool long_ );
+    void       update_ord( const order_update_t& ord_ );
+    void       update_position();
 
     // >0 表示long多余short
     vol_t position( const code_t& code_ );
@@ -73,28 +128,21 @@ struct OrderMgmt : ITrader {
     vol_t long_position( const code_t& code_ );
 
 private:
-    void   herge( order_t& src_, const order_t& update_ );
-    void   accum( order_t& src_, const order_t& update_ );
     nvx_st close( const order_t& r_ );
-    oid_t  put( const odir_t& dir_, const code_t& code_, const vol_t qty_, const price_t price_, const otype_t mode_, const price_t sl_, const price_t tp_, const text_t& remark_ );
+    oid_t  put( odir_t        dir_,
+                const code_t& code_,
+                vol_t         qty_,
+                price_t       price_,
+                otype_t       mode_,
+                const text_t& remark_ );
+    nvx_st remove( oid_t id );
 
 private:
-    oid_t oid();
-    using OrderOpt = std::optional<std::reference_wrapper<order_t>>;
-    OrderOpt    get( oid_t id_ );
-    position_t* position( const code_t& code_, bool long_ );
+    Portfolio _pf;
+    OrderBook _record;
 
 private:
-    using portfilio_t  = std::array<position_t, 2>;                             //! 仓位, [0]-long, [1]-short
-    using OrderDetails = std::unordered_map<oid_t, order_t>;                    //! 所有的订单列表
-    using InsPosition  = std::unordered_map<code_t, portfilio_t, code_hash_t>;  //! 每个合约有正反两个方向的持仓
-
-    OrderDetails _book;
-    InsPosition  _ins_position;
-    std::mutex   _mutex;
-
-private:
-    static std::atomic<oid_t> _init_id;
+    IBroker* _ib;
 };
 
 NVX_NS_END

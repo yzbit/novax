@@ -34,13 +34,20 @@ SOFTWARE.
 NVX_NS_BEGIN
 
 struct Context;
-struct Quant;
+
 struct IStrategy {
+    enum class notify_t {
+        error,
+        clock,
+        order,
+        tick,
+        instate
+    };
+
     virtual ~IStrategy() {}
 
-    virtual void init()                  = 0;
-    virtual void invoke( Context* c_ )   = 0;
-    virtual void prefight( Context* c_ ) = 0;
+    virtual nvx_st init()                                         = 0;
+    virtual nvx_st invoke( IStrategy::notify_t n_, IContext* c_ ) = 0;
 };
 
 NVX_NS_END

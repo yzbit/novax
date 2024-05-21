@@ -36,7 +36,7 @@ SOFTWARE.
 NVX_NS_BEGIN
 
 struct DcPub : IPub {
-    DcPub( IData* d_ )
+    DcPub( DcServer* d_ )
         : _srv( d_ ) {
     }
 
@@ -52,24 +52,33 @@ struct DcPub : IPub {
     }
 
 private:
-    IData* _srv = nullptr;
+    DcServer* _srv = nullptr;
 };
 
 void DcServer::update( const quotation_t& tick_ ) {
+#if 0
     update_subs();
+    persist( tick_ );
 
-    for ( auto& sub : _subs ) {
-        // todo,send
+    if ( find( tick_.code ) ) {
+        for ( auto& sub : _subs ) {
+            // todo,send
+        }
     }
+#endif
 }
 
-void DcServer::on_event( const dc::Event* m_ ) {
+void DcServer::on_event( const dc::Event* m_, struct bufferevent* bev_ ) {
     switch ( m_->id ) {
     default: break;
-    case dc::event_t::sub_data:
-        // todo, get sockete ?
-        _candicates.enqueue( { "rb", 0 } );
-        break;
+    case dc::event_t::sub_data: {
+        const dc::SubEvent* sub = reinterpret_cast<const dc::SubEvent*>( m_ );
+        _candicates.enqueue( { sub->code, bev_ } );
+    } break;
+    case dc::event_t::unsub_data: {
+        const dc::SubEvent* sub = reinterpret_cast<const dc::SubEvent*>( m_ );
+        _candicates.enqueue( { sub->code, 0 } );
+    } break;
     }
 }
 
@@ -88,7 +97,7 @@ nvx_st DcServer::run() {
     auto                      pub   = new DcPub( this );
     [[maybe_unused]] IMarket* ctpmd = new ctp::CtpExMd( pub );
     // todo
-   // [[maybe_unused]] auto fut = std::async( std::launch::async, &DcServer::thread_save, *this );
+    // [[maybe_unused]] auto fut = std::async( std::launch::async, &DcServer::thread_save, *this );
 
     attach( 0 );
     return NVX_OK;
@@ -97,8 +106,63 @@ nvx_st DcServer::run() {
 void DcServer::update_subs() {
     sub_t s;
     while ( _candicates.try_dequeue( s ) ) {
-        // todo 去重
-        _subs.push_back( s );
+        if ( !s.socket ) {
+            _subs.erase( std::remove_if( _subs.begin(), _subs.end(), [ & ]( const auto& v ) { return v.code == s.code; } ) );
+        }
+        else {
+            _subs.push_back( s );
+        }
     }
 }
+
+void DcServer::accept_cb( evutil_socket_t listener, short event, void* arg ) {
+    struct event_base* base = ( struct event_base* )arg;
+
+    struct sockaddr_un client_addr;
+    socklen_t          client_addr_len = sizeof( client_addr );
+
+    evutil_socket_t client_sock = accept( listener, ( struct sockaddr* )&client_addr, &client_addr_len );
+
+    if ( client_sock == -1 ) {
+        perror( "accept" );
+        return;
+    }
+
+    evutil_make_socket_nonblocking( client_sock );
+
+    struct bufferevent* bev = bufferevent_socket_new( base, client_sock, BEV_OPT_CLOSE_ON_FREE );
+
+    // 设置读写回调
+
+    event_base_dispatch( base );
+}
+
+nvx_st DcServer::start_server() {
+#if 0
+    struct sockaddr_un addr;
+    memset( &addr, 0, sizeof( addr ) );
+    addr.sun_family = AF_UNIX;
+    strcpy( addr.sun_path, DC_SERVER_ADDR );
+
+    int sock = socket( AF_UNIX, SOCK_STREAM, 0 );
+    evutil_make_listen_socket_reuseable( sock );
+
+    unlink( DC_SERVER_ADDR );
+    bind( sock, ( struct sockaddr* )&addr, sizeof( addr ) );
+    listen( sock, 5 );
+
+    struct event_base* base = event_base_new();
+
+    struct event* listener = evutil_make_socket_nonblocking( sock );
+
+    event_set( listener, sock, EV_READ | EV_PERSIST, accept_cb, base );
+    event_add( listener, NULL );
+
+    event_base_dispatch( base );
+
+    close( sock );
+#endif
+    return NVX_OK;
+}
+
 NVX_NS_END

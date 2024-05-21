@@ -25,6 +25,7 @@ SOFTWARE.
 * \date: 2024
 **********************************************************************************/
 
+#include <log.hpp>
 #include <mutex>
 #include <stdio.h>
 
@@ -66,7 +67,7 @@ nvx_st DcClient::unsubscribe( const code_t& code_ ) {
     return send_event( _bev, um );
 }
 
-void DcClient::on_event( const dc::Event* m_ ) {
+void DcClient::on_event( const dc::Event* m_, struct bufferevent* bev ) {
     switch ( m_->id ) {
     default: return;
     case dc::event_t::ack:
@@ -94,11 +95,11 @@ void IEndpoint::read_cb( struct bufferevent* bev_, void* ctx ) {
     if ( !msg ) return;
 
     IEndpoint* cli = reinterpret_cast<IEndpoint*>( ctx );
-    cli->on_event( msg );
+    // cli->on_event( msg );
 }
 
 void IEndpoint::event_cb( struct bufferevent* bev, short event_, void* ctx ) {
-    printf( "dcclient on event" );
+    printf( "dcclient on event:%d\n", event_ );
 }
 
 void IEndpoint::attach( struct bufferevent* bev_ ) {
@@ -121,6 +122,7 @@ nvx_st DcClient::run() {
 
     int sock = socket( AF_UNIX, SOCK_STREAM, 0 );
     ::connect( sock, ( struct sockaddr* )&addr, sizeof( addr ) );
+    // evutil_make_listen_socket_reuseable( sock );
 
     struct bufferevent* bev = bufferevent_socket_new( base, sock, BEV_OPT_CLOSE_ON_FREE );
 
