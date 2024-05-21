@@ -31,6 +31,7 @@ SOFTWARE.
 #include <event2/buffer.h>
 #include <event2/bufferevent.h>
 #include <event2/event.h>
+#include <event2/thread.h>
 #include <map>
 #include <mutex>
 #include <stdio.h>
@@ -93,8 +94,8 @@ struct UnsubEvent {
 // msg消息可以无损的转成任何xxMsg，前提是数据收的很全
 union Event {
     event_t      id;
-    StartDcEvent startdc;
-    StopDcEvent  stopdc;
+    StartDcEvent startdc;  // todo
+    StopDcEvent  stopdc;   // todo
     SubEvent     sub;
     UnsubEvent   unsub;
     QutEvent     qut;
@@ -146,8 +147,8 @@ protected:
     void attach( struct bufferevent* bev_ );
 
 private:
-    virtual void on_event( const dc::Event* m_ )      = 0;
-    virtual void on_ack( dc::event_t req_, char rc_ ) = 0;
+    virtual void on_event( const dc::Event* m_, struct bufferevent* bev ) = 0;
+    virtual void on_ack( dc::event_t req_, char rc_ )                     = 0;
 
 private:
     static void read_cb( struct bufferevent* bev, void* ctx );
@@ -167,12 +168,12 @@ struct DcClient : IMarket, IEndpoint {
     nvx_st run();
 
 private:
-    void on_event( const dc::Event* m_ ) override;
+    void on_event( const dc::Event* m_, struct bufferevent* bev ) override;
     void on_ack( dc::event_t req_, char rc_ ) override;
     void on_tick( const quotation_t& qut_ );
 
 private:
-    using book_t = std::map<code_t, bool>;
+    // using book_t = std::map<code_t, bool>;
 
     bool _dc_running = false;
 
@@ -185,16 +186,18 @@ struct sub_t {
     void* socket;
 };
 
-struct DcServer : IData, IEndpoint {
-    void   update( const quotation_t& tick_ ) override;
+struct DcServer : IEndpoint {
+    void   update( const quotation_t& tick_ );
     nvx_st run();
 
 private:
-    void on_event( const dc::Event* m_ ) override;
+    void on_event( const dc::Event* m_, struct bufferevent* bev ) override;
 
 private:
-    void   update_subs();
-    nvx_st persist( const quotation_t& );  // todo save to file
+    void        update_subs();
+    nvx_st      persist( const quotation_t& );  // todo save to file
+    nvx_st      start_server();
+    static void accept_cb( evutil_socket_t listener, short event, void* arg );
 
 private:
     static void thread_save( DcServer& s_ );

@@ -25,46 +25,21 @@ SOFTWARE.
 * \date: 2024
 **********************************************************************************/
 
-// data center
-#include <map>
+#ifndef F3D31FE0_A591_4B61_A625_E6EC52FC5817
+#define F3D31FE0_A591_4B61_A625_E6EC52FC5817
+#include "definitions.h"
 
-#include "../core/proxy.h"
-
-//pub-sub模式
 NVX_NS_BEGIN
 
-struct Subscriber {
-    int    token_id;
-    code_t symbol;
-};
-
-struct DcProxy : IData {
-    static int run() {
-        return 0;
-    }
-
-    void update( const quotation_t& tick_ ) override {
-        // 根据订阅信息把数据发给订阅者
-    }
-
-    void process() {
-        switch ( cmd ) {
-        case start:
-            _m = new ctp::CtpExMd( d_ );
-            break;
-        case subscribe:
-            break;
-        case unsubscribe:
-            break;
-        };
-    }
-
-private:
-    IMarket* _m;
+struct IPosition {
+    virtual nvx_st  stop( vol_t qty_, price_t price_ )   = 0;
+    virtual nvx_st  profit( vol_t qty_, price_t price_ ) = 0;
+    virtual price_t avg_dealt()                          = 0;
+    virtual vol_t   qty()                                = 0;
+    virtual kidx_t  last_entry()                         = 0;
+    virtual kidx_t  last_exit()                          = 0;
 };
 
 NVX_NS_END
 
-int main() {
-    return NVX_NS::DcProxy::run();
-}
+#endif /* F3D31FE0_A591_4B61_A625_E6EC52FC5817 */

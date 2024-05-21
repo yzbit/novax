@@ -27,6 +27,7 @@ SOFTWARE.
 
 #ifndef A0091236_F594_4A70_BDCB_927CD411D38C
 #define A0091236_F594_4A70_BDCB_927CD411D38C
+#include <atomic>
 #include <functional>
 #include <iostream>
 #include <memory>
@@ -39,6 +40,22 @@ SOFTWARE.
 #include "ns.h"
 
 NVX_NS_BEGIN
+struct Spinner {
+    void lock() {
+        bool exp = false;
+
+        while ( !_flag.compare_exchange_weak( exp, true, std::memory_order::memory_order_release, std::memory_order::memory_order_relaxed ) )
+            exp = false;
+    }
+
+    void unlock() {
+        _flag.store( false, std ::memory_order_release );
+    }
+
+private:
+    std::atomic_bool _flag = false;
+};
+
 template <typename... T>
 struct MaxTypeSize;
 

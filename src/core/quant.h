@@ -41,17 +41,9 @@ struct Context;
 struct Clock;
 
 struct Quant {
-
     static Quant& instance();
     virtual ~Quant() {}
-
     virtual nvx_st execute( IStrategy* s_ ) = 0;
-    virtual void   invoke()                 = 0;
-
-    virtual IData*     data()     = 0;
-    virtual ITrader*   trader()   = 0;
-    virtual Context*   context()  = 0;
-    virtual IStrategy* strategy() = 0;
 };
 
 NVX_NS_END

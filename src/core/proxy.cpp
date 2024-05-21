@@ -44,9 +44,6 @@ IMarket::IMarket( IPub* pub_ )
     : ISubject( pub_ ) {
 }
 
-ITrader::~ITrader() {}
-IData::~IData() {}
-
 IMarket* create_market( IPub* p_ ) {
     return new DcClient( p_ );
 }

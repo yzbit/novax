@@ -40,11 +40,13 @@ enum class msg_type {
     order,
     fund,
     position,
-    error
+    error,
+    timer
 };
 
-using order_msg_t = int;
-using error_msg_t = int;
+using timer_msg_t = int;
+using order_msg_t = order_update_t;
+using error_msg_t = nvxerr_t;
 using pos_msg_t   = int;
 using tick_msg_t  = quotation_t;
 using fund_msg_t  = fund_t;
@@ -106,7 +108,7 @@ inline const T& msg_t::get() const {
 
 struct IPub {
     virtual ~IPub() {}
-    virtual int post( const pub::msg_t& m_ ) = 0;
+    virtual nvx_st post( const pub::msg_t& m_ ) = 0;
 };
 
 #define PUB( m ) post( m )

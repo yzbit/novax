@@ -25,43 +25,59 @@ SOFTWARE.
 * \date: 2024
 **********************************************************************************/
 
-#ifndef C2E26F98_58D2_4FB6_9B05_CB4ED59A65C3
-#define C2E26F98_58D2_4FB6_9B05_CB4ED59A65C3
+#ifndef C44A4ED8_FC43_44BB_A641_DADAFD2C62CC
+#define C44A4ED8_FC43_44BB_A641_DADAFD2C62CC
 
 #include "definitions.h"
 #include "models.h"
 
 NVX_NS_BEGIN
-struct Aspect;
+
 struct IPosition;
+struct OrderMgmt;
 
-struct IContext {
-    static IContext* create();
+struct context_impl_t {
+    quotation_t qut;
+    fund_t      fund;
+    nvxerr_t    error;
+};
 
-    virtual const quotation_t& qut() const        = 0;
-    virtual const fund_t       fund() const       = 0;
-    virtual Aspect*            load( const code_t&   symbol_,
-                                     const period_t& period_,
-                                     int             count_ ) = 0;
+struct ContextIntf : IContext {
+    ContextIntf( OrderMgmt* mgmt_ );
 
-    virtual oid_t open( const code_t& c_,
-                        vol_t         qty_,
-                        price_t       sl_    = 0,
-                        price_t       tp_    = 0,
-                        price_t       price_ = 0,
-                        otype_t       mode_  = otype_t::market ) = 0;
+    void update_qut( const quotation_t& qut_ );
+    void update_fund( const fund_t& fund_ );
+    void update_error( const nvxerr_t& err_ );
 
-    virtual nvx_st     close( const code_t& c_,
-                              vol_t         qty_,
-                              price_t       price_ = 0,
-                              otype_t       mode_  = otype_t::market ) = 0;
-    virtual IPosition* qry_long( const code_t& c_ )             = 0;
-    virtual IPosition* qry_short( const code_t& c_ )            = 0;
-    virtual datetime_t time() const                             = 0;
-    virtual nvxerr_t   error() const                            = 0;
-    virtual ~IContext();
+private:
+    const quotation_t& qut() const override;
+    const fund_t       fund() const override;
+    Aspect*            load( const code_t&   symbol_,
+                             const period_t& period_,
+                             int             count_ ) override;
+
+    oid_t open( const code_t& c_,
+                vol_t         qty_,
+                price_t       sl_    = 0,
+                price_t       tp_    = 0,
+                price_t       price_ = 0,
+                otype_t       mode_  = otype_t::market );
+
+    nvx_st close( const code_t& c_,
+                  vol_t         qty_,
+                  price_t       price_ = 0,
+                  otype_t       mode_  = otype_t::market );
+
+    IPosition* qry_long( const code_t& c_ ) override;
+    IPosition* qry_short( const code_t& c_ ) override;
+    datetime_t time() const override;
+    nvxerr_t   error() const override;
+
+private:
+    context_impl_t _impl;
+    OrderMgmt*     _mgmt;
 };
 
 NVX_NS_END
 
-#endif /* C2E26F98_58D2_4FB6_9B05_CB4ED59A65C3 */
+#endif /* C44A4ED8_FC43_44BB_A641_DADAFD2C62CC */

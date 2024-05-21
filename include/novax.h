@@ -34,6 +34,7 @@ SOFTWARE.
 #include "log.hpp"
 #include "models.h"
 #include "ns.h"
+#include "position.h"
 #include "proxy.h"
 #include "pub.h"
 #include "quant.h"

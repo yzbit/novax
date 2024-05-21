@@ -56,39 +56,12 @@ struct IBroker : ISubject {
     virtual nvx_st cancel( const order_t& o_ ) = 0;
 };
 
-struct ITrader {
-    virtual void update_ord( oid_t id_, ostatus_t status_ ) = 0;
-    virtual void update_ord( const order_t& o_ )            = 0;
-    virtual void update_fund( const fund_t& f_ )            = 0;
-    virtual void update_position()                          = 0;
-    virtual ~ITrader();
-
-protected:
-    IBroker* ib() { return _ib; }
-
-private:
-    IBroker* _ib;
-    friend IBroker;
-};
-
 struct IMarket : ISubject {
     IMarket( IPub* pub_ );
     virtual nvx_st start()                            = 0;
     virtual nvx_st stop()                             = 0;
     virtual nvx_st subscribe( const code_t& code_ )   = 0;
     virtual nvx_st unsubscribe( const code_t& code_ ) = 0;
-};
-
-struct IData {
-    virtual void update( const quotation_t& tick_ ) = 0;
-    virtual ~IData();
-
-protected:
-    IMarket* market() { return _m; }
-
-private:
-    IMarket* _m;
-    friend IMarket;
 };
 
 NVX_NS_END

@@ -36,27 +36,19 @@ SOFTWARE.
 #include "definitions.h"
 #include "models.h"
 #include "ns.h"
-#include "proxy.h"
 #include "ringbuffer.h"
 #include "taskqueue.h"
 
 NVX_NS_BEGIN
 struct Aspect;
+struct Quant;
 struct IMarket;
 
-//
-// 如果数据共享,那么start就不仅仅是调用IMarket.start了,需要统一管理不同quant的请求,然后统一处理,data实际上要作为独立的进程运行
-// 那么数据服务是不是另外一个IMarket呢,Data还是本地的的data,毕竟指标的计算还是要在本地做的
-// ctpagent只需要一个,数据通过zmq传递到data
-// datacenter
-// brokeragen
-//
-struct Quant;
-struct Data : IData {
-    Data();
+struct Data {
+    Data( IMarket* market_ );
     ~Data();
 
-    void   update( const quotation_t& tick_ ) override;
+    void   update( const quotation_t& tick_ );
     nvx_st start();
     nvx_st stop();
 
@@ -65,16 +57,11 @@ struct Data : IData {
     nvx_st  dettach( Aspect* a_ );
 
 private:
-    void process();
+    std::list<Aspect*> _aspects;
+    TaskQueue*         _jobs = nullptr;
 
 private:
-    RingBuff<quotation_t, 30> _cache;
-    std::list<Aspect*>        _aspects;
-    TaskQueue*                _jobs = nullptr;
-
-private:
-    std::mutex              _mutex;
-    std::condition_variable _cv;
+    IMarket* _market = nullptr;
 };
 
 NVX_NS_END

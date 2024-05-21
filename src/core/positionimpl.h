@@ -25,20 +25,36 @@ SOFTWARE.
 * \date: 2024
 **********************************************************************************/
 
+#ifndef BA6DB31D_0B8F_4679_B2F6_B9726A037824
+#define BA6DB31D_0B8F_4679_B2F6_B9726A037824
 #include <novax.h>
 
-#include "../gallery/test.strategy.h"
+NVX_NS_BEGIN
 
-/*
-   1）初始化reactor进行进行初始--其实没必要
-   2）设置日志
-   3）设置数据网关和交易网关--可能通过插件提供
-   4）加载和初始化策略
-   5）订阅数据----感觉订阅数据和加载失败都应该是在加载策略的时候做的
-*/
+struct PositionImpl : IPosition {
+    PositionImpl( const code_t& code_, bool long_ );
+    bool          is_short() const { return _long; }
+    const code_t& symbol() const { return _p.symbol; }
+    vol_t         herge( vol_t qty_, price_t price_ );
+    void          accum( vol_t qty_, price_t price_ );
+    void          reset();
 
-int main() {
-    NVX_NS::IStrategy* s = new TestStrategy();
+private:
+    nvx_st  stop( vol_t qty_, price_t price_ ) override;
+    nvx_st  profit( vol_t qty_, price_t price_ ) override;
+    price_t avg_dealt() override;
+    vol_t   qty() override;
+    kidx_t  last_entry() override;
+    kidx_t  last_exit() override;
 
-    return QUANT.execute( s );
-}
+private:
+    PositionImpl() = delete;
+
+private:
+    bool       _long;
+    pos_item_t _p;
+};
+
+NVX_NS_END
+
+#endif /* BA6DB31D_0B8F_4679_B2F6_B9726A037824 */

@@ -63,6 +63,10 @@ using text_t       = string_t;
 using money_t      = float;
 using kidx_t       = uint32_t;
 
+enum class nvxerr_t {
+    order_rejected,
+};
+
 constexpr nvx_st NVX_OK   = 0;
 constexpr nvx_st NVX_Fail = -1;
 

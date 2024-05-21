@@ -24,13 +24,12 @@ SOFTWARE.
 * \author: yaozn(zinan@outlook.com)
 * \date: 2024
 **********************************************************************************/
-
 #include <cassert>
 #include <list>
-
-#include "context.h"
+#include <novax.h>
 
 #include "aspect.h"
+#include "contextimpl.h"
 #include "data.h"
 #include "log.hpp"
 #include "ordermgmt.h"
@@ -39,38 +38,45 @@ SOFTWARE.
 
 NVX_NS_BEGIN
 
-#define TRADER ( *dynamic_cast<OrderMgmt*>( QUANT.trader() ) )
+ContextIntf::ContextIntf( OrderMgmt* m_ )
+    : _mgmt( m_ ) {}
 
-Context::Context() {}
-
-const quotation_t& Context::qut() const {
-    return _qut;
+void ContextIntf::update_qut( const quotation_t& qut_ ) {
+    _impl.qut = qut_;
 }
 
-const fund_t Context::fund() const {
-    return _fund;
+void ContextIntf::update_fund( const fund_t& fund_ ) {
+    _impl.fund = fund_;
 }
 
-void Context::update_qut( const quotation_t& q_ ) {
-    _qut = q_;
-    QUANT.strategy()->prefight( this );
+void ContextIntf::update_error( const nvxerr_t& err_ ) {
+    _impl.error = err_;
 }
 
-void Context::update_fund( const fund_t& f_ ) {
-    _fund = f_;
+nvxerr_t ContextIntf::error() const {
+    return _impl.error;
 }
 
-Aspect* Context::load( const code_t& symbol_, const period_t& period_, int count_ ) {
+const quotation_t& ContextIntf::qut() const {
+    return _impl.qut;
+}
+
+const fund_t ContextIntf::fund() const {
+    return _impl.fund;
+}
+
+Aspect* ContextIntf::load( const code_t& symbol_, const period_t& period_, int count_ ) {
+
     // return ASP.add( symbol_, period_, count_ );
     // todo
     return nullptr;
 }
 
-oid_t Context::open( const code_t& c_, vol_t qty_, price_t sl_, price_t tp_, price_t price_, otype_t mode_ ) {
+oid_t ContextIntf::open( const code_t& c_, vol_t qty_, price_t sl_, price_t tp_, price_t price_, otype_t mode_ ) {
     if ( qty_ < 0 )
-        return TRADER.sellshort( c_, -qty_, price_, mode_, sl_, tp_ );
+        return _mgmt->sellshort( c_, -qty_, price_, mode_, "" );
     else if ( qty_ > 0 )
-        return TRADER.buylong( c_, qty_, price_, mode_ );
+        return _mgmt->buylong( c_, qty_, price_, mode_, "" );
     else {
         assert( false );
         return 0;
@@ -79,59 +85,29 @@ oid_t Context::open( const code_t& c_, vol_t qty_, price_t sl_, price_t tp_, pri
     return 0;
 }
 
-nvx_st Context::close( const code_t& c_, vol_t qty_, price_t price_, otype_t mode_ ) {
+nvx_st ContextIntf::close( const code_t& c_, vol_t qty_, price_t price_, otype_t mode_ ) {
     if ( qty_ < 0 ) {
-        return TRADER.buy( c_, -qty_, price_, mode_ );
+        return _mgmt->buy( c_, -qty_, price_, mode_, "" );
     }
     else if ( qty_ > 0 ) {
-        return TRADER.sell( c_, qty_, price_, mode_ );
+        return _mgmt->sell( c_, qty_, price_, mode_, "" );
     }
     else {
-        return TRADER.close( c_ );
+        return _mgmt->close( c_ );
     }
 }
 
-vol_t Context::position() const {
-#if 0
-    auto& pf = p();
-    vol_t v  = 0;
-    pf.for_each( []( position_t& p ) {
-        v += p.position;
-    } );
-
-    return v;
-    return p().dealt();
-
-#endif
-    return vol_t();
+datetime_t ContextIntf::time() const {
+    return datetime_t::now();
 }
 
-vol_t Context::position( const code_t& c_ ) const {
-    return 0;
+IPosition* ContextIntf::qry_long( const code_t& c_ ) {
+    return _mgmt->position( c_, true );
 }
 
-vol_t Context::pending() const {
-    return 0;
-}
+IPosition* ContextIntf::qry_short( const code_t& c_ ) {
 
-vol_t Context::pending( const code_t& c_ ) const {
-    return 0;
-}
-
-price_t Context::put_price() const {
-    return 0;
-}
-
-price_t Context::last_deal() const {
-    return 0;
-}
-
-kidx_t Context::last_entry() const {
-    return 0;
-}
-
-kidx_t Context::last_exit() const {
-    return 0;
+    return _mgmt->position( c_, false );
 }
 
 NVX_NS_END
