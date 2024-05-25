@@ -71,7 +71,7 @@ TEST( IdMgr, basic ) {
     TThostFtdcOrderSysIDType id = { 'b' };
 
     NVX_NS::ctp::fsr_t   fsr;
-    NVX_NS::ctp::exid_t  eid( ex );
+    NVX_NS::ctp::ctpex_t eid( ex );
     NVX_NS::ctp::exoid_t oid( id );
 
     NVX_NS::ctp::IdMgr m;
@@ -98,7 +98,7 @@ TEST( IdMgr, basic ) {
     m.update_sysid( fsr, ex, id );
     ASSERT_EQ( m.id_of( 99 ).value().ex.data()[ 0 ], 'x' );
 
-    NVX_NS::ctp::exid_t eid2;
+    NVX_NS::ctp::ctpex_t eid2;
     eid2 = ex;
     ASSERT_EQ( eid2.data()[ 0 ], 'x' );
 
@@ -107,8 +107,20 @@ TEST( IdMgr, basic ) {
 
     ASSERT_TRUE( eid2.is_valid() );
 
-    NVX_NS::ctp::exid_t eid3;
+    NVX_NS::ctp::ctpex_t eid3;
     ASSERT_FALSE( eid3.is_valid() );
+
+    NVX_NS::ctp::order_id_t id0{ fsr, ex, id };
+
+    ASSERT_TRUE( id0.is_valid() );
+    ASSERT_TRUE( id0.has_refid() );
+    ASSERT_TRUE( id0.has_sysid() );
+
+    NVX_NS::ctp::order_id_t id1{ fsr, NVX_NS::ctp::ctpex_t(), NVX_NS::ctp::exoid_t() };
+
+    ASSERT_TRUE( id1.is_valid() );
+    ASSERT_TRUE( id1.has_refid() );
+    ASSERT_FALSE( id1.has_sysid() );
 }
 
 #endif /* C1DE8F61_B7D0_4C2B_82B7_DEB95AACC4B7 */

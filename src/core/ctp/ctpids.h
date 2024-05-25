@@ -175,7 +175,7 @@ struct sess_t {
     }
 };
 
-using exid_t  = Encaps<TThostFtdcExchangeIDType>;
+using ctpex_t = Encaps<TThostFtdcExchangeIDType>;
 using exoid_t = Encaps<TThostFtdcOrderSysIDType>;
 
 struct fsr_t {
@@ -194,7 +194,7 @@ struct fsr_t {
 
 struct order_id_t {
     fsr_t   fsr;
-    exid_t  ex;
+    ctpex_t ex;
     exoid_t id;
 
     order_id_t() = default;
@@ -222,7 +222,7 @@ struct IdMgr {
                    : NVX_Fail;
     }
 
-    nvx_st update_sysid( const fsr_t& fsr_, const exid_t& ex_, const exoid_t& oid_ ) {
+    nvx_st update_sysid( const fsr_t& fsr_, const ctpex_t& ex_, const exoid_t& oid_ ) {
         std::unique_lock<Spinner> lck{ _sp };
 
         for ( auto& [ k, v ] : _ids ) {
@@ -246,7 +246,7 @@ struct IdMgr {
         _ids.erase( std::find_if( _ids.begin(), _ids.end(), [ & ]( auto& pair ) { return pair.second.fsr == ref_; } ) );
     }
 
-    opt_id id_of( const exid_t& ex_, const exoid_t& oid_ ) {
+    opt_id id_of( const ctpex_t& ex_, const exoid_t& oid_ ) {
         std::unique_lock<Spinner> lck{ _sp };
         return id_of( std::find_if( _ids.begin(), _ids.end(), [ & ]( auto& pair ) { return pair.second.id == oid_ && pair.second.ex == ex_; } ) );
     }
