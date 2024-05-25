@@ -20,8 +20,21 @@ struct MaxTypeSize<T, R...> {
     };
 };
 
+struct C {
+    C() {
+        printf( "a[1]=%d\n", aa[ 1 ] );
+    }
+
+    int aa[ 8 ];
+};
+
 int main() {
     printf( "size=%d\n", MaxTypeSize<int, short, long, char, a>::value );
 
+    int aa[ 9 ];// = { 0 };
+
+    printf( "a[1]=%d\n", aa[ 1 ] );
+
+    C c;
     return 0;
 }

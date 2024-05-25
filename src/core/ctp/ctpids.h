@@ -29,211 +29,250 @@ SOFTWARE.
 #define EBC2EDD7_C2AC_4519_9357_CE387B50513F
 
 #include <ctp/ThostFtdcTraderApi.h>
+#include <definitions.h>
+#include <map>
+#include <mutex>
+#include <optional>
 #include <stdlib.h>
 #include <string.h>
+#include <type_traits>
 
 #include "../ns.h"
+#include "../utils.hpp"
 
 NVX_NS_BEGIN
+
 namespace ctp {
-struct order_ref_t {
-    explicit order_ref_t( const TThostFtdcOrderRefType& ctp_ref_ );
-    // explicit order_ref_t( const char* sz_ref_ );
-    explicit order_ref_t( unsigned ref_ );
-    explicit order_ref_t( const order_ref_t& r_ );
-    order_ref_t();
 
-    void         copy( TThostFtdcOrderRefType& ref_ );
-    order_ref_t& operator=( const order_ref_t& r_ );
-    order_ref_t& operator=( int r_ );
-    order_ref_t& operator+=( int diff_ );
-    order_ref_t& operator++();
-    order_ref_t  operator+( int diff_ );
-    bool         operator==( const order_ref_t& );
-    bool         operator==( unsigned ref_ );
-    bool         operator==( const TThostFtdcOrderRefType& ref_ );
-    const char*  str_val() const;
-    unsigned     int_val() const;
+template <typename T, typename = std::enable_if_t<std::is_array_v<T>>>
+struct Encaps {
+    enum { LENGTH = sizeof( T ) };
+
+    Encaps() = default;
+    Encaps( const T& ex_ ) {
+        memcpy( _data, &ex_, LENGTH );
+        _data[ LENGTH ] = 0;
+    }
+
+    Encaps( const Encaps& ex_ ) {
+        memcpy( _data, &ex_._data, sizeof( _data ) );
+    }
+
+    char* data() {
+        return _data;
+    }
+
+    size_t length() const {
+        return LENGTH;
+    }
+
+    void copy_to( T& ref_ ) {
+        memcpy( ref_, _data, LENGTH );
+    }
+
+    bool operator==( const Encaps& r_ ) {
+        return ( this == &r_ ) || ( 0 == memcmp( _data, r_._data, LENGTH ) );
+    }
+
+    bool operator==( const T& r_ ) {
+        return 0 == memcmp( _data, r_, LENGTH );
+    }
+
+    bool operator!=( const Encaps& r_ ) {
+        return ( this != &r_ ) && ( 0 != memcmp( _data, r_._data, LENGTH ) );
+    }
+
+    bool operator!=( const T& r_ ) {
+        return 0 != memcmp( _data, r_, LENGTH );
+    }
+
+    Encaps& operator=( const Encaps& r_ ) {
+        if ( this == &r_ ) return *this;
+
+        memcpy( _data, r_._data, sizeof( _data ) );
+        return *this;
+    }
+
+    Encaps& operator=( const T& r_ ) {
+        memcpy( _data, r_, Encaps<T>::LENGTH );
+        _data[ Encaps<T>::LENGTH ] = 0;
+
+        return *this;
+    }
+
+    bool is_valid() {
+        return !!_data[ 0 ];
+    }
+
+protected:
+    char _data[ LENGTH + 1 ] = { 0 };
+};
+
+struct ref_t : Encaps<TThostFtdcOrderRefType> {
+    explicit ref_t( const TThostFtdcOrderRefType& r_ )
+        : Encaps( r_ ) {}
+
+    explicit ref_t( unsigned ref_ ) {
+        from( ref_ );
+    }
+
+    explicit ref_t( const ref_t& r_ )
+        : Encaps( r_ ) {}
+
+    ref_t() {
+        memset( _data, '0', LENGTH );
+    }
+
+    ref_t& operator=( int r_ ) {
+        from( r_ );
+        return *this;
+    }
+
+    ref_t& operator+=( int diff_ ) {
+        from( int_val() + diff_ );
+        return *this;
+    }
+
+    ref_t& operator++() {
+        from( int_val() + 1 );
+        return *this;
+    }
+
+    ref_t operator+( int diff_ ) {
+        return ref_t( int_val() + diff_ );
+    }
+
+    bool operator==( unsigned ref_ ) {
+        return int_val() == ref_;
+    }
+
+    bool operator==( const ref_t& ref_ ) {
+        return Encaps::operator==( ref_ );
+    }
+
+    unsigned int_val() const {
+        return std::atoi( _data );
+    }
 
 private:
-    void from( unsigned v_ );
-
-private:
-    enum {
-        DATA_LENGTH = sizeof( TThostFtdcOrderRefType ) + 1
-    };
-    char _data[ DATA_LENGTH ];
+    void from( unsigned v_ ) {
+        memset( _data, '0', sizeof( _data ) );
+        int i        = LENGTH;
+        _data[ i-- ] = 0;
+        while ( v_ && i >= 0 ) {
+            _data[ i-- ] = v_ % 10 + '0';
+            v_ /= 10;
+        }
+    }
 };
 
-struct session_t {
-    int         front;
-    int         sess;
-    order_ref_t init_ref;
+struct sess_t {
+    int front = 0;
+    int conn  = 0;
 
-    session_t() = default;
-    session_t( TThostFtdcFrontIDType f_, TThostFtdcSessionIDType s_, const TThostFtdcOrderRefType& r_ )
-        : front( f_ )
-        , sess( s_ )
-        , init_ref( r_ ) {}
+    bool operator==( const sess_t& s_ ) {
+        return front == s_.front && conn == s_.conn;
+    }
 };
 
-struct sys_order_t {
-    char ex_id[ 9 ];
-    char order_id[ 21 ];
-
-    sys_order_t( const sys_order_t& oth_ );
-    sys_order_t();
-    sys_order_t( const TThostFtdcExchangeIDType& ex_, const TThostFtdcOrderSysIDType& oid_ );
-
-    bool         is_valid() const;
-    sys_order_t& operator=( const sys_order_t& oth_ );
-    bool         operator==( const sys_order_t& eoid_ ) const;
-    bool         operator!=( const sys_order_t& eoid_ ) const;
-};
+using exid_t  = Encaps<TThostFtdcExchangeIDType>;
+using exoid_t = Encaps<TThostFtdcOrderSysIDType>;
 
 struct fsr_t {
-    int         front;
-    int         sess;
-    order_ref_t ref;
+    sess_t ss;
+    ref_t  ref;
 
     fsr_t() = default;
-    fsr_t( int f_, int s_, const order_ref_t& r_ )
-        : front( f_ )
-        , sess( s_ )
+    fsr_t( int f_, int s_, const ref_t& r_ )
+        : ss( { f_, s_ } )
         , ref( r_ ) {}
 
     bool operator==( const fsr_t& r_ ) {
-        return this == &r_ || ( front == r_.front && sess == r_.sess && ref == r_.ref );
+        return ( this == &r_ ) || ( ss == r_.ss && ref == r_.ref );
     }
 };
 
 struct order_id_t {
-    fsr_t       fsr;
-    sys_order_t sysid;
+    fsr_t   fsr;
+    exid_t  ex;
+    exoid_t id;
 
     order_id_t() = default;
     bool has_sysid() {
-        return !!sysid.order_id[ 0 ];
+        return id.is_valid();
+    }
+
+    bool has_refid() {
+        return fsr.ref.is_valid();
+    }
+
+    bool is_valid() {
+        return has_refid() || has_sysid();
     }
 };
 
-//--------------------------impl------------------------------------
-inline bool order_ref_t::operator==( const order_ref_t& r_ ) {
-    return memcmp( _data, r_._data, sizeof( _data ) ) == 0;
-}
+struct IdMgr {
+    using opt_id = std::optional<order_id_t>;
 
-inline bool order_ref_t::operator==( unsigned ref_ ) {
-    return int_val() == ref_;
-}
+    nvx_st insert( const order_id_t& id_ ) {
+        std::unique_lock<Spinner> lck{ _sp };
 
-inline bool order_ref_t::operator==( const TThostFtdcOrderRefType& ref_ ) {
-    return memcmp( _data, ref_, sizeof( TThostFtdcOrderRefType ) ) == 0;
-}
-
-inline order_ref_t::order_ref_t( const TThostFtdcOrderRefType& ctp_ref_ ) {
-    memcpy( _data, ctp_ref_, sizeof( TThostFtdcOrderRefType ) );
-    _data[ DATA_LENGTH - 1 ] = 0;
-}
-
-// order_ref_t::order_ref_t( const char* sz_ref_ )
-//     : order_ref_t( atoi( sz_ref_ ) ) {
-// }
-
-inline void order_ref_t::from( unsigned v_ ) {
-    // todo
-    memset( _data, '0', sizeof( _data ) );
-
-    int i = DATA_LENGTH - 1;
-
-    _data[ i-- ] = 0;
-    while ( v_ && i >= 0 ) {
-        _data[ i-- ] = v_ % 10 + '0';
-        v_ /= 10;
+        return _ids.try_emplace( id_.fsr.ref.int_val(), id_ ).second
+                   ? NVX_OK
+                   : NVX_Fail;
     }
-}
 
-inline order_ref_t::order_ref_t( unsigned ref_ ) {
-    from( ref_ );
-}
+    nvx_st update_sysid( const fsr_t& fsr_, const exid_t& ex_, const exoid_t& oid_ ) {
+        std::unique_lock<Spinner> lck{ _sp };
 
-inline order_ref_t::order_ref_t( const order_ref_t& r_ )
-    : order_ref_t( r_.int_val() ) {}
+        for ( auto& [ k, v ] : _ids ) {
+            if ( v.fsr == fsr_ ) {
+                v.ex = ex_;
+                v.id = oid_;
+                return NVX_OK;
+            }
+        }
 
-inline order_ref_t::order_ref_t() {
-    memset( _data, '0', DATA_LENGTH );
-    _data[ DATA_LENGTH - 1 ] = 0;
-}
+        return NVX_Fail;
+    }
 
-inline order_ref_t& order_ref_t::operator++() {
-    from( int_val() + 1 );
-    return *this;
-}
+    void remove( const oid_t& id_ ) {
+        std::unique_lock<Spinner> lck{ _sp };
+        _ids.erase( id_ );
+    }
 
-inline order_ref_t& order_ref_t::operator=( const order_ref_t& r_ ) {
-    memcpy( _data, r_._data, sizeof( _data ) );
-    return *this;
-}
+    void remove( const fsr_t& ref_ ) {
+        std::unique_lock<Spinner> lck{ _sp };
+        _ids.erase( std::find_if( _ids.begin(), _ids.end(), [ & ]( auto& pair ) { return pair.second.fsr == ref_; } ) );
+    }
 
-inline order_ref_t& order_ref_t::operator=( int r_ ) {
-    from( r_ );
-    return *this;
-}
+    opt_id id_of( const exid_t& ex_, const exoid_t& oid_ ) {
+        std::unique_lock<Spinner> lck{ _sp };
+        return id_of( std::find_if( _ids.begin(), _ids.end(), [ & ]( auto& pair ) { return pair.second.id == oid_ && pair.second.ex == ex_; } ) );
+    }
 
-inline order_ref_t& order_ref_t::operator+=( int diff_ ) {
-    from( int_val() + diff_ );
-    return *this;
-}
+    opt_id id_of( const fsr_t& ref_ ) {
+        std::unique_lock<Spinner> lck{ _sp };
+        return id_of( std::find_if( _ids.begin(), _ids.end(), [ & ]( auto& pair ) { return pair.second.fsr == ref_; } ) );
+    }
 
-inline order_ref_t order_ref_t::operator+( int diff_ ) {
-    return order_ref_t( int_val() + diff_ );
-}
+    opt_id id_of( const oid_t& id_ ) {
+        std::unique_lock<Spinner> lck{ _sp };
+        return id_of( _ids.find( id_ ) );
+    }
 
-inline const char* order_ref_t::str_val() const {
-    return _data;
-}
+private:
+    using IdMap = std::map<oid_t, order_id_t>;
 
-inline unsigned order_ref_t::int_val() const {
-    return std::atoi( _data );
-}
+    opt_id id_of( IdMap::iterator itr_ ) {
+        return itr_ != _ids.end() ? opt_id( itr_->second )
+                                  : std::nullopt;
+    };
 
-inline void order_ref_t::copy( TThostFtdcOrderRefType& ref_ ) {
-    memcpy( ref_, _data, sizeof( TThostFtdcOrderRefType ) );
-}
-
-//-----sysorder t
-inline sys_order_t::sys_order_t( const sys_order_t& oth_ ) {
-    memcpy( ex_id, oth_.ex_id, sizeof( ex_id ) );
-    memcpy( order_id, oth_.order_id, sizeof( order_id ) );
-}
-
-inline sys_order_t::sys_order_t() {
-    memset( ex_id, 0x00, sizeof( ex_id ) );
-    memset( order_id, 0x00, sizeof( order_id ) );
-}
-
-inline sys_order_t::sys_order_t( const TThostFtdcExchangeIDType& ex_, const TThostFtdcOrderSysIDType& oid_ ) {
-    memcpy( ex_id, ex_, sizeof( ex_id ) );
-    memcpy( order_id, oid_, sizeof( order_id ) );
-}
-
-inline bool sys_order_t::is_valid() const {
-    return ex_id[ 0 ] && order_id[ 0 ];
-}
-
-inline sys_order_t& sys_order_t::operator=( const sys_order_t& oth_ ) {
-    memcpy( ex_id, oth_.ex_id, sizeof( ex_id ) );
-    memcpy( order_id, oth_.order_id, sizeof( order_id ) );
-
-    return *this;
-}
-
-inline bool sys_order_t::operator!=( const sys_order_t& oth_ ) const {
-    return !( *this == oth_ );
-}
-
-inline bool sys_order_t::operator==( const sys_order_t& oth_ ) const {
-    return this == &oth_ || ( memcmp( ex_id, oth_.ex_id, sizeof( ex_id ) ) == 0 && memcmp( order_id, oth_.order_id, sizeof( order_id ) ) );
-}
+private:
+    Spinner _sp;
+    IdMap   _ids;
+};
 };  // namespace ctp
 
 NVX_NS_END

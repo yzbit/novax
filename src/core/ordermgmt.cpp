@@ -129,12 +129,16 @@ OrderBook::OrderBook( oid_t init_id_ )
 OrderBook::~OrderBook() {
 }
 
-order_t* OrderBook::append() {
-    auto ord = order_t();
-    ord.id   = ++_start_id;
-    _ords.try_emplace( ord.id, ord );
-    return &_ords[ ord.id ];
+order_t* OrderBook::append( order_t& order_ ) {
+    order_.id = oid();
+    _ords.try_emplace( order_.id, order_ );
+    return &_ords[ order_.id ];
 }
+
+size_t OrderBook::count() const {
+    return _ords.size();
+}
+
 //------------------------
 OrderMgmt::~OrderMgmt() {}
 OrderMgmt::OrderMgmt( IBroker* ib_, id_t id_start_ )
@@ -150,9 +154,7 @@ oid_t OrderMgmt::put( odir_t        dir_,
                       price_t       price_,
                       otype_t       mode_,
                       const text_t& remark_ ) {
-#if 0
     auto r   = order_t( code_, qty_, price_, mode_, dir_ );
-    r.id     = oid();
     r.remark = remark_;
 
     if ( 0 != _ib->put( r ) ) {
@@ -160,12 +162,10 @@ oid_t OrderMgmt::put( odir_t        dir_,
         return kBadId;
     }
 
-    _record.emplace( r.id, r );
+    _record.append( r );
 
-    LOG_INFO( "order count in book: [ %lu ]", _record.size() );
+    LOG_INFO( "order count in book: [ %lu ]", _record.count() );
     return r.id;
-#endif
-    return 0;
 }
 
 nvx_st OrderMgmt::close( const code_t& code_ ) {
@@ -195,26 +195,22 @@ oid_t OrderMgmt::buylong( const code_t& code_,
 }
 
 nvx_st OrderMgmt::cancel( oid_t id_ ) {
-#if 0
     LOG_TAGGED( "om", "del order: %u", id_ );
-    auto o = get( id_ );
-    if ( !o ) {
+    auto r = _record.find( id_ );
+
+    if ( !r ) {
         LOG_TAGGED( "om", "cannot find order: %u", id_ );
         return NVX_Fail;
     }
 
-    auto& r = o.value().get();
-    if ( !o
-         || ( r.status != ostatus_t::pending
-              && r.status != ostatus_t::partial_dealed
-              && r.status != ostatus_t::patial_canelled ) ) {
-        LOG_TAGGED( "om", "can not cancel order, id=%u status=%d", id_, r.status );
+    if ( r->status != ostatus_t::pending
+         && r->status != ostatus_t::partial_dealed
+         && r->status != ostatus_t::patial_canelled ) {
+        LOG_TAGGED( "om", "can not cancel order, id=%u status=%d", id_, r->status );
         return NVX_Fail;
     }
 
-    return _ib->cancel( r );
-#endif
-    return NVX_OK;
+    return _ib->cancel( *r );
 }
 
 nvx_st OrderMgmt::remove( oid_t id_ ) {

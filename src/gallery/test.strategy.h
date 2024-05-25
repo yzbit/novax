@@ -30,8 +30,10 @@ SOFTWARE.
 struct TestStrategy : NVX_NS::IStrategy {
     NVX_NS::nvx_st init() override {
         // QUANT.data()->market()->subscribe( "rb2410" );
+        return NVX_NS::NVX_OK;
     }
 
     NVX_NS::nvx_st invoke( NVX_NS::IStrategy::notify_t n_, NVX_NS::IContext* c_ ) override {
+        return NVX_NS::NVX_OK;
     }
 };

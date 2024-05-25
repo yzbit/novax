@@ -17,7 +17,8 @@ SET(SRC
    # ut.kline.cpp
    # ut.code.cpp
    # ut.calendar.cpp
-    ut.messageq.cpp
+   # ut.messageq.cpp
+    ut.ctpid.cpp
 )
 
 #ut coverage

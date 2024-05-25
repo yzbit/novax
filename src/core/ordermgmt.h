@@ -65,8 +65,10 @@ struct OrderBook {
     OrderBook( oid_t init_id_ );
     ~OrderBook();
 
+    size_t   count() const;
+    oid_t    oid();
     order_t* find( oid_t id_ );
-    order_t* append();
+    order_t* append( order_t& order_ );
 
 private:
     void persist() {

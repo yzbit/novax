@@ -73,17 +73,13 @@ private:
     CThostFtdcTraderApi* _api;
 
 private:
-    void session_changed( const session_t& s_ );
-
-    order_id_t* id_of( const fsr_t& ref_ );
-    order_id_t* id_of( const sys_order_t& sys_ );
-    order_id_t* id_of( const oid_t& oid_ );
+    void reconnected( const sess_t& s_, const ref_t& max_ref_ );
 
 private:
-    using IdVec = std::vector<order_id_t>;
     setting_t _settings;
-    IdVec     _ids;
-    session_t _ss;
+    sess_t    _ss;
+    ref_t     _last_ref;
+    IdMgr     _id;
 
 private:
     void OnRtnBulletin( CThostFtdcBulletinField* pBulletin ) override;                                                                                                                     /// 交易所公告通知

@@ -101,9 +101,9 @@ nvx_st CtpTrader::qry_commission() {
                                                                      : NVX_Fail;
 }
 
-void CtpTrader::session_changed( const session_t& s_ ) {
-    // todo
-    assert( 0 );
+void CtpTrader::reconnected( const sess_t& s_, const ref_t& max_ref_ ) {
+    _ss       = s_;
+    _last_ref = max_ref_;
 }
 
 nvx_st CtpTrader::qry_position() {
@@ -118,11 +118,7 @@ nvx_st CtpTrader::cancel( const order_t& o_ ) {
     // UserID非必填，是操作员账号，不填写会收不到OnErrRtnOrderAction回报，一般客户和InvestorID填写一样就可以
     CTP_COPY_SAFE( field.UserID, _settings.i.id.c_str() );
 
-    /*来自网络的解释：
-    如果单子还在CTP就要用FrontID+SessionID+OrderRef撤，因为送到exchange前还没有OrderSysID.
-    如果单子已经送到Exchange,那既可以用 FrontID+SessionID+OrderRef撤，也可以用ExchangeID+OrderSysID撤。
-    */
-    auto id = id_of( o_.id );
+    auto id = _id.id_of( o_.id );
 
     if ( !id ) {
         LOG_INFO( "xModifyOrder@试图删除一个不存在订单ID,%d\n", o_ );
@@ -130,13 +126,13 @@ nvx_st CtpTrader::cancel( const order_t& o_ ) {
     }
 
     if ( id->has_sysid() ) {
-        memcpy( field.OrderSysID, id->sysid.order_id, sizeof( field.OrderSysID ) );
-        memcpy( field.ExchangeID, id->sysid.ex_id, sizeof( field.ExchangeID ) );
+        id.value().ex.copy_to( field.ExchangeID );
+        id.value().id.copy_to( field.OrderSysID );
     }
     else {
-        id->fsr.ref.copy( field.OrderRef );
+        id.value().fsr.ref.copy_to( field.OrderRef );
         field.FrontID   = _ss.front;
-        field.SessionID = _ss.sess;
+        field.SessionID = _ss.conn;
     }
 
     CTP_COPY_SAFE( field.InstrumentID, o_.code.c_str() );
@@ -172,12 +168,12 @@ nvx_st CtpTrader::put( const order_t& o_ ) {
     }
 
     order_id_t id;
-    id.fsr = fsr_t( _ss.front, _ss.sess, order_ref_t( o_.id ) );
-    _ids.emplace_back( id );
+    id.fsr = fsr_t( _ss.front, _ss.conn, ref_t( o_.id ) );
+    _id.insert( id );
 
     CThostFtdcInputOrderField field = { 0 };
 
-    id.fsr.ref.copy( field.OrderRef );
+    id.fsr.ref.copy_to( field.OrderRef );
     CTP_COPY_SAFE( field.BrokerID, _settings.i.broker.c_str() );
     CTP_COPY_SAFE( field.InvestorID, _settings.i.id.c_str() );
     CTP_COPY_SAFE( field.UserID, _settings.i.id.c_str() );
@@ -283,7 +279,13 @@ nvx_st CtpTrader::put( const order_t& o_ ) {
 
     field.RequestID = req_id();
 
-    return !_api->ReqOrderInsert( &field, field.RequestID ) ? NVX_OK : NVX_Fail;
+    auto rc = _api->ReqOrderInsert( &field, field.RequestID );
+    if ( 0 == rc ) {
+
+        return NVX_OK;
+    }
+
+    return NVX_Fail;
 }
 
 nvx_st CtpTrader::login() {
@@ -370,7 +372,9 @@ void CtpTrader::OnRspAuthenticate( CThostFtdcRspAuthenticateField* pRspAuthentic
 }
 
 void CtpTrader::OnRspUserLogin( CThostFtdcRspUserLoginField* pRspUserLogin, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) {
-    session_changed( { pRspUserLogin->FrontID, pRspUserLogin->SessionID, pRspUserLogin->MaxOrderRef } );
+    ref_t r( pRspUserLogin->MaxOrderRef );
+
+    //    reconnected( { pRspUserLogin->FrontID, pRspUserLogin->SessionID }, { pRspUserLogin->MaxOrderRef } );
     // todo
     // tune_clock();  // todo
     if ( qry_settlement() < 0 ) {
@@ -406,7 +410,7 @@ void CtpTrader::OnRspQrySettlementInfo( CThostFtdcSettlementInfoField* pSettleme
 
 void CtpTrader::OnRspOrderInsert( CThostFtdcInputOrderField* f_, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) {
     LOG_INFO( "订单被ctp前置拒绝,req=%d, id=%d, msg=%s", nRequestID, pRspInfo->ErrorID, pRspInfo->ErrorMsg );
-    auto id = id_of( { _ss.front, _ss.sess, order_ref_t( f_->OrderRef ) } );
+    auto id = _id.id_of( { _ss.front, _ss.conn, ref_t( f_->OrderRef ) } );
 
     if ( !id ) {
         LOG_INFO( "can not reg order ref: %s", f_->OrderRef );
@@ -420,7 +424,7 @@ void CtpTrader::OnRspOrderInsert( CThostFtdcInputOrderField* f_, CThostFtdcRspIn
 void CtpTrader::OnRspOrderAction( CThostFtdcInputOrderActionField* f_, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) {
     LOG_INFO( "撤单被ctp前置拒绝,req=%d, id=%d, msg=%s", nRequestID, pRspInfo->ErrorID, pRspInfo->ErrorMsg );
 
-    auto id = id_of( { _ss.front, _ss.sess, order_ref_t( f_->OrderRef ) } );
+    auto id = _id.id_of( { _ss.front, _ss.conn, ref_t( f_->OrderRef ) } );
 
     if ( !id ) {
         LOG_INFO( "rtn trade, cannot reg order id" );
@@ -459,28 +463,12 @@ odir_t CtpTrader::cvt_direction( const TThostFtdcDirectionType& di_, const TThos
         return odir_t::none;
 }
 
-order_id_t* CtpTrader::id_of( const oid_t& oid_ ) {
-    return 0;
-}
-
-order_id_t* CtpTrader::id_of( const fsr_t& ref_ ) {
-    // auto oid = std::find( _ids.begin(), _ids.end(), [ & ]( const auto& id_ ) { return id_.fsr.ref == ref_; } );
-    // return oid == _ids.end() ? nullptr : &( *oid );
-    return 0;
-}
-
-order_id_t* CtpTrader::id_of( const sys_order_t& sys_ ) {
-    // auto oid = std::find( _ids.begin(), _ids.end(), [ & ]( const auto& id_ ) { return id_.sysid == sys_; } );
-    // return oid == _ids.end() ? nullptr : &( *oid );
-    return 0;
-}
-
 void CtpTrader::OnRtnOrder( CThostFtdcOrderField* f_ ) {
     LOG_INFO( "[ctp] OnOrderRtn[1]@front=%d sess=%d ref=%s exid=%s sysid=%s\n", f_->FrontID, f_->SessionID, f_->OrderRef, f_->ExchangeID, f_->OrderSysID );
 
-    order_id_t* id = f_->RelativeOrderSysID[ 0 ] != 0
-                         ? id_of( { f_->ExchangeID, f_->RelativeOrderSysID } )
-                         : id_of( { f_->FrontID, f_->SessionID, order_ref_t( f_->OrderRef ) } );
+    auto id = f_->RelativeOrderSysID[ 0 ] != 0
+                  ? _id.id_of( f_->ExchangeID, f_->RelativeOrderSysID )
+                  : _id.id_of( { f_->FrontID, f_->SessionID, ref_t( f_->OrderRef ) } );
 
     if ( !id ) {
         LOG_INFO( "cannot reg order id ex= %s syso=%d ref=%s rel=%s", f_->ExchangeID, f_->OrderSysID, f_->OrderRef, f_->RelativeOrderSysID );
@@ -553,7 +541,7 @@ void CtpTrader::OnRtnOrder( CThostFtdcOrderField* f_ ) {
 }
 
 void CtpTrader::OnRtnTrade( CThostFtdcTradeField* f_ ) {
-    auto id = id_of( { _ss.front, _ss.sess, order_ref_t( f_->OrderRef ) } );
+    auto id = _id.id_of( { _ss.front, _ss.conn, ref_t( f_->OrderRef ) } );
 
     if ( !id ) {
         LOG_INFO( "rtn trade, cannot reg order id" );
@@ -562,7 +550,7 @@ void CtpTrader::OnRtnTrade( CThostFtdcTradeField* f_ ) {
 
     order_t o;
 
-    o.id = id->fsr.ref.int_val();
+    o.id = id.value().fsr.ref.int_val();
     o.datetime.from_ctp( f_->TradeDate, f_->TradeTime, 0 );
     o.qty   = f_->Volume;
     o.code  = f_->InstrumentID;
@@ -581,7 +569,7 @@ void CtpTrader::OnRtnTrade( CThostFtdcTradeField* f_ ) {
 void CtpTrader::OnErrRtnOrderInsert( CThostFtdcInputOrderField* f_, CThostFtdcRspInfoField* pRspInfo ) {
     LOG_INFO( "INSERT ERROR,errid=%d msg=%s", pRspInfo->ErrorID, pRspInfo->ErrorMsg );
 
-    auto id = id_of( { _ss.front, _ss.sess, order_ref_t( f_->OrderRef ) } );
+    auto id = _id.id_of( { _ss.front, _ss.conn, ref_t( f_->OrderRef ) } );
 
     if ( !id ) {
         LOG_INFO( "errrtn insert, cannot reg order id" );
@@ -605,7 +593,7 @@ void CtpTrader::OnErrRtnOrderAction( CThostFtdcOrderActionField* f_, CThostFtdcR
 
     LOG_INFO( "撤单被交易所拒绝, 原因: [ %d %s ]", pRspInfo->ErrorID, pRspInfo->ErrorMsg );
 
-    auto id = id_of( { _ss.front, _ss.sess, order_ref_t( f_->OrderRef ) } );
+    auto id = _id.id_of( { _ss.front, _ss.conn, ref_t( f_->OrderRef ) } );
 
     if ( !id ) {
         LOG_INFO( "rtn trade, cannot reg order id" );

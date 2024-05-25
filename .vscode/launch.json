@@ -9,7 +9,7 @@
             "type": "cppdbg", // ++
             "request": "launch",
             "program": "/home/yaozn/data/code/novax/output/novax.ut", // 调试程序的位置及程序名称
-            //"program": "/home/ubuntu/code/cub/build/src/reactor/cub_reactor", // 调试程序的位置及程序名称
+            //"program": "/home/yaozn/data/code/novax/a.out", // 调试程序的位置及程序名称
             "args": [ // 传送进来的参数，像C函数中的argc个的args
                 "/home/yaozn/data/code/novax/output/"
             ],
