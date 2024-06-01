@@ -66,13 +66,13 @@ struct AckEvent {
 };
 
 struct QutEvent {
-    event_t     id = event_t::data_tick;
-    quotation_t qut;
+    event_t id = event_t::data_tick;
+    tick    qut;
 };
 
 struct SubEvent {
     event_t id = event_t::sub_data;
-    code_t  code;
+    code    code;
 };
 
 struct StopDcEvent {
@@ -85,7 +85,7 @@ struct StartDcEvent {
 
 struct UnsubEvent {
     event_t id = event_t::unsub_data;
-    code_t  code;
+    code    code;
 };
 
 // 实际发送消息的时候没必要发送固定长度的Msg，那是浪费，是什么消息就发送什么消息即可，根据id把消息转成对应下msg即可
@@ -139,9 +139,9 @@ inline const Event* recv_event( struct bufferevent* bev_ ) {
 }
 }  // namespace dc
 
-struct IEndpoint {
-    IEndpoint();
-    virtual ~IEndpoint() {}
+struct endpoint {
+    endpoint();
+    virtual ~endpoint() {}
 
 protected:
     void attach( struct bufferevent* bev_ );
@@ -158,22 +158,22 @@ private:
     struct bufferevent* _bev = nullptr;
 };
 
-struct DcClient : IMarket, IEndpoint {
-    DcClient( IPub* data_ );
+struct dc_client : market, endpoint {
+    dc_client( pub* data_ );
 
     nvx_st start() override;
     nvx_st stop() override;
-    nvx_st subscribe( const code_t& code_ ) override;
-    nvx_st unsubscribe( const code_t& code_ ) override;
+    nvx_st subscribe( const code& code_ ) override;
+    nvx_st unsubscribe( const code& code_ ) override;
     nvx_st run();
 
 private:
     void on_event( const dc::Event* m_, struct bufferevent* bev ) override;
     void on_ack( dc::event_t req_, char rc_ ) override;
-    void on_tick( const quotation_t& qut_ );
+    void on_tick( const tick& qut_ );
 
 private:
-    // using book_t = std::map<code_t, bool>;
+    // using book_t = std::map<code, bool>;
 
     bool _dc_running = false;
 
@@ -186,8 +186,8 @@ struct sub_t {
     void* socket;
 };
 
-struct DcServer : IEndpoint {
-    void   update( const quotation_t& tick_ );
+struct dc_server : endpoint {
+    void   update( const tick& tick_ );
     nvx_st run();
 
 private:
@@ -195,19 +195,19 @@ private:
 
 private:
     void        update_subs();
-    nvx_st      persist( const quotation_t& );  // todo save to file
+    nvx_st      persist( const tick& );  // todo save to file
     nvx_st      start_server();
     static void accept_cb( evutil_socket_t listener, short event, void* arg );
 
 private:
-    static void thread_save( DcServer& s_ );
+    static void thread_save( dc_server& s_ );
 
 private:
 #define MAX_CACHE_CNT 128
 
-    moodycamel::ConcurrentQueue<sub_t>   _candicates;
-    std::vector<sub_t>                   _subs;
-    RingBuff<quotation_t, MAX_CACHE_CNT> _cache;
+    moodycamel::ConcurrentQueue<sub_t> _candicates;
+    std::vector<sub_t>                 _subs;
+    ring_buff<tick, MAX_CACHE_CNT>     _cache;
 };
 
 NVX_NS_END

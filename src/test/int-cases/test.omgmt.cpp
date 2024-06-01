@@ -34,11 +34,11 @@ SOFTWARE.
 
 namespace cub {
 struct XContext : cub::MgmtContext {
-    int put_order( const order_t& o_ ) {
+    int put_order( const order& o_ ) {
         return 0;
     }
 
-    int del_order( oid_t id_ ) {
+    int del_order( oid id_ ) {
         return 0;
     }
 };
@@ -47,15 +47,15 @@ struct XContext : cub::MgmtContext {
 int main() {
     LOG_ENABLE_STDOUT();
 
-    auto om = new cub::OrderMgmt( 0 );
+    auto om = new cub::order_mgmt( 0 );
 
     om->start();
-    auto ids = om->sellshort( "rb2410", 1, 6543.0, cub::otype_t::market );
-    auto idl = om->buylong( "cu2410", 1, 6543.0, cub::otype_t::market );
+    auto ids = om->sellshort( "rb2410", 1, 6543.0, cub::otype::market );
+    auto idl = om->buylong( "cu2410", 1, 6543.0, cub::otype::market );
 
     om->position( "rb2410" );
 
-    cub::order_t o;
+    cub::order o;
     o.id = ids;
     om->update( o );
 

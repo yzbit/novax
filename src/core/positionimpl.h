@@ -31,24 +31,24 @@ SOFTWARE.
 
 NVX_NS_BEGIN
 
-struct PositionImpl : IPosition {
-    PositionImpl( const code_t& code_, bool long_ );
-    bool          is_short() const { return _long; }
-    const code_t& symbol() const { return _p.symbol; }
-    vol_t         herge( vol_t qty_, price_t price_ );
-    void          accum( vol_t qty_, price_t price_ );
-    void          reset();
+struct position_impl : position {
+    position_impl( const code& code_, bool long_ );
+    bool        is_short() const { return _long; }
+    const code& symbol() const { return _p.symbol; }
+    vol         herge( vol qty_, price price_ );
+    void        accum( vol qty_, price price_ );
+    void        reset();
 
 private:
-    nvx_st  stop( vol_t qty_, price_t price_ ) override;
-    nvx_st  profit( vol_t qty_, price_t price_ ) override;
-    price_t avg_dealt() override;
-    vol_t   qty() override;
-    kidx_t  last_entry() override;
-    kidx_t  last_exit() override;
+    nvx_st stop( vol qty_, price price_ ) override;
+    nvx_st profit( vol qty_, price price_ ) override;
+    price  avg_dealt() override;
+    vol    qty() override;
+    kidx   last_entry() override;
+    kidx   last_exit() override;
 
 private:
-    PositionImpl() = delete;
+    position_impl() = delete;
 
 private:
     bool       _long;

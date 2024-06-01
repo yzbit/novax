@@ -34,7 +34,7 @@ SOFTWARE.
 #include "../core/models.h"
 
 struct XContext : cub::DataContext {
-    void update( const cub::quotation_t& q_ ) {
+    void update( const cub::tick& q_ ) {
         std::cout << "update: q.ask=" << q_.ask << std::endl;
     }
 
@@ -47,7 +47,7 @@ int main() {
     LOG_INIT( "./log/testasp", -1 );
     LOG_ENABLE_STDOUT();
 
-    cub::quotation_t q;
+    cub::tick q;
     q.ask = 99.99;
 
     auto d = new cub::Data( new XContext() );

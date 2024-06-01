@@ -44,7 +44,7 @@ void foo( int a ) {
 
 int main() {
 
-    cub::TaskQueue* q = cub::TaskQueue::create( 4 );
+    cub::task_queue* q = cub::task_queue::create( 4 );
 
     q->run_r( foo, 1 );
 
@@ -69,7 +69,7 @@ int main() {
     std::thread( [ & ]() {
         int seq = 0;
         for ( ;; ) {
-            NVX_NS::msg::QuotationFrame d;
+            NVX_NS::msg::TickFrame d;
 
             if ( seq == 3 ) {
                 REACTOR.sub( { cub::msg::mid_t::svc_data }, []( const cub::msg::header_t& h ) {

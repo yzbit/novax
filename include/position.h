@@ -31,13 +31,19 @@ SOFTWARE.
 
 NVX_NS_BEGIN
 
-struct IPosition {
-    virtual nvx_st  stop( vol_t qty_, price_t price_ )   = 0;
-    virtual nvx_st  profit( vol_t qty_, price_t price_ ) = 0;
-    virtual price_t avg_dealt()                          = 0;
-    virtual vol_t   qty()                                = 0;
-    virtual kidx_t  last_entry()                         = 0;
-    virtual kidx_t  last_exit()                          = 0;
+struct position {
+    enum class type_t {
+        relative,
+        absolute
+    };
+
+    /**stop和gain是修改止损止盈单,参数全0会删除止损止盈单,只允许下一个止损或者止盈
+     * 可以通过条件单自己设置更多止损
+     */
+    virtual nvx_st stop( vol qty_, price price_, type_t t_ ) = 0;
+    virtual nvx_st gain( vol qty_, price price_ )            = 0;
+    virtual price  avg_dealt()                               = 0;
+    virtual vol    qty()                                     = 0;
 };
 
 NVX_NS_END

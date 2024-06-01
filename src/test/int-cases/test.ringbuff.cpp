@@ -37,15 +37,15 @@ SOFTWARE.
 int main() {
     std::cout << "file name=" << __FILE__ << std::endl;
 
-    cub::RingBuff<cub::quotation_t, 5> ring;
+    cub::ring_buff<cub::tick, 5> ring;
 
-    cub::quotation_t r, w;
+    cub::tick r, w;
 
     std::condition_variable cv;
     std::mutex              mtx;
 
     THREAD_DETACHED( [ & ]() {
-        cub::price_t p = 0;
+        cub::price p = 0;
         while ( 1 ) {
             w.ask = ++p;
             ring.put( w );

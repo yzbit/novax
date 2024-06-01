@@ -42,11 +42,11 @@ SOFTWARE.
 #define DBG_TRACE( ... )
 
 NVX_NS_BEGIN
-struct TaskQueue {
-    TaskQueue()          = default;
-    virtual ~TaskQueue() = default;
+struct task_queue {
+    task_queue()          = default;
+    virtual ~task_queue() = default;
 
-    static TaskQueue* create( int _poolsize_ );
+    static task_queue* create( int _poolsize_ );
 
     template <typename _Callable, typename... _Args>
     void run_r( _Callable&& __f, _Args&&... __args ) {
@@ -62,7 +62,7 @@ struct TaskQueue {
     virtual void on_idle() {}
 };
 
-struct ThreadPool : public TaskQueue {
+struct ThreadPool : public task_queue {
     explicit ThreadPool( size_t n )
         : _shutdown( false ) {
         while ( n ) {
@@ -157,7 +157,7 @@ private:
     std::mutex              _mutex;
 };
 
-inline TaskQueue* TaskQueue::create( int _poolsize_ ) {
+inline task_queue* task_queue::create( int _poolsize_ ) {
     return new ThreadPool( _poolsize_ );
 }
 

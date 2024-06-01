@@ -29,8 +29,8 @@ SOFTWARE.
 #include <novax.h>
 #include <stdio.h>
 
-TEST( Series, Basic ) {
-    nvx::Series<int> s( 5 );
+TEST( series, Basic ) {
+    nvx::series<int> s( 5 );
 
     ASSERT_EQ( s.size(), 1 );
 
@@ -55,8 +55,8 @@ TEST( Series, Basic ) {
     ASSERT_EQ( s[ 0 ], 6 );
 }
 
-TEST( Series, Adv ) {
-    nvx::Series<int> s( 3 );
+TEST( series, Adv ) {
+    nvx::series<int> s( 3 );
 
     for ( int i = 0; i < 8; i++ ) {
         s.append( i );

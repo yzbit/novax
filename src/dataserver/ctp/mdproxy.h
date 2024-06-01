@@ -25,6 +25,9 @@ SOFTWARE.
 * \date: 2024
 **********************************************************************************/
 
+#ifndef CE81CD99_2111_47E4_B979_D68AA99AD36B
+#define CE81CD99_2111_47E4_B979_D68AA99AD36B
+
 #ifndef DF548D9F_3819_44FA_89F5_6218193C54F2
 #define DF548D9F_3819_44FA_89F5_6218193C54F2
 #include <ctp/ThostFtdcMdApi.h>
@@ -45,24 +48,24 @@ NVX_NS_BEGIN
 
 namespace ctp {
 struct mdex : market, CThostFtdcMdSpi {
-    mdex( IPub* p_ );
+    mdex( pub* p_ );
 
 protected:
-    NvxSt start() override;
-    NvxSt stop() override;
-    NvxSt subscribe( const Code& code_ ) override;
-    NvxSt unsubscribe( const Code& code_ ) override;
+    nvx_st start() override;
+    nvx_st stop() override;
+    nvx_st subscribe( const code& code_ ) override;
+    nvx_st unsubscribe( const code& code_ ) override;
 
 private:
-    NvxSt init();
-    NvxSt login();
-    NvxSt sub();
-    NvxSt unsub();
-    NvxSt sub( Code& code_ );
-    NvxSt unsub( Code& code_ );
+    nvx_st init();
+    nvx_st login();
+    nvx_st sub();
+    nvx_st unsub();
+    nvx_st sub( code& code_ );
+    nvx_st unsub( code& code_ );
 
 private:
-    std::unique_ptr<char*[]> set2arr( std::set<Code>& s );
+    std::unique_ptr<char*[]> set2arr( std::set<code>& s );
 
 private:
     // ctp overrides
@@ -82,8 +85,11 @@ private:
 
 private:
     CThostFtdcMdApi* _api = nullptr;
-    setting          _settings;
+    setting        _settings;
+    std::set<code> _sub_symbols;
+    std::set<code> _unsub_symbols;
     bool             _is_svc_online = false;
+    std::mutex       _sub_mtx;
 
 private:
     bool _running = false;
@@ -95,3 +101,6 @@ private:
 NVX_NS_END
 
 #endif /* DF548D9F_3819_44FA_89F5_6218193C54F2 */
+
+
+#endif /* CE81CD99_2111_47E4_B979_D68AA99AD36B */

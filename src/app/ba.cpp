@@ -33,7 +33,7 @@ SOFTWARE.
 // 这里只负责下单,无法对订单状态进行追踪,追踪需要在各个quant实例的ordermgmt中进行
 NVX_NS_BEGIN
 
-struct BaProxy : IBroker {
+struct BaProxy : broker {
     static int run() {
         return 0;
     }

@@ -39,36 +39,36 @@ SOFTWARE.
 
 // order mgmt  只管理订单和仓位，其他的不负责，甚至订单都可以不用管理
 NVX_NS_BEGIN
-struct IPosition;
-struct IBroker;
+struct position;
+struct broker;
 
-struct Portfolio {
+struct portfolio {
     enum class dist_t : char {
         netlong,
         netshort
     };
 
-    using PosRepo = std::vector<PositionImpl*>;
+    using PosRepo = std::vector<position_impl*>;
 
-    Portfolio();
+    portfolio();
 
-    nvx_st        update( const order_update_t& upt_ );
-    PositionImpl* pos( const code_t& code_, dist_t d_ );
-    PositionImpl* add( const code_t& code_, dist_t d_ );
+    nvx_st         update( const order_update& upt_ );
+    position_impl* pos( const code& code_, dist_t d_ );
+    position_impl* add( const code& code_, dist_t d_ );
 
 private:
     PosRepo _repo;
 };
 
 // todo. sync to disk.
-struct OrderBook {
-    OrderBook( oid_t init_id_ );
-    ~OrderBook();
+struct ordbook {
+    ordbook( oid init_id_ );
+    ~ordbook();
 
-    size_t   count() const;
-    oid_t    oid();
-    order_t* find( oid_t id_ );
-    order_t* append( order_t& order_ );
+    size_t count() const;
+    oid    oid();
+    order* find( oid id_ );
+    order* append( order& order_ );
 
 private:
     void persist() {
@@ -76,75 +76,69 @@ private:
     }
 
 private:
-    std::unordered_map<oid_t, order_t> _ords;
+    std::unordered_map<oid, order> _ords;
 
-    oid_t _start_id;
+    oid _start_id;
 };
 
 //--------------------------
-struct OrderMgmt {
-    OrderMgmt( IBroker* ib_, oid_t id_start_ );
-    ~OrderMgmt();
+struct order_mgmt {
+    order_mgmt( broker* ib_, oid id_start_ );
+    ~order_mgmt();
 
     nvx_st start();
     nvx_st stop();
 
     //-price=0 use market
-    oid_t  buylong( const code_t& code_,
-                    vol_t         qty_,
-                    price_t       price_,
-                    otype_t       mode_,
-                    const text_t& remark );
-    nvx_st sell( const code_t& code_,
-                 vol_t         qty_,
-                 price_t       price_,
-                 otype_t       mode_,
-                 const text_t& remark );
-    oid_t  sellshort( const code_t& code_,
-                      vol_t         qty_,
-                      price_t       price_,
-                      otype_t       mode_,
-                      const text_t& remark );
-    nvx_st buy( const code_t& code_,
-                vol_t         qty_,
-                price_t       price_,
-                otype_t       mode_,
-                const text_t& remark );
+    oid buylong( const code& code_,
+                 vol         qty_,
+                 price       price_,
+                 otype       mode_,
+                 const text& remark );
+    oid sell( const code& code_,
+              vol         qty_,
+              price       price_,
+              otype       mode_,
+              const text& remark );
+    oid sellshort( const code& code_,
+                   vol         qty_,
+                   price       price_,
+                   otype       mode_,
+                   const text& remark );
+    oid buy( const code& code_,
+             vol         qty_,
+             price       price_,
+             otype       mode_,
+             const text& remark );
 
     // 这里不能用oid好像，因为order id最终会转化为position,当然因为我们其实是记得自己的订单有多少转为了position的
     // 可以先只支持单腿操作，也就是如果既有空单又有多单，那么选择合适的
     // 有没有可能一个价格同时是多单和空单的止损单，多单价格p1，空单价格p0，多单的止损必须是小于p1，空单的止损是大于p0，只要p1>p>p0，就成立, 此时你很难讲p是给谁做止损的
-    nvx_st stop( const code_t& code_, vol_t qty_, price_t price_ );
-    nvx_st profit( const code_t& code_, vol_t qty_, price_t price_ );
-    nvx_st cancel( oid_t id_ );
-    nvx_st close( oid_t id_ );
-    nvx_st close( const code_t& code_ );
+    oid stop( const code& code_, vol qty_, price price_ );
+    oid gain( const code& code_, vol qty_, price price_ );
+    oid cancel( oid id_ );
+    oid close( const code& code_ );
 
-    IPosition* position( const code_t& code_, bool long_ );
-    void       update_ord( const order_update_t& ord_ );
-    void       update_position();
-
-    // >0 表示long多余short
-    vol_t position( const code_t& code_ );
-    vol_t short_position( const code_t& code_ );
-    vol_t long_position( const code_t& code_ );
+    position* position( const code& code_, bool long_ );
+    void      update_ord( const order_update& ord_ );
+    void      update_position();
 
 private:
-    nvx_st close( const order_t& r_ );
-    oid_t  put( odir_t        dir_,
-                const code_t& code_,
-                vol_t         qty_,
-                price_t       price_,
-                otype_t       mode_,
-                const text_t& remark_ );
-    nvx_st remove( oid_t id );
+    oid close( position* p_, vol qty_ );
+    oid put( ord_dir     dir_,
+             const code& code_,
+             vol         qty_,
+             price       price_,
+             otype       mode_,
+             const text& remark_ );
+    // nvx_st remove( oid id );
 
 private:
-    Portfolio _pf;
-    OrderBook _record;
+    portfolio _pf;
+    ordbook   _orders;
 
 private:
-    IBroker* _ib;
+    broker* _ib;
 };
 
 NVX_NS_END

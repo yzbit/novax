@@ -35,7 +35,7 @@ SOFTWARE.
 NVX_NS_BEGIN
 
 template <typename T, int N>
-struct RingBuff {
+struct ring_buff {
     int  put( const T& t_ );
     int  pop( T& t_ );
     T*   head();
@@ -49,7 +49,7 @@ private:
 };
 
 template <typename T, int N>
-inline int RingBuff<T, N>::put( const T& t_ ) {
+inline int ring_buff<T, N>::put( const T& t_ ) {
     if ( size() >= N - 1 ) return -1;
 
     _data[ _wr ] = t_;
@@ -60,7 +60,7 @@ inline int RingBuff<T, N>::put( const T& t_ ) {
 }
 
 template <typename T, int N>
-inline int RingBuff<T, N>::pop( T& t_ ) {
+inline int ring_buff<T, N>::pop( T& t_ ) {
     if ( size() == 0 ) return -1;
 
     t_ = _data[ _rd ];
@@ -71,19 +71,19 @@ inline int RingBuff<T, N>::pop( T& t_ ) {
     return 0;
 }
 template <typename T, int N>
-inline void RingBuff<T, N>::clear() {
+inline void ring_buff<T, N>::clear() {
     _rd = _wr;
 }
 
 template <typename T, int N>
-inline T* RingBuff<T, N>::head() {
+inline T* ring_buff<T, N>::head() {
     return size() == 0
                ? nullptr
                : &_data[ _rd ];
 }
 
 template <typename T, int N>
-inline int RingBuff<T, N>::size() {
+inline int ring_buff<T, N>::size() {
     return _wr >= _rd
                ? _wr - _rd
                : _wr + N - _rd;

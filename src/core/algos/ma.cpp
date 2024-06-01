@@ -40,7 +40,7 @@ Ma::Ma( const std::string& code_, int period_ ) {
     add_series( 1, period_ );
 }
 
-void Ma::on_calc( const Kline& ref_, const quotation_t& q_ ) {
+void Ma::on_calc( const kline& ref_, const tick& q_ ) {
     if ( ref_.bar_cnt() < period_ ) {
         return 0;
     }

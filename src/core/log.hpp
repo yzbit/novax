@@ -54,7 +54,7 @@ SOFTWARE.
 
 NVX_NS_BEGIN
 
-struct Logz {
+struct logz {
     enum class severty_t {
         info,
         warn,
@@ -62,7 +62,7 @@ struct Logz {
         fatal
     };
 
-    static Logz& instance();
+    static logz& instance();
 
     int shut();
 
@@ -91,14 +91,14 @@ private:
     static constexpr int32_t kMaxRotate = 5 * 1024 * 1024;
 };
 
-inline Logz& Logz::instance() {
-    static Logz l;
+inline logz& logz::instance() {
+    static logz l;
     return l;
 }
 
 NVX_NS_END
 
-#define LOGZ NVX_NS::Logz::instance()
+#define LOGZ NVX_NS::logz::instance()
 #define SR_LOGZ_CLOSE LOGZ.shut
 
 #ifdef MS_VC
@@ -137,7 +137,7 @@ NVX_NS_END
 
 NVX_NS_BEGIN
 
-inline std::string Logz::time_str( bool simple_ ) {
+inline std::string logz::time_str( bool simple_ ) {
     auto now = std::chrono::system_clock::now();
     // 通过不同精度获取相差的毫秒数
     uint64_t dis_millseconds =
@@ -160,7 +160,7 @@ inline std::string Logz::time_str( bool simple_ ) {
     return str_time;
 }
 
-inline std::string Logz::time_str_file() {
+inline std::string logz::time_str_file() {
     auto now = std::chrono::system_clock::now();
 
     time_t tt             = std::chrono::system_clock::to_time_t( now );
@@ -173,25 +173,25 @@ inline std::string Logz::time_str_file() {
     return str_time;
 }
 
-inline std::string Logz::real_log( const std::string& name_ ) {
+inline std::string logz::real_log( const std::string& name_ ) {
     if ( _keep ) return name_;
 
     std::string real = name_ + std::string( "-" ) + time_str_file() + ".log";
     return real;
 }
 
-inline void Logz::flush() {
+inline void logz::flush() {
     if ( _log_fd < 0 )
         return;
     fsync( _log_fd );
 }
 
-inline int Logz::shut() {
+inline int logz::shut() {
     close( _log_fd );
     return 0;
 }
 
-inline int Logz::lite( const char* msg_ ) {
+inline int logz::lite( const char* msg_ ) {
     if ( _use_stdout ) {
         fprintf( stderr, "%s", msg_ );
     }
@@ -240,7 +240,7 @@ inline int Logz::lite( const char* msg_ ) {
     return sz;
 }
 
-inline int Logz::details( const char* tag_, const char* file_, const char* func_, int line_, const char* fmt_, ... ) {
+inline int logz::details( const char* tag_, const char* file_, const char* func_, int line_, const char* fmt_, ... ) {
     char buff[ 1024 ];
     memset( buff, 0x00, sizeof( buff ) );
 
@@ -262,7 +262,7 @@ inline int Logz::details( const char* tag_, const char* file_, const char* func_
     return this->lite( buff );
 }
 
-inline int Logz::fmt( const char* fmt_, ... ) {
+inline int logz::fmt( const char* fmt_, ... ) {
     char buff[ 1024 ];
 
     va_list ap;
@@ -273,12 +273,12 @@ inline int Logz::fmt( const char* fmt_, ... ) {
     return this->lite( buff );
 }
 
-inline int Logz::archive( const char* file_ ) {
+inline int logz::archive( const char* file_ ) {
     close( _log_fd );
     return 0;
 }
 
-inline int Logz::init( const char* log_file_, int rotate_, bool keep_ ) {
+inline int logz::init( const char* log_file_, int rotate_, bool keep_ ) {
     if ( _log_fd > 0 )
         return 0;
 

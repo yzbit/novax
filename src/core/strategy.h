@@ -35,8 +35,8 @@ NVX_NS_BEGIN
 
 struct Context;
 
-struct IStrategy {
-    enum class notify_t {
+struct strategy {
+    enum class ntf_t {
         error,
         clock,
         order,
@@ -44,10 +44,10 @@ struct IStrategy {
         instate
     };
 
-    virtual ~IStrategy() {}
+    virtual ~strategy() {}
 
-    virtual nvx_st init()                                         = 0;
-    virtual nvx_st invoke( IStrategy::notify_t n_, IContext* c_ ) = 0;
+    virtual nvx_st init()                                    = 0;
+    virtual nvx_st invoke( strategy::ntf_t n_, context* c_ ) = 0;
 };
 
 NVX_NS_END

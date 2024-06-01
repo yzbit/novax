@@ -36,12 +36,12 @@ SOFTWARE.
 
 NVX_NS_BEGIN
 
-Data::Data( IMarket* market_ )
+data::data( market* market_ )
     : _market( market_ ) {
-    _jobs = TaskQueue::create( 4 );
+    _jobs = task_queue::create( 4 );
 }
 
-void Data::update( const quotation_t& tick_ ) {
+void data::update( const tick& tick_ ) {
     _jobs->drain();
 
     for ( auto& as : _aspects ) {
@@ -53,37 +53,37 @@ void Data::update( const quotation_t& tick_ ) {
     }
 }
 
-nvx_st Data::start() {
+nvx_st data::start() {
     return _market->start();
 }
 
-nvx_st Data::stop() {
+nvx_st data::stop() {
     return _market->stop();
 }
 
-nvx_st Data::attach( Aspect* a_ ) {
+nvx_st data::attach( aspect* a_ ) {
     _aspects.push_back( a_ );
 
     return 0;
 }
 
-nvx_st Data::dettach( Aspect* a_ ) {
-    if ( !a_ ) return NVX_Fail;
+nvx_st data::dettach( aspect* a_ ) {
+    if ( !a_ ) return NVX_FAIL;
     return _market->unsubscribe( a_->code() );
 }
 
-Aspect* Data::attach( const code_t& symbol_, const period_t& period_, int count_ ) {
+aspect* data::attach( const code& symbol_, const Period& period_, int count_ ) {
     if ( _market->subscribe( symbol_ ) < 0 )
         return nullptr;
 
-    Aspect* a = new Aspect( this );
+    aspect* a = new aspect( this );
     a->load( symbol_, period_, count_ );
 
     attach( a );
     return a;
 }
 
-Data::~Data() {
+data::~Data() {
     _jobs->shutdown();
     delete _jobs;
     for ( auto as : _aspects ) {

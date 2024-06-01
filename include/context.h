@@ -32,34 +32,34 @@ SOFTWARE.
 #include "models.h"
 
 NVX_NS_BEGIN
-struct Aspect;
-struct IPosition;
+struct aspect;
+struct position;
 
-struct IContext {
-    static IContext* create();
+struct context {
+    static context* create();
 
-    virtual const quotation_t& qut() const        = 0;
-    virtual const fund_t       fund() const       = 0;
-    virtual Aspect*            load( const code_t&   symbol_,
-                                     const period_t& period_,
+    virtual const tick& qut() const        = 0;
+    virtual const fund       fund() const       = 0;
+    virtual aspect*            load( const code&   symbol_,
+                                     const Period& period_,
                                      int             count_ ) = 0;
 
-    virtual oid_t open( const code_t& c_,
-                        vol_t         qty_,
-                        price_t       sl_    = 0,
-                        price_t       tp_    = 0,
-                        price_t       price_ = 0,
-                        otype_t       mode_  = otype_t::market ) = 0;
+    virtual oid open( const code& c_,
+                        vol         qty_,
+                        price       sl_    = 0,
+                        price       tp_    = 0,
+                        price       price_ = 0,
+                        otype       mode_  = otype::market ) = 0;
 
-    virtual nvx_st     close( const code_t& c_,
-                              vol_t         qty_,
-                              price_t       price_ = 0,
-                              otype_t       mode_  = otype_t::market ) = 0;
-    virtual IPosition* qry_long( const code_t& c_ )             = 0;
-    virtual IPosition* qry_short( const code_t& c_ )            = 0;
-    virtual datetime_t time() const                             = 0;
+    virtual nvx_st     close( const code& c_,
+                              vol         qty_,
+                              price       price_ = 0,
+                              otype       mode_  = otype::market ) = 0;
+    virtual position* qry_long( const code& c_ )             = 0;
+    virtual position* qry_short( const code& c_ )            = 0;
+    virtual datetime time() const                             = 0;
     virtual nvxerr_t   error() const                            = 0;
-    virtual ~IContext();
+    virtual ~context();
 };
 
 NVX_NS_END

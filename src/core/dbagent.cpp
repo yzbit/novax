@@ -33,51 +33,51 @@ SOFTWARE.
 
 NVX_NS_BEGIN
 
-struct SQLiteAgent : DbAgent {
+struct sqlite_agent : db_agent {
 private:
     conn_t open( const char* url_, const char* usr_, const char* pwd_, const char* dbname_ = nullptr, bool create_ = true, void* param_ = nullptr ) override;
     nvx_st close() override;
     nvx_st transaction() override;
     nvx_st commit() override;
     nvx_st rollback() override;
-    nvx_st execute( const string_t& sql_ ) override;
-    nvx_st fetch( const string_t& clause_, dbcallback_t cb_, void* p1, void* p2 ) override;
+    nvx_st execute( const xstring& sql_ ) override;
+    nvx_st fetch( const xstring& clause_, dbcallback_t cb_, void* p1, void* p2 ) override;
     id_t   last_key( const char* table_ ) override;
 };
 
-DbAgent* DbAgent::create( DbAgent::dbtype_t at ) {
+db_agent* db_agent::create( db_agent::dbtype_t at ) {
     switch ( at ) {
     default:
         return nullptr;
-    case DbAgent::dbtype_t::SQLite:
-        return new SQLiteAgent();
+    case db_agent::dbtype_t::SQLite:
+        return new sqlite_agent();
     }
 
     return nullptr;
 }
 
-DbAgent::conn_t DbAgent::open( DbAgent::param_t& p ) {
+db_agent::conn_t db_agent::open( db_agent::param_t& p ) {
     return open( p.server.c_str(), p.user.c_str(), p.pwd.c_str(), p.dbname.c_str(), p.create, p.data );
 }
 
-bool DbAgent::is_open() const {
+bool db_agent::is_open() const {
     return _conn != nullptr;
 }
 
-DbAgent::conn_t SQLiteAgent::open( const char* url, const char* usr, const char* pwd, const char* dbname, bool create, void* param ) {
+db_agent::conn_t sqlite_agent::open( const char* url, const char* usr, const char* pwd, const char* dbname, bool create, void* param ) {
     sqlite3* sql    = nullptr;
     int      result = SQLITE_OK;
 
     if ( is_nil( url ) && is_nil( dbname ) )
         return nullptr;
 
-    string_t dbpath = "";
+    xstring dbpath = "";
     if ( is_nil( url ) )
         dbpath = dbname;
     else if ( is_nil( dbname ) )
         dbpath = url;
     else
-        dbpath = string_t( url ) + string_t( dbpath );
+        dbpath = xstring( url ) + xstring( dbpath );
 
     if ( create )
         result = sqlite3_open_v2( dbpath.c_str(), &sql, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_NOMUTEX | SQLITE_OPEN_SHAREDCACHE, NULL );
@@ -96,7 +96,7 @@ DbAgent::conn_t SQLiteAgent::open( const char* url, const char* usr, const char*
     return sql;
 }
 
-nvx_st SQLiteAgent::close() {
+nvx_st sqlite_agent::close() {
     sqlite3* sql = ( sqlite3* )conn();
     sqlite3_close_v2( sql );
     _conn = nullptr;
@@ -104,30 +104,30 @@ nvx_st SQLiteAgent::close() {
     return NVX_OK;
 }
 
-nvx_st SQLiteAgent::transaction() {
+nvx_st sqlite_agent::transaction() {
     sqlite3* sql = ( sqlite3* )conn();
-    if ( !sql ) return NVX_Fail;
+    if ( !sql ) return NVX_FAIL;
 
-    return sqlite3_exec( sql, "BEGIN;", nullptr, nullptr, nullptr ) ? NVX_Fail : NVX_OK;
+    return sqlite3_exec( sql, "BEGIN;", nullptr, nullptr, nullptr ) ? NVX_FAIL : NVX_OK;
 }
 
-nvx_st SQLiteAgent::commit() {
+nvx_st sqlite_agent::commit() {
     sqlite3* sql = ( sqlite3* )conn();
-    if ( !sql ) return NVX_Fail;
+    if ( !sql ) return NVX_FAIL;
 
-    return sqlite3_exec( sql, "COMMIT;", nullptr, nullptr, nullptr ) ? NVX_Fail : NVX_OK;
+    return sqlite3_exec( sql, "COMMIT;", nullptr, nullptr, nullptr ) ? NVX_FAIL : NVX_OK;
 }
 
-nvx_st SQLiteAgent::rollback() {
+nvx_st sqlite_agent::rollback() {
     sqlite3* sql = ( sqlite3* )conn();
-    if ( !sql ) return NVX_Fail;
+    if ( !sql ) return NVX_FAIL;
 
-    return sqlite3_exec( sql, "ROLLBACK;", nullptr, nullptr, nullptr ) ? NVX_Fail : NVX_OK;
+    return sqlite3_exec( sql, "ROLLBACK;", nullptr, nullptr, nullptr ) ? NVX_FAIL : NVX_OK;
 }
 
-nvx_st SQLiteAgent::execute( const string_t& clause_ ) {
+nvx_st sqlite_agent::execute( const xstring& clause_ ) {
     sqlite3* sql = ( sqlite3* )conn();
-    if ( !sql ) return NVX_Fail;
+    if ( !sql ) return NVX_FAIL;
 
 #if 0
 	sqlite3_stmt* stmt = NULL;
@@ -155,17 +155,17 @@ nvx_st SQLiteAgent::execute( const string_t& clause_ ) {
 
 	return VMS_OK;
 #endif
-    return sqlite3_exec( sql, clause_.c_str(), nullptr, nullptr, nullptr ) ? NVX_Fail : NVX_OK;
+    return sqlite3_exec( sql, clause_.c_str(), nullptr, nullptr, nullptr ) ? NVX_FAIL : NVX_OK;
 }
 
-nvx_st SQLiteAgent::fetch( const string_t& clause_, dbcallback_t cb_, void* p1, void* p2 ) {
+nvx_st sqlite_agent::fetch( const xstring& clause_, dbcallback_t cb_, void* p1, void* p2 ) {
     sqlite3* sql = ( sqlite3* )conn();
-    if ( !sql ) return NVX_Fail;
+    if ( !sql ) return NVX_FAIL;
 
-    return sqlite3_exec( sql, clause_.c_str(), cb_.target<int( void*, int, char**, char** )>(), p1, ( char** )p2 ) ? NVX_Fail : NVX_OK;
+    return sqlite3_exec( sql, clause_.c_str(), cb_.target<int( void*, int, char**, char** )>(), p1, ( char** )p2 ) ? NVX_FAIL : NVX_OK;
 }
 
-DbAgent::id_t SQLiteAgent::last_key( const char* table ) {
+db_agent::id_t sqlite_agent::last_key( const char* table ) {
     sqlite3* sql = ( sqlite3* )conn();
     return sqlite3_last_insert_rowid( sql );
 }

@@ -33,15 +33,15 @@ SOFTWARE.
 USE_CUB_NS
 
 struct BreakTh : Strategy {
-    BreakTh( const code_t& code_ )
+    BreakTh( const code& code_ )
         : _code( code_ ) {}
 
     void on_invoke( Context* c ) override;
     void on_init( Context* c ) override;
-    void on_ck( const quotation_t& ) override;
+    void on_ck( const tick& ) override;
 
 private:
-    code_t     _code;
+    code     _code;
     Indicator* _ma = nullptr;
 };
 

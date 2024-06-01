@@ -37,26 +37,26 @@ SOFTWARE.
 NVX_NS_BEGIN
 
 template <typename T>
-struct Series final {
+struct series final {
     using element_t = T;
     using visitor_t = std::function<bool( element_t& )>;
 
-    Series( int n_ );
-    ~Series();
+    series( int n_ );
+    ~series();
 
     size_t size();
     void   for_each( visitor_t v_ );
-    void   update( kidx_t index_, const element_t& t_ );
+    void   update( kidx index_, const element_t& t_ );
 
     element_t& append( const element_t& t_ );
     element_t& current();
     element_t& shift();
-    element_t& operator[]( kidx_t index_ );
-    element_t& get( kidx_t index_ );
-    element_t& at( kidx_t index_ );
+    element_t& operator[]( kidx index_ );
+    element_t& get( kidx index_ );
+    element_t& at( kidx index_ );
 
 private:
-    size_t idx2slot( kidx_t index_ );
+    size_t idx2slot( kidx index_ );
     void   inc();
 
 private:
@@ -77,7 +77,7 @@ private:
     } while ( 0 )
 
 template <typename T>
-inline Series<T>::Series( int n_ ) {
+inline series<T>::series( int n_ ) {
     _total = n_;
     _size  = 1;
 
@@ -86,19 +86,19 @@ inline Series<T>::Series( int n_ ) {
 }
 
 template <typename T>
-inline void Series<T>::inc() {
+inline void series<T>::inc() {
     if ( _size < _total ) {
         ++_size;
     }
 }
 
 template <typename T>
-inline Series<T>::~Series() {
+inline series<T>::~series() {
     delete[] _values;
 }
 
 template <typename T>
-inline typename Series<T>::element_t& Series<T>::shift() {
+inline typename series<T>::element_t& series<T>::shift() {
     ++_end;
     SERIES_ROUND( _begin, _end, _total );
     inc();
@@ -106,24 +106,24 @@ inline typename Series<T>::element_t& Series<T>::shift() {
 }
 
 template <typename T>
-inline typename Series<T>::element_t& Series<T>::current() {
+inline typename series<T>::element_t& series<T>::current() {
     return get( 0 );
 }
 
 template <typename T>
-inline typename Series<T>::element_t& Series<T>::append( const element_t& t_ ) {
+inline typename series<T>::element_t& series<T>::append( const element_t& t_ ) {
     auto& e = shift();
     e       = t_;
     return e;
 }
 
 template <typename T>
-inline size_t Series<T>::size() {
+inline size_t series<T>::size() {
     return _size;
 }
 
 template <typename T>
-inline void Series<T>::for_each( typename Series<T>::visitor_t v_ ) {
+inline void series<T>::for_each( typename series<T>::visitor_t v_ ) {
     size_t n = size();
     for ( int loop = _begin; n--; loop = ( loop + 1 ) % _total ) {
         if ( !v_( _values[ loop ] ) ) break;
@@ -131,12 +131,12 @@ inline void Series<T>::for_each( typename Series<T>::visitor_t v_ ) {
 }
 
 template <typename T>
-inline void Series<T>::update( kidx_t index_, const element_t& t_ ) {
+inline void series<T>::update( kidx index_, const element_t& t_ ) {
     get( index_ ) = t_;
 }
 
 template <typename T>
-inline size_t Series<T>::idx2slot( kidx_t index_ ) {
+inline size_t series<T>::idx2slot( kidx index_ ) {
     // 0-~n-1
     if ( index_ >= size() ) {
         throw std::range_error( "series index overflow" );
@@ -146,17 +146,17 @@ inline size_t Series<T>::idx2slot( kidx_t index_ ) {
 }
 
 template <typename T>
-inline typename Series<T>::element_t& Series<T>::operator[]( kidx_t index_ ) {
+inline typename series<T>::element_t& series<T>::operator[]( kidx index_ ) {
     return get( index_ );
 }
 
 template <typename T>
-inline typename Series<T>::element_t& Series<T>::at( kidx_t index_ ) {
+inline typename series<T>::element_t& series<T>::at( kidx index_ ) {
     return get( index_ );
 }
 
 template <typename T>
-inline typename Series<T>::element_t& Series<T>::get( kidx_t index_ ) {
+inline typename series<T>::element_t& series<T>::get( kidx index_ ) {
     return _values[ idx2slot( index_ ) ];
 }
 

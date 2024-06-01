@@ -35,12 +35,12 @@ SOFTWARE.
 
 NVX_NS_BEGIN
 
-struct DcPub : IPub {
-    DcPub( DcServer* d_ )
+struct dc_pub : pub {
+    dc_pub( dc_server* d_ )
         : _srv( d_ ) {
     }
 
-    const quotation_t& qut_from_pub( const pub::tick_msg_t& m_ ) const {
+    const tick& qut_from_pub( const pub::tick_msg_t& m_ ) const {
         return m_;
     }
 
@@ -52,10 +52,10 @@ struct DcPub : IPub {
     }
 
 private:
-    DcServer* _srv = nullptr;
+    dc_server* _srv = nullptr;
 };
 
-void DcServer::update( const quotation_t& tick_ ) {
+void dc_server::update( const tick& tick_ ) {
 #if 0
     update_subs();
     persist( tick_ );
@@ -68,7 +68,7 @@ void DcServer::update( const quotation_t& tick_ ) {
 #endif
 }
 
-void DcServer::on_event( const dc::Event* m_, struct bufferevent* bev_ ) {
+void dc_server::on_event( const dc::Event* m_, struct bufferevent* bev_ ) {
     switch ( m_->id ) {
     default: break;
     case dc::event_t::sub_data: {
@@ -82,28 +82,28 @@ void DcServer::on_event( const dc::Event* m_, struct bufferevent* bev_ ) {
     }
 }
 
-nvx_st DcServer::persist( const quotation_t& tick_ ) {
+nvx_st dc_server::persist( const tick& tick_ ) {
     //_cache.
     return NVX_OK;
 }
 
-void DcServer::thread_save( DcServer& s_ ) {
+void dc_server::thread_save( dc_server& s_ ) {
     for ( ;; )
         ;
 }
 
-nvx_st DcServer::run() {
+nvx_st dc_server::run() {
     // todo
-    auto                      pub   = new DcPub( this );
-    [[maybe_unused]] IMarket* ctpmd = new ctp::CtpExMd( pub );
+    auto                     pub   = new dc_pub( this );
+    [[maybe_unused]] market* ctpmd = new ctp::mdex( pub );
     // todo
-    // [[maybe_unused]] auto fut = std::async( std::launch::async, &DcServer::thread_save, *this );
+    // [[maybe_unused]] auto fut = std::async( std::launch::async, &dc_server::thread_save, *this );
 
     attach( 0 );
     return NVX_OK;
 }
 
-void DcServer::update_subs() {
+void dc_server::update_subs() {
     sub_t s;
     while ( _candicates.try_dequeue( s ) ) {
         if ( !s.socket ) {
@@ -115,7 +115,7 @@ void DcServer::update_subs() {
     }
 }
 
-void DcServer::accept_cb( evutil_socket_t listener, short event, void* arg ) {
+void dc_server::accept_cb( evutil_socket_t listener, short event, void* arg ) {
     struct event_base* base = ( struct event_base* )arg;
 
     struct sockaddr_un client_addr;
@@ -137,7 +137,7 @@ void DcServer::accept_cb( evutil_socket_t listener, short event, void* arg ) {
     event_base_dispatch( base );
 }
 
-nvx_st DcServer::start_server() {
+nvx_st dc_server::start_server() {
 #if 0
     struct sockaddr_un addr;
     memset( &addr, 0, sizeof( addr ) );

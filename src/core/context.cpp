@@ -38,43 +38,43 @@ SOFTWARE.
 
 NVX_NS_BEGIN
 
-ContextIntf::ContextIntf( OrderMgmt* m_ )
+context_intf::context_intf( order_mgmt* m_ )
     : _mgmt( m_ ) {}
 
-void ContextIntf::update_qut( const quotation_t& qut_ ) {
+void context_intf::update_qut( const tick& qut_ ) {
     _impl.qut = qut_;
 }
 
-void ContextIntf::update_fund( const fund_t& fund_ ) {
+void context_intf::update_fund( const fund& fund_ ) {
     _impl.fund = fund_;
 }
 
-void ContextIntf::update_error( const nvxerr_t& err_ ) {
+void context_intf::update_error( const nvxerr_t& err_ ) {
     _impl.error = err_;
 }
 
-nvxerr_t ContextIntf::error() const {
+nvxerr_t context_intf::error() const {
     return _impl.error;
 }
 
-const quotation_t& ContextIntf::qut() const {
+const tick& context_intf::qut() const {
     return _impl.qut;
 }
 
-const fund_t ContextIntf::fund() const {
+const fund context_intf::fund() const {
     return _impl.fund;
 }
 
-Aspect* ContextIntf::load( const code_t& symbol_, const period_t& period_, int count_ ) {
+aspect* context_intf::load( const code& symbol_, const Period& period_, int count_ ) {
 
     // return ASP.add( symbol_, period_, count_ );
     // todo
     return nullptr;
 }
 
-oid_t ContextIntf::open( const code_t& c_, vol_t qty_, price_t sl_, price_t tp_, price_t price_, otype_t mode_ ) {
+oid context_intf::open( const code& c_, vol qty_, price sl_, price tp_, price price_, otype mode_ ) {
     if ( qty_ < 0 )
-        return _mgmt->sellshort( c_, -qty_, price_, mode_, "" );
+        return _mgmt->sellshort( c_, qty_, price_, mode_, "" );
     else if ( qty_ > 0 )
         return _mgmt->buylong( c_, qty_, price_, mode_, "" );
     else {
@@ -85,9 +85,9 @@ oid_t ContextIntf::open( const code_t& c_, vol_t qty_, price_t sl_, price_t tp_,
     return 0;
 }
 
-nvx_st ContextIntf::close( const code_t& c_, vol_t qty_, price_t price_, otype_t mode_ ) {
+oid context_intf::close( const code& c_, vol qty_, price price_, otype mode_ ) {
     if ( qty_ < 0 ) {
-        return _mgmt->buy( c_, -qty_, price_, mode_, "" );
+        return _mgmt->buy( c_, qty_, price_, mode_, "" );
     }
     else if ( qty_ > 0 ) {
         return _mgmt->sell( c_, qty_, price_, mode_, "" );
@@ -97,15 +97,15 @@ nvx_st ContextIntf::close( const code_t& c_, vol_t qty_, price_t price_, otype_t
     }
 }
 
-datetime_t ContextIntf::time() const {
-    return datetime_t::now();
+datetime context_intf::time() const {
+    return datetime::now();
 }
 
-IPosition* ContextIntf::qry_long( const code_t& c_ ) {
+position* context_intf::qry_long( const code& c_ ) {
     return _mgmt->position( c_, true );
 }
 
-IPosition* ContextIntf::qry_short( const code_t& c_ ) {
+position* context_intf::qry_short( const code& c_ ) {
 
     return _mgmt->position( c_, false );
 }

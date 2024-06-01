@@ -29,29 +29,29 @@ SOFTWARE.
 #include <novax.h>
 #include <stdio.h>
 
-TEST( Calendar, Basic ) {
-    NVX_NS::Calendar c;
+TEST( calendar, Basic ) {
+    NVX_NS::calendar c;
     ASSERT_TRUE( c.load_schedule( 0 ) < 0 );
 
     ASSERT_TRUE( c.load_schedule( "conf.d/ctp/cal.json" ) == 0 );
 
-    NVX_NS::datespec_t date;
+    NVX_NS::datespec date;
     date.year  = 2024;
     date.month = 5;
     date.day   = 6;
     date.wday  = 1;
 
-    NVX_NS::timespec_t time;
+    NVX_NS::timespec time;
     time.hour   = 1;
     time.minute = 29;
     time.second = 10;
     time.milli  = 399;
 
-    NVX_NS::datetime_t dt;
+    NVX_NS::datetime dt;
     dt.d = date;
     dt.t = time;
 
-    NVX_NS::code_t code = "sc2410";
+    NVX_NS::code code = "sc2410";
 
     ASSERT_TRUE( c.is_trade_day( date ) );
     ASSERT_TRUE( c.is_trade_time( code, time ) );

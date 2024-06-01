@@ -41,7 +41,7 @@ NVX_NS_BEGIN
 #define REACTOR_TRADE "inproc://cub-trade.chan"
 
 struct LocalSocket {
-    LocalSocket( zmq::context_t& ctx_, zmq::socket_type type_ )
+    LocalSocket( zmq::conText& ctx_, zmq::socket_type type_ )
         : sock( ctx_, type_ ) {
         LOG_INFO( "local sock created, ctx=0x%lx, sock=0x%lx", ( intptr_t )&ctx_, ( intptr_t )&sock );
     }
@@ -63,7 +63,7 @@ struct LocalSocket {
     }
 
     bool connected = false;
-    // zmq::context_t context;
+    // zmq::conText context;
     zmq::socket_t sock;
 };
 
@@ -101,7 +101,7 @@ ReactorImpl::ReactorImpl() {
 }
 
 int ReactorImpl::init() {
-    _center_ctx = std::move( zmq::context_t( 2 ) );
+    _center_ctx = std::move( zmq::conText( 2 ) );
 
     auto mainloop = [ & ]() {
         zmq::socket_t xpub = zmq::socket_t( _center_ctx, zmq::socket_type::xpub );

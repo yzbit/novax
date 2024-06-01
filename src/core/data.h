@@ -40,28 +40,26 @@ SOFTWARE.
 #include "taskqueue.h"
 
 NVX_NS_BEGIN
-struct Aspect;
-struct Quant;
-struct IMarket;
 
-struct Data {
-    Data( IMarket* market_ );
-    ~Data();
+struct aspect;
+struct market;
+struct data {
+    data();
+    ~data();
 
-    void   update( const quotation_t& tick_ );
-    nvx_st start();
-    nvx_st stop();
-
-    Aspect* attach( const code_t& symbol_, const period_t& period_, int count_ );
-    nvx_st  attach( Aspect* a_ );
-    nvx_st  dettach( Aspect* a_ );
+    void    update( const tick& tick_ );
+    nvx_st  start();
+    nvx_st  stop();
+    nvx_st  attach( aspect* a_ );
+    nvx_st  dettach( aspect* a_ );
+    aspect* attach( const code& symbol_, const Period& period_, int count_ );
 
 private:
-    std::list<Aspect*> _aspects;
-    TaskQueue*         _jobs = nullptr;
+    std::list<aspect*> _aspects;
+    task_queue*        _jobs = nullptr;
 
 private:
-    IMarket* _market = nullptr;
+    market* _market = nullptr;
 };
 
 NVX_NS_END

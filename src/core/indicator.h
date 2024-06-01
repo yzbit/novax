@@ -32,27 +32,27 @@ SOFTWARE.
 
 NVX_NS_BEGIN
 
-struct IIndicator {
-    enum class IndiType {
+struct indicator {
+    enum class type {
         main,
         addi
     };
 
     virtual const char* name() const { return "indi##"; }
     virtual size_t      nvalue() { return 1; }
-    virtual IndiType    type() { return IndiType::main; }
+    virtual type        type() { return type::main; }
     virtual double      at( int track_, int index_ ) { return .0; }
 
-    virtual ~IIndicator() {}
+    virtual ~indicator() {}
 };
 
-struct IAlgo {
-    virtual void calc( const quotation_t& qut_, int total_bars_ ) = 0;
+struct algo {
+    virtual void calc( const tick& qut_, int total_bars_ ) = 0;
 
-    virtual ~IAlgo() {}
+    virtual ~algo() {}
 };
 
-// struct Ma:IAlogo, IIndicator
+// struct Ma:IAlogo, indicator
 NVX_NS_END
 
 #endif /* B4872862_3AFF_45FF_86DA_A0808D740978 */

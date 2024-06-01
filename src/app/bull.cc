@@ -38,7 +38,7 @@ SOFTWARE.
 */
 
 int main() {
-    // NVX_NS::IStrategy* s = new TestStrategy();
+    // NVX_NS::strategy* s = new TestStrategy();
 
     // return QUANT.execute( s );
     return 0;

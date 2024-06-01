@@ -31,7 +31,7 @@ SOFTWARE.
 #include "../core/series.h"
 
 int main() {
-    auto s = new cub::Series( 40 );
+    auto s = new cub::series( 40 );
     s->append( 3 );
     s->append( 5.0 );
     s->append( "aaaa" );

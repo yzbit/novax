@@ -34,34 +34,48 @@ SOFTWARE.
 #include "pub.h"
 NVX_NS_BEGIN
 
-struct ISubject {
-    ISubject( IPub* pub_ )
+struct subject {
+    subject( pub* pub_ )
         : _pub( pub_ ) {}
 
-    virtual ~ISubject() {}
+    virtual ~subject() {}
 
 protected:
     int post( const pub::msg_t& m_ );
 
 private:
-    IPub* _pub = nullptr;
+    pub* _pub = nullptr;
 };
 
-struct IBroker : ISubject {
-    IBroker( IPub* pub_ );
+struct broker : subject {
+    enum class Type {
+        ctp
+    };
 
-    virtual nvx_st start()                     = 0;
-    virtual nvx_st stop()                      = 0;
-    virtual nvx_st put( const order_t& o_ )    = 0;
-    virtual nvx_st cancel( const order_t& o_ ) = 0;
+    broker( pub* pub_ );
+    static broker* create( Type t_, pub* pub_ );
+
+    virtual nvx_st start()             = 0;
+    virtual nvx_st stop()              = 0;
+    virtual oid    put( const code& instrument_,
+                        vol         qty_,
+                        price       price_,
+                        otype       mode_,
+                        ord_dir     dir_ ) = 0;
+
+    virtual nvx_st cancel( const oid& id_ ) = 0;
 };
 
-struct IMarket : ISubject {
-    IMarket( IPub* pub_ );
-    virtual nvx_st start()                            = 0;
-    virtual nvx_st stop()                             = 0;
-    virtual nvx_st subscribe( const code_t& code_ )   = 0;
-    virtual nvx_st unsubscribe( const code_t& code_ ) = 0;
+struct market : subject {
+    enum class
+        static market*
+        create( Type t_, pub* pub_ );
+
+    market( pub* pub_ );
+    virtual nvx_st start()                          = 0;
+    virtual nvx_st stop()                           = 0;
+    virtual nvx_st subscribe( const code& code_ )   = 0;
+    virtual nvx_st unsubscribe( const code& code_ ) = 0;
 };
 
 NVX_NS_END

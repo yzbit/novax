@@ -35,33 +35,33 @@ SOFTWARE.
 
 NVX_NS_BEGIN
 
-struct Kline;
-struct Data;
-struct IIndicator;
-struct Aspect final {
-    Aspect( Data* data_ );
-    ~Aspect();
+struct kline;
+struct data;
+struct indicator;
+struct aspect final {
+    aspect( Data* data_ );
+    ~aspect();
 
-    void   update( const quotation_t& q_ );
-    nvx_st load( const code_t& code_, const period_t& p_, int count_ );
-    nvx_st addi( IIndicator* i_ );
+    void   update( const tick& q_ );
+    nvx_st load( const code& code_, const Period& p_, int count_ );
+    nvx_st addi( indicator* i_ );
 
-    const code_t& code() const;
-    Kline&        kline( kidx_t index_ = 0 );
-    bool          loaded() const;
+    const code& code() const;
+    kline&      kline( kidx index_ = 0 );
+    bool        loaded() const;
 
 private:
     void debug();
     struct prii_t {
-        int         p;
-        IIndicator* i;
+        int        p;
+        indicator* i;
     };
 
     std::vector<prii_t> _algos;
 
     int    _ref_prio = 1;
-    code_t _symbol   = "";
-    Kline* _k        = nullptr;
+    code   _symbol   = "";
+    kline* _k        = nullptr;
 
 private:
     Data* _data;
@@ -69,10 +69,10 @@ private:
 
 struct AspRepo {
     static AspRepo& instance();
-    Aspect*         add( const code_t& code_, const period_t& p_, int count_ );
+    aspect*         add( const code& code_, const Period& p_, int count_ );
 
 private:
-    using repo_t = std::vector<Aspect>;
+    using repo_t = std::vector<aspect>;
     repo_t _repo;
 };
 

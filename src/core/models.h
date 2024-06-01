@@ -41,47 +41,47 @@ enum class variety_t {
     bitcoin,
 };
 
-struct fund_t {
-    money_t    withdraw;    // 取款
-    money_t    cashin;      // 存钱
-    money_t    balance;     // 余额
-    money_t    prebalance;  // 上次结算余额
-    money_t    available;   // 可用资金
-    money_t    cprofit;     // 平仓利润
-    money_t    pprofit;     // 持仓利润
-    money_t    commission;
-    money_t    margin;
-    money_t    lever;
-    money_t    premargin;
-    money_t    predeposit;
-    money_t    precredit;
-    money_t    deposit;
-    datetime_t day;
+struct fund {
+    money    withdraw;    // 取款
+    money    cashin;      // 存钱
+    money    balance;     // 余额
+    money    prebalance;  // 上次结算余额
+    money    available;   // 可用资金
+    money    cprofit;     // 平仓利润
+    money    pprofit;     // 持仓利润
+    money    commission;
+    money    margin;
+    money    lever;
+    money    premargin;
+    money    predeposit;
+    money    precredit;
+    money    deposit;
+    datetime day;
 };
 
-struct candle_t {
-    id_t       id;
-    price_t    high;
-    price_t    low;
-    price_t    close;
-    price_t    open;
-    vol_t      volume;
-    vol_t      opi;  // opi
-    datetime_t time;
+struct candle {
+    id_t     id;
+    price    high;
+    price    low;
+    price    close;
+    price    open;
+    vol      volume;
+    vol      opi;  // opi
+    datetime time;
 
     // todo no need
-    // code_t     symbol;
+    // code     symbol;
 
-    price_t body() { return fabs( close - open ); }
-    price_t long_shadow() { return std::max( uppers(), lowers() ); }
-    price_t height() { return high - low; }
-    price_t bar_mid() { return ( high + low ) / 2; }
-    price_t body_mid() { return ( open + close ) / 2; }
-    price_t price() { return close; }
-    price_t uppers() { return high - body_up(); }
-    price_t lowers() { return body_low() - low; }
-    price_t body_up() { return std::max( close, open ); }
-    price_t body_low() { return std::min( close, open ); }
+    price body() { return fabs( close - open ); }
+    price long_shadow() { return std::max( uppers(), lowers() ); }
+    price height() { return high - low; }
+    price bar_mid() { return ( high + low ) / 2; }
+    price body_mid() { return ( open + close ) / 2; }
+    price price() { return close; }
+    price uppers() { return high - body_up(); }
+    price lowers() { return body_low() - low; }
+    price body_up() { return std::max( close, open ); }
+    price body_low() { return std::min( close, open ); }
 
     bool red() { return close > open; }
     bool white() { return red(); }
@@ -104,158 +104,146 @@ struct candle_t {
 #define PRICE_DEPTH 5
 
 // real time ticks
-struct quotation_t {
-    code_t     code;
-    int        ex;        // 交易所
-    vol_t      volume;    // 成交仓位
-    money_t    turnover;  // 成交额
-    vol_t      opi;
-    vol_t      bidvol;  // 没有深度数据
-    vol_t      askvol;
-    price_t    bid;
-    price_t    ask;
-    price_t    highest;
-    price_t    lowest;
-    price_t    avgprice;    // 均价
-    price_t    upperlimit;  // 涨跌停
-    price_t    lowerlimit;
-    price_t    last;  // 上次成交的价格
-    price_t    open;
-    price_t    close;
-    datetime_t time;
+struct tick {
+    code     code;
+    int      ex;        // 交易所
+    vol      volume;    // 成交仓位
+    money    turnover;  // 成交额
+    vol      opi;
+    vol      bidvol;  // 没有深度数据
+    vol      askvol;
+    price    bid;
+    price    ask;
+    price    highest;
+    price    lowest;
+    price    avgprice;    // 均价
+    price    upperlimit;  // 涨跌停
+    price    lowerlimit;
+    price    last;  // 上次成交的价格
+    price    open;
+    price    close;
+    datetime time;
 };
 
-struct order_t {
-    enum class dir_t {
-        none,
-        p_long,
-        p_short,
-        sell,
-        cover,
-    };
-
-    enum class type_t {
-        cond,    // 条件单-似乎有点复杂，tbd
-        fak,     // fill and kill,限价立即成交其余撤单
-        market,  // 市价成交
-        fok,     // fill or kill,限价立刻成交，否则撤单
-        wok,     // 限价等5秒，不能成交立即撤单,WAIT OR KILL==普通限价单
-        pursue,  // 限价不能成交就提高1个tick追赶5次，然后撤单==循环的FAK
-        fam,     // 立即成交，其余使用市价交易 = fak+market
-    };
-
-    enum class status_t {
-        // todo noneed, create          = 0x0001,
-        pending         = 0x0002,
-        partial         = 0x0004,
-        dealt           = 0x0008,
-        deleted         = 0x0010,
-        closed          = 0x0040,
-        cancelling      = 0x0080,
-        finished        = 0x0100,  // ctp 已成交和finish是两个状态，参照onrtntrade的函数说明
-        aborted         = 0x0200,  // 操作失败
-        cancelled       = deleted,
-        partial_dealed  = partial | dealt,
-        patial_deleted  = partial | deleted,
-        patial_canelled = patial_deleted,
-        error           = 0x0100
-    };
-
-    order_t() = default;
-    order_t( const code_t& c_,
-             const vol_t   v_,
-             const price_t p_,
-             const type_t& t_,
-             const dir_t&  d_ );
-
-    oid_t      id       = kBadId;       //! 订单id
-    code_t     code     = "";           //! 代码，RB1910
-    ex_t       ex       = "";           //! 交易所，SHEX
-    dir_t      dir      = dir_t::none;  //! 方向，买、卖、平
-    price_t    price    = .0;           //! 期望成交价格，已成交价格
-    price_t    tp_price = .0;           //! 止盈价格
-    price_t    sl_price = .0;           //! 止损价格
-    vol_t      qty      = .0;           //! 期望成交数量, 已成交数量
-    vol_t      traded   = .0;           //! 已经成交
-    status_t   status   = status_t::pending;
-    type_t     mode     = type_t::market;
-    bool       today    = true;               //! 今仓，昨仓
-    datetime_t datetime = datetime_t::now();  //! 成交或者下单的时间、日期
-    string_t   remark   = "#";                //! 如果会非常频繁的创建和拷贝订单，这里最好是用数组--string的实现必须健壮,考虑到各种可能的诡异操作~
+enum class ord_dir {
+    none,
+    p_long,
+    p_short,
+    sell,
+    cover,
 };
 
-using odir_t    = order_t::dir_t;
-using otype_t   = order_t::type_t;
-using ostatus_t = order_t::status_t;
-
-struct order_update_t {
-    oid_t     id;
-    vol_t     qty;
-    price_t   price;
-    odir_t    dir;
-    ostatus_t status;
+enum class otype {
+    limit,
+    stop,
+    cond,    // 条件单-似乎有点复杂，tbd
+    fak,     // fill and kill,限价立即成交其余撤单
+    market,  // 市价成交
+    fok,     // fill or kill,限价立刻成交，否则撤单
+    wok,     // 限价等5秒，不能成交立即撤单,WAIT OR KILL==普通限价单
+    pursue,  // 限价不能成交就提高1个tick追赶5次，然后撤单==循环的FAK
+    fam,     // 立即成交，其余使用市价交易 = fak+market
 };
 
-struct pos_item_t {
-    code_t  symbol;
-    price_t price;
-    price_t last_price;
-    money_t profit;
-    money_t close_profit;
-    money_t value;
-    vol_t   qty;
-    odir_t  dir;
-
-    datetime_t update_time;
+enum class ostatus {
+    // todo noneed, create          = 0x0001,
+    pending         = 0x0002,
+    partial         = 0x0004,
+    dealt           = 0x0008,
+    deleted         = 0x0010,
+    closed          = 0x0040,
+    cancelling      = 0x0080,
+    finished        = 0x0100,  // ctp 已成交和finish是两个状态，参照onrtntrade的函数说明
+    aborted         = 0x0200,  // 操作失败
+    cancelled       = deleted,
+    partial_dealed  = partial | dealt,
+    patial_deleted  = partial | deleted,
+    patial_canelled = patial_deleted,
+    error           = 0x0100
 };
 
-struct performance_t {
-    int     records;  // 交易多少次
-    money_t profit;   // 总利润盈利多少
-    money_t commission;
+struct order {
+    oid      id       = NVX_BAD_OID;  //! 订单id
+    code     code     = "";           //! 代码，RB1910
+    Ex       ex       = "";           //! 交易所，SHEX
+    price    price    = .0;           //! 期望成交价格，已成交价格
+    price    tp_price = .0;           //! 止盈价格
+    price    sl_price = .0;           //! 止损价格
+    vol      qty      = .0;           //! 期望成交数量, 已成交数量
+    vol      traded   = .0;           //! 已经成交
+    ord_dir  dir      = dir_t::none;  //! 方向，买、卖、平
+    ostatus  status   = ostatus::pending;
+    otype    mode     = type_t::market;
+    bool     today    = true;             //! 今仓，昨仓
+    datetime datetime = datetime::now();  //! 成交或者下单的时间、日期
+    xstring  remark   = "#";              //! 如果会非常频繁的创建和拷贝订单，这里最好是用数组--string的实现必须健壮,考虑到各种可能的诡异操作~
+};
 
-    int     long_n;
-    money_t long_profit;
-    money_t long_loss;
+struct order_update {
+    oid     id;
+    vol     qty;
+    price   price;
+    ord_dir dir;
+    ostatus status;
+};
+
+struct PosItem {
+    code    symbol;
+    price   price;
+    price   last_price;
+    money   profit;
+    money   close_profit;
+    money   value;
+    vol     qty;
+    ord_dir dir;
+
+    datetime update_time;
+};
+
+struct Performance {
+    int   records;  // 交易多少次
+    money profit;   // 总利润盈利多少
+    money commission;
+
+    int   long_n;
+    money long_profit;
+    money long_loss;
 
     int    short_n;
     double short_profit;
     double short_loss;
 
-    float   win_rate;
-    float   profit_rate;
-    money_t avg_pftlss;  // proft/lss
-    money_t avg_pft;
-    money_t avg_lss;
+    float win_rate;
+    float profit_rate;
+    money avg_pftlss;  // proft/lss
+    money avg_pft;
+    money avg_lss;
 
-    money_t max_loss;
-    money_t max_profit;
-    int     profit_n;  // 亏损次数
-    int     loss_n;    // 盈利次数
+    money max_loss;
+    money max_profit;
+    int   profit_n;  // 亏损次数
+    int   loss_n;    // 盈利次数
 
-    array_t<money_t> profits;  // 每次有平仓都记录一下利润，用于画曲线
+    array_t<money> profits;  // 每次有平仓都记录一下利润，用于画曲线
 };
 
-struct margin_rate_t {
-    string_t broker;
-    string_t investor;
-    code_t   instrument;
-    ex_t     ex;
-    char     investor_range;   // ctp 投资者范围
-    bool     is_relative;      // 是否相对交易所收取
-    bool     hedge;            // 投机套保标志
-    float    long_by_money;    /// 多头保证金率
-    float    long_by_volume;   // 多头保证金费
-    float    short_by_money;   /// 空头保证金率
-    float    short_by_volume;  // 空头保证金费;
+struct MarginRate {
+    xstring broker;
+    xstring investor;
+    code    instrument;
+    ex_t    ex;
+    char    investor_range;   // ctp 投资者范围
+    bool    is_relative;      // 是否相对交易所收取
+    bool    hedge;            // 投机套保标志
+    float   long_by_money;    /// 多头保证金率
+    float   long_by_volume;   // 多头保证金费
+    float   short_by_money;   /// 空头保证金率
+    float   short_by_volume;  // 空头保证金费;
 };
 
 //---inlines
-inline order_t::order_t( const code_t& c_,
-                         const vol_t   v_,
-                         const price_t p_,
-                         const type_t& t_,
-                         const dir_t&  d_ ) {
+inline order::order( oid id_, const code& c_, const vol v_, const price p_, const type_t& t_, const dir_t& d_ ) {
+    id    = id_;
     code  = c_;
     qty   = v_;
     price = p_;

@@ -27,13 +27,13 @@ SOFTWARE.
 
 #include <novax.h>
 
-struct TestStrategy : NVX_NS::IStrategy {
+struct TestStrategy : NVX_NS::strategy {
     NVX_NS::nvx_st init() override {
         // QUANT.data()->market()->subscribe( "rb2410" );
         return NVX_NS::NVX_OK;
     }
 
-    NVX_NS::nvx_st invoke( NVX_NS::IStrategy::notify_t n_, NVX_NS::IContext* c_ ) override {
+    NVX_NS::nvx_st invoke( NVX_NS::strategy::notify_t n_, NVX_NS::context* c_ ) override {
         return NVX_NS::NVX_OK;
     }
 };

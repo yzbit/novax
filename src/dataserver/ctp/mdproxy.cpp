@@ -71,6 +71,60 @@ nvx_st mdex::subscribe( const code& code_ ) {
     return NVX_OK;
 }
 
+nvx_st mdex::unsubscribe( const code& code_ ) {
+    std::unique_lock<std::mutex> lock{ _sub_mtx };
+
+    LOG_TAGGED( "ctp",
+                "UNsubscribe svc=%d, code=%s, pending sub=%d pending_unsub=%d",
+                _is_svc_online,
+                code_.c_str(),
+                ( int )_sub_symbols.size(),
+                ( int )_unsub_symbols.size() );
+
+    if ( _sub_symbols.count( code_ ) == 0 ) return NVX_OK;
+
+    _sub_symbols.erase( code_ );
+    _unsub_symbols.insert( code_ );
+
+    if ( _is_svc_online ) {
+        unsub( const_cast<code&>( code_ ) );
+    }
+
+    return NVX_OK;
+}
+
+nvx_st mdex::sub() {
+    CTP_CHECK_READY( NVX_FAIL );
+
+    if ( _sub_symbols.empty() )
+        return NVX_OK;
+
+    auto arr = set2arr( _sub_symbols );
+
+    return _api->SubscribeMarketData( arr.get(), _sub_symbols.size() );
+}
+
+nvx_st mdex::unsub() {
+    CTP_CHECK_READY( NVX_FAIL );
+
+    if ( _sub_symbols.empty() ) return NVX_OK;
+
+    auto arr = set2arr( _sub_symbols );
+    return _api->UnSubscribeMarketData( arr.get(), _unsub_symbols.size() );
+}
+
+std::unique_ptr<char*[]> mdex::set2arr( std::set<code>& s ) {
+    auto arr = std::make_unique<char*[]>( _sub_symbols.size() );
+    int  n   = 0;
+
+    for ( auto& s : s ) {
+        arr[ n++ ] = s.c_str();
+        // fprintf( stderr, "#### %s\n", arr[ n - 1 ] );
+    }
+
+    return arr;
+}
+
 nvx_st mdex::sub( code& code_ ) {
     CTP_CHECK_READY( NVX_FAIL );
 
@@ -81,16 +135,8 @@ nvx_st mdex::sub( code& code_ ) {
 nvx_st mdex::unsub( code& code_ ) {
     CTP_CHECK_READY( NVX_FAIL );
 
-    char* c  = code_.c_str();
-    auto  rc = _api->UnSubscribeMarketData( &c, 1 );
-
-    if ( 0 == rc ) {
-        LOG_INFO( "subscribe code [%s] sent", code_.c_str() )
-        return NVX_OK;
-    }
-
-    LOG_INFO( "subscribe code [%s] failed", code_.c_str() )
-    return rc;
+    char* c = code_.c_str();
+    return _api->UnSubscribeMarketData( &c, 1 );
 }
 
 id_t mdex::session_id() {

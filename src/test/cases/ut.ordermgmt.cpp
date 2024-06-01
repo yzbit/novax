@@ -57,9 +57,9 @@ SOFTWARE.
 }
 */
 
-struct FakeBroker : NVX_NS::IBroker {
+struct FakeBroker : NVX_NS::broker {
     FakeBroker( NVX_NS::ITrader* t )
-        : IBroker( t ) {}
+        : broker( t ) {}
 #if 0
     int start() override {
         return 0;
@@ -68,19 +68,19 @@ struct FakeBroker : NVX_NS::IBroker {
     int stop() {
         retturn 0;
     }
-    virtual int put( const order_t& o_ )    = 0;
-    virtual int cancel( const order_t& o_ ) = 0;
+    virtual int put( const order& o_ )    = 0;
+    virtual int cancel( const order& o_ ) = 0;
 #endif
 
     // MOCK_METHOD( int, start, (), ( override ) );
     MOCK_METHOD0( start, int() );
     MOCK_METHOD0( stop, int() );
-    MOCK_METHOD1( put, int( const NVX_NS::order_t& ) );
-    MOCK_METHOD1( cancel, int( const NVX_NS::order_t& ) );
+    MOCK_METHOD1( put, int( const NVX_NS::order& ) );
+    MOCK_METHOD1( cancel, int( const NVX_NS::order& ) );
 };
 
 TEST( Mgmt, simpleput ) {
-    NVX_NS::OrderMgmt m;
+    NVX_NS::order_mgmt m;
     FakeBroker        fb( &m );
 
     EXPECT_CALL( fb, start() ).WillOnce( testing::Return( 0 ) );
@@ -91,7 +91,7 @@ TEST( Mgmt, simpleput ) {
     auto rc = m.start();
     rc      = m.stop();
 
-    NVX_NS::order_t o;
+    NVX_NS::order o;
 
     o.id = m.buylong( "rb2410", 1 );
 
@@ -101,43 +101,43 @@ TEST( Mgmt, simpleput ) {
 }
 
 TEST( Mgmt, putfail ) {
-    NVX_NS::OrderMgmt m;
+    NVX_NS::order_mgmt m;
     FakeBroker        fb( &m );
 
     EXPECT_CALL( fb, put( testing::_ ) ).Times( 1 ).WillRepeatedly( testing::Return( -1 ) );
 
     auto id = m.buylong( "rb2410", 1 );
-    ASSERT_EQ( id, NVX_NS::kBadId );
+    ASSERT_EQ( id, NVX_NS::NVX_BAD_OID );
 }
 
 /// -------------------------------------------------
-struct SimBroker : NVX_NS::IBroker {
+struct SimBroker : NVX_NS::broker {
     SimBroker( NVX_NS::ITrader* t )
-        : NVX_NS::IBroker( t ) {}
+        : NVX_NS::broker( t ) {}
 
     int start() override { return 0; }
     int stop() override { return 0; }
-    int put( const NVX_NS::order_t& o_ ) override {
+    int put( const NVX_NS::order& o_ ) override {
         delegator()->update_ord( o_.id, NVX_NS::ostatus_t::cancelled );
         return 0;
     }
 
-    int cancel( const NVX_NS::order_t& o_ ) override {
+    int cancel( const NVX_NS::order& o_ ) override {
         return 0;
     }
 
-    void update( NVX_NS::oid_t id, int flag ) {
+    void update( NVX_NS::oid id, int flag ) {
         // delegator()->update_ord( o_ );
     }
 };
 
 TEST( Mgmt, position ) {
-    NVX_NS::OrderMgmt m;
+    NVX_NS::order_mgmt m;
 
     SimBroker fb( &m );
 
     auto id = m.buylong( "rb2410", 1 );
-    ASSERT_EQ( id, NVX_NS::kBadId );
+    ASSERT_EQ( id, NVX_NS::NVX_BAD_OID );
 
     fb.update( 0, 0 );
 }

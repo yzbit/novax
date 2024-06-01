@@ -3,20 +3,20 @@
 #include <type_traits>
 
 template <typename T, typename = std::enable_if_t<std::is_array_v<T>>>
-struct Encaps {
+struct encpas {
     enum { LENGTH = sizeof( T ) };
 
-    Encaps() = default;
-    Encaps( const T& ex_ ) {
+    encpas() = default;
+    encpas( const T& ex_ ) {
         memcpy( _data, &ex_, LENGTH );
         _data[ LENGTH ] = 0;
     }
 
-    bool operator==( const Encaps& r_ ) {
+    bool operator==( const encpas& r_ ) {
         return ( this == &r_ ) || ( 0 == memcmp( _data, r_._data, LENGTH ) );
     }
 
-    bool operator!=( const Encaps& r_ ) {
+    bool operator!=( const encpas& r_ ) {
         return ( this != &r_ ) && ( 0 != memcmp( _data, r_._data, LENGTH ) );
     }
 
@@ -28,16 +28,16 @@ struct Encaps {
         return 0 != memcmp( _data, r_, LENGTH );
     }
 
-    Encaps& operator=( const Encaps& r_ ) {
+    encpas& operator=( const encpas& r_ ) {
         if ( this == &r_ ) return *this;
 
         memcpy( _data, r_._data, sizeof( _data ) );
         return *this;
     }
 
-    Encaps& operator=( const T& r_ ) {
-        memcpy( _data, r_, Encaps<T>::LENGTH );
-        _data[ Encaps<T>::LENGTH ] = 0;
+    encpas& operator=( const T& r_ ) {
+        memcpy( _data, r_, encpas<T>::LENGTH );
+        _data[ encpas<T>::LENGTH ] = 0;
 
         return *this;
     }
@@ -51,10 +51,10 @@ protected:
 };
 using atype = char[ 10 ];
 
-struct ref_t : Encaps<atype> {
-    ref_t( const atype& t_ )
-        : Encaps( t_ ) {}
-    ref_t() = default;
+struct ordref : encpas<atype> {
+    ordref( const atype& t_ )
+        : encpas( t_ ) {}
+    ordref() = default;
 };
 
 int main() {
@@ -62,9 +62,9 @@ int main() {
     strcpy( a, "aaa" );
     strcpy( b, "bbb" );
 
-    ref_t r( a );
-    ref_t r0( b );
-    ref_t r1;
+    ordref r( a );
+    ordref r0( b );
+    ordref r1;
 
     r = r0;
 

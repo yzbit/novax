@@ -60,23 +60,23 @@ namespace js = rapidjson;
 #define CTP_COPY_SAFE( _field_, _str_ ) memcpy( _field_, _str_, std::min( ( int )strlen( _str_ ), ( int )sizeof( _field_ ) - 1 ) )
 
 struct cert_t {
-    string_t auth;
-    string_t appid;
-    string_t token;
+    xstring auth;
+    xstring appid;
+    xstring token;
 };
 
 struct investor_t {
-    string_t broker;
-    string_t name;
-    string_t password;
-    string_t id;
+    xstring broker;
+    xstring name;
+    xstring password;
+    xstring id;
 };
 
-struct setting_t {
-    std::vector<string_t> frontend;
-    string_t              flow_path; /* 根据ctp手册，默认值“”表示当前目录*/
-    investor_t            i;
-    cert_t                c;
+struct setting {
+    std::vector<xstring> frontend;
+    xstring              flow_path; /* 根据ctp手册，默认值“”表示当前目录*/
+    investor_t           i;
+    cert_t               c;
 
     int load( const char* file_ );
 };
@@ -138,7 +138,7 @@ inline int cvt_ex( const TThostFtdcExchangeIDType& exid_ ) {
     return -1;
 }
 
-inline int setting_t::load( const char* file_ ) {
+inline int setting::load( const char* file_ ) {
     std::ifstream json( file_, std::ios::in );
 
     if ( !json.is_open() ) {

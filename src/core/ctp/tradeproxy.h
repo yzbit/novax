@@ -45,14 +45,14 @@ NVX_NS_BEGIN
 
 namespace ctp {
 
-struct CtpTrader : IBroker, CThostFtdcTraderSpi {
-    CtpTrader( IPub* tr_ );
+struct trader : broker, CThostFtdcTraderSpi {
+    trader( pub* tr_, int id_start_ref_ );
 
 protected:
     nvx_st start() override;
     nvx_st stop() override;
-    nvx_st put( const order_t& o_ ) override;
-    nvx_st cancel( const order_t& o_ ) override;
+    nvx_st cancel( const oid& id_ ) = 0;
+    oid    put( const code& instrument_, vol qty_, price price_, otype mode_, ord_dir dir_ ) override;
 
 private:
     nvx_st login();
@@ -64,22 +64,25 @@ private:
     nvx_st qry_marginrate();
     nvx_st qry_commission();
     nvx_st qry_position();
+    nvx_st qry_instruments();
 
 private:
-    odir_t cvt_direction( const TThostFtdcDirectionType& di_, const TThostFtdcCombOffsetFlagType& comb_ );
-    odir_t cvt_direction( const TThostFtdcDirectionType& di_, const TThostFtdcOffsetFlagType& comb_ );
+    ord_dir cvt_direction( const TThostFtdcDirectionType& di_, const TThostFtdcCombOffsetFlagType& comb_ );
+    ord_dir cvt_direction( const TThostFtdcDirectionType& di_, const TThostFtdcOffsetFlagType& comb_ );
 
 private:
     CThostFtdcTraderApi* _api;
 
 private:
-    void reconnected( const sess_t& s_, const ref_t& max_ref_ );
+    void reconnected( const session& s_, const ordref& max_ref_ );
+    bool settled() { return _settled; }
 
 private:
-    setting_t _settings;
-    sess_t    _ss;
-    ref_t     _last_ref;
-    IdMgr     _id;
+    setting _settings;
+    session _ss;
+    ordref  _last_ref;
+    id_mgr  _id;
+    bool    _settled = false;  // 是否是必须查询settlement之后才可以下单?--感觉应该是不必要的
 
 private:
     void OnRtnBulletin( CThostFtdcBulletinField* pBulletin ) override;                                                                                                                     /// 交易所公告通知

@@ -109,10 +109,10 @@ private:
 
 #include <string>
 #include <vector>
-using stringlist_t = std::vector<std::string>;
+using string_list = std::vector<std::string>;
 #define DECLARE_ARG_NAMES( ... )                \
-    stringlist_t& arg_names() {                 \
-        static stringlist_t __v{ __VA_ARGS__ }; \
+    string_list& arg_names() {                 \
+        static string_list __v{ __VA_ARGS__ }; \
         return __v;                             \
     }
 

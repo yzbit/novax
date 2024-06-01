@@ -29,6 +29,6 @@ SOFTWARE.
 #include <novax.h>
 #include <stdio.h>
 
-TEST( Kline, Init ) {
+TEST( kline, Init ) {
     
 }

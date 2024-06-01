@@ -33,23 +33,23 @@ SOFTWARE.
 
 NVX_NS_BEGIN
 
-int ISubject::post( const pub::msg_t& m_ ) {
+int subject::post( const pub::msg_t& m_ ) {
     return _pub ? _pub->post( m_ ) : -1;
 }
 
-IBroker::IBroker( IPub* pub_ )
-    : ISubject( pub_ ){};
+broker::broker( pub* pub_ )
+    : subject( pub_ ){};
 
-IMarket::IMarket( IPub* pub_ )
-    : ISubject( pub_ ) {
+market::market( pub* pub_ )
+    : subject( pub_ ) {
 }
 
-IMarket* create_market( IPub* p_ ) {
-    return new DcClient( p_ );
+market* create_market( pub* p_ ) {
+    return new dc_client( p_ );
 }
 
-IBroker* create_broker( IPub* p_ ) {
-    return new ctp::CtpTrader( p_ );
+broker* create_broker( pub* p_ ) {
+    return new ctp::trader( p_ );
 }
 
 NVX_NS_END

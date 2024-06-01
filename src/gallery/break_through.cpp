@@ -31,13 +31,13 @@ SOFTWARE.
 #include "context.h"
 
 void BreakTh::on_init( Context* c_ ) {
-    if ( !c_->load( _code, { period_t::type_t::hour, 2 }, 30 ) ) {
-        LOG_INFO( "load code failed: code=%s,period={%d %d}, count=%d", _code, ( int )period_t::type_t::hour, 2, 30 );
+    if ( !c_->load( _code, { Period::type_t::hour, 2 }, 30 ) ) {
+        LOG_INFO( "load code failed: code=%s,period={%d %d}, count=%d", _code, ( int )Period::type_t::hour, 2, 30 );
         return;
     }
 }
 
-void BreakTh::on_ck( const quotation_t& ) {
+void BreakTh::on_ck( const tick& ) {
 }
 
 #define DELAY_TRADING ( 20 * 60 )  // 20MIN
@@ -55,7 +55,7 @@ void BreakTh::on_invoke( Context* c_ ) {
 
     if ( c.position() == 0 ) {
         if ( c.bar().close() < c.kline().llv( 10, pricetype_t::close ) && t > 15 * 60 ) {  // 开盘15分钟后
-            oid_t id = c.pshort( _code, 1, c.bar().close, otype_t::market );
+            oid id = c.pshort( _code, 1, c.bar().close, otype::market );
 
             if ( id == 0 ) {
                 LOG_INFO( "sell short failed" );
@@ -63,7 +63,7 @@ void BreakTh::on_invoke( Context* c_ ) {
             }
         }
         else if ( c.bar().close() > c.kline().hhv( 10, pricetype_t::close ) && t > 15 * 60 ) {
-            oid_t id = c.plong( _code, 1, c.bar().close, otype_t::market );
+            oid id = c.plong( _code, 1, c.bar().close, otype::market );
 
             if ( id == 0 ) {
                 LOG_INFO( "sell short failed" );

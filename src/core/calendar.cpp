@@ -36,19 +36,19 @@ SOFTWARE.
 
 NVX_NS_BEGIN
 
-Calendar::Calendar() {
-    _year = datetime_t::now().d.year;
+calendar::calendar() {
+    _year = datetime::now().d.year;
 }
 
-bool Calendar::is_trade_day() {
-    return is_trade_day( datetime_t().now().d );
+bool calendar::is_trade_day() {
+    return is_trade_day( datetime().now().d );
 }
 
-datespec_t Calendar::previous_day( const datetime_t& dt_ ) {
-    return datetime_t().from_unix_time( dt_.to_unix_time() - 1 * 24 * 60 * 60 ).d;
+datespec calendar::previous_day( const datetime& dt_ ) {
+    return datetime().from_unix_time( dt_.to_unix_time() - 1 * 24 * 60 * 60 ).d;
 }
 
-bool Calendar::is_trade_day( const datespec_t& date_ ) {
+bool calendar::is_trade_day( const datespec& date_ ) {
     if ( is_weekend( date_ ) ) return false;
 
     // todo: check if _holiday is empty
@@ -60,7 +60,7 @@ bool Calendar::is_trade_day( const datespec_t& date_ ) {
 }
 
 // 注意：只看trade_day和trade_time不能判断是否交易时间，比如周一凌晨1点day和time都true但不是交易时间，因为这边day和time分开判断的
-bool Calendar::is_trade_time( const code_t& c_, const timespec_t& time_ ) {
+bool calendar::is_trade_time( const code& c_, const timespec& time_ ) {
     // todo: check if _sessions is empty
 
     // compare time_ with _sessions
@@ -82,12 +82,12 @@ bool Calendar::is_trade_time( const code_t& c_, const timespec_t& time_ ) {
     return false;
 }
 
-void Calendar::parse_year( const CalSheet& sh_ ) {
+void calendar::parse_year( const cal_sheet& sh_ ) {
     _year = sh_.HasMember( "year" ) ? sh_[ "year" ].GetInt() : _year;
     LOG_TAGGED( "cal", "get year from calendar: %d", _year );
 }
 
-void Calendar::parse_hol( const CalSheet& sh_ ) {
+void calendar::parse_hol( const cal_sheet& sh_ ) {
     if ( !sh_.HasMember( "holidays" ) ) {
         LOG_TAGGED( "cal", "no holiday defined" );
         return;
@@ -107,7 +107,7 @@ void Calendar::parse_hol( const CalSheet& sh_ ) {
     }
 }
 
-void Calendar::parse_sess( const CalSheet& sh_ ) {
+void calendar::parse_sess( const cal_sheet& sh_ ) {
     if ( !sh_.HasMember( "sessions" ) ) {
         LOG_TAGGED( "cal", "no sessions defined" );
         return;
@@ -164,9 +164,9 @@ void Calendar::parse_sess( const CalSheet& sh_ ) {
     }
 }
 
-nvx_st Calendar::load_schedule( const char* cal_file_ ) {
+nvx_st calendar::load_schedule( const char* cal_file_ ) {
     if ( cal_file_ == nullptr )
-        return NVX_Fail;
+        return NVX_FAIL;
 
     std::ifstream ifs( cal_file_ );
     if ( !ifs.is_open() ) {
@@ -190,21 +190,21 @@ nvx_st Calendar::load_schedule( const char* cal_file_ ) {
     return NVX_OK;
 }
 
-bool Calendar::is_weekend( const datespec_t& d_ ) {
+bool calendar::is_weekend( const datespec& d_ ) {
     int wday = d_.wday;
 
     return wday == 0 || wday == 6;
 }
 
-bool Calendar::is_trade_datetime( const code_t& c_ ) {
-    return is_trade_datetime( c_, datetime_t().now() );
+bool calendar::is_trade_datetime( const code& c_ ) {
+    return is_trade_datetime( c_, datetime().now() );
 }
 
-bool Calendar::is_leap_year( int year_ ) {
+bool calendar::is_leap_year( int year_ ) {
     return ( 0 == year_ % 100 && 0 == year_ % 400 ) || ( 0 != year_ % 100 && 0 == year_ % 4 );
 }
 
-int Calendar::month_days( int y_, int m_ ) {
+int calendar::month_days( int y_, int m_ ) {
     if ( 1 == m_ || 3 == m_ || 5 == m_ || 7 == m_ || 8 == m_ || 10 == m_ || 12 == m_ )
         return 31;
     else if ( 4 == m_ || 6 == m_ || 9 == m_ || 11 == m_ )
@@ -213,10 +213,10 @@ int Calendar::month_days( int y_, int m_ ) {
         return is_leap_year( y_ ) ? 29 : 38;
 }
 
-bool Calendar::is_trade_datetime( const code_t& c_, const datetime_t& dt_ ) {
+bool calendar::is_trade_datetime( const code& c_, const datetime& dt_ ) {
     int hour = dt_.t.hour;
 
-    datetime_t dt = datetime_t().from_unix_time( dt_.to_unix_time() );
+    datetime dt = datetime().from_unix_time( dt_.to_unix_time() );
 
     if ( hour < 4 ) {
         dt.d = previous_day( dt_ );

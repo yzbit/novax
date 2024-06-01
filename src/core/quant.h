@@ -34,20 +34,16 @@ SOFTWARE.
 
 NVX_NS_BEGIN
 
-struct IStrategy;
-struct IData;
-struct ITrader;
-struct Context;
-struct Clock;
-
-struct Quant {
-    static Quant& instance();
-    virtual ~Quant() {}
-    virtual nvx_st execute( IStrategy* s_ ) = 0;
+struct strategy;
+struct quant {
+    static quant& instance();
+    virtual ~quant() {}
+    virtual clock* clock()                 = 0;  //?
+    virtual nvx_st execute( strategy* s_ ) = 0;
 };
 
 NVX_NS_END
 
-#define QUANT NVX_NS::Quant::instance()
+#define Q NVX_NS::quant::instance()
 
 #endif /* C4704959_F4BE_4EAA_9C19_9CD09E83DA7D */

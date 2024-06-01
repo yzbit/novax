@@ -34,19 +34,19 @@ SOFTWARE.
 #include "ns.h"
 
 NVX_NS_BEGIN
-struct DbAgent {
+struct db_agent {
     enum class dbtype_t {
         SQLite,
         MySQL
     };
 
     struct param_t {
-        string_t server = "";
-        string_t dbname = "";
-        string_t user   = "";
-        string_t pwd    = "";
-        bool     create = true;
-        void*    data   = nullptr;
+        xstring server = "";
+        xstring dbname = "";
+        xstring user   = "";
+        xstring pwd    = "";
+        bool    create = true;
+        void*   data   = nullptr;
     };
 
     using dbcallback_t = std::function<int( void* usrdata, int colcnt, char** colvalue, char** colname )>;
@@ -54,23 +54,23 @@ struct DbAgent {
     using conn_t = void*;
     using id_t   = int64_t;
 
-    static DbAgent* create( dbtype_t dt_ );
+    static db_agent* create( dbtype_t dt_ );
 
     virtual conn_t open( const char* url_, const char* usr_, const char* pwd_, const char* dbname_ = nullptr, bool create_ = true, void* param_ = nullptr ) = 0;
     virtual conn_t open( param_t& p_ );
     virtual conn_t conn() { return _conn; }
     virtual nvx_st close() = 0;
     virtual bool   is_open() const;
-    virtual nvx_st transaction() { return NVX_Fail; }
-    virtual nvx_st commit() { return NVX_Fail; }
-    virtual nvx_st rollback() { return NVX_Fail; }
-    virtual nvx_st execute( const string_t& clause_ ) = 0;
-    virtual id_t   last_key( const char* table_ )     = 0;
-    virtual nvx_st fetch( const string_t& clause_, dbcallback_t cb_, void* p1 = nullptr, void* p2 = nullptr ) { return NVX_Fail; };
+    virtual nvx_st transaction() { return NVX_FAIL; }
+    virtual nvx_st commit() { return NVX_FAIL; }
+    virtual nvx_st rollback() { return NVX_FAIL; }
+    virtual nvx_st execute( const xstring& clause_ ) = 0;
+    virtual id_t   last_key( const char* table_ )    = 0;
+    virtual nvx_st fetch( const xstring& clause_, dbcallback_t cb_, void* p1 = nullptr, void* p2 = nullptr ) { return NVX_FAIL; };
 
 protected:
-    DbAgent();
-    virtual ~DbAgent();
+    db_agent();
+    virtual ~db_agent();
 
 protected:
     conn_t _conn = nullptr;

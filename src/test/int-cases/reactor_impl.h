@@ -61,7 +61,7 @@ private:
     void filter_from_id( FilterToken& filter_, const msg::mid_t& ids_ );
 
 private:
-    zmq::context_t _center_ctx;
+    zmq::conText _center_ctx;
 };
 
 NVX_NS_END

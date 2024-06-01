@@ -33,32 +33,32 @@ SOFTWARE.
 #define BAR_TRACK 0
 NVX_NS_BEGIN
 
-Kline::Kline( const code_t& code_, const period_t& p_, size_t series_count_ )
+kline::kline( const code& code_, const Period& p_, size_t series_count_ )
     : _symbol( code_ )
     , _period( p_ )
     , _bars( new BarSeries( series_count_ ) ) {
 }
 
-candle_t& Kline::bar( int index_ ) {
+candle_t& kline::bar( int index_ ) {
     return _bars->get( index_ );
 }
 
-period_t Kline::period() const {
+Period kline::period() const {
     return _period;
 }
 
-const code_t& Kline::symbol() const {
+const code& kline::symbol() const {
     return _symbol;
 }
 
-const quotation_t& Kline::qut() const {
+const tick& kline::qut() const {
     return _qut;
 }
 
 //--period如果是天，当然是以每天的开盘价作为上一个x线的结束
 //--以小时为单位，则必然是以开盘+n小时作为结果，而且以天为单位
 //--暂且不处理超过日的周期
-bool Kline::is_new_bar( const quotation_t& q_ ) {
+bool kline::is_new_bar( const tick& q_ ) {
 #if 0  // todo
     uint32_t p     = _period;
     uint32_t shift = CLOCK_OF( q_.ex ).open_shift();
@@ -103,7 +103,7 @@ TradingDay,InstrumentID,...,UpdateTime,UpdateMillisec...
 我们可以提供两种模式，一种按照自然日来分割，日内按照K线周期来分，最后不足一个周期就算了; 第二按照每根k线足够的周期来生成
 考虑到开盘价很重要，这么做可能意义不是很大
 */
-void Kline::calc( const quotation_t& q_, int total_ ) {
+void kline::calc( const tick& q_, int total_ ) {
     _qut = q_;
 
     // auto r = recent();

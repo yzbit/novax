@@ -39,36 +39,36 @@ SOFTWARE.
 
 NVX_NS_BEGIN
 
-struct Calendar {
+struct canlendar {
     nvx_st load_schedule( const char* cal_file_ );
     bool   is_trade_day();
-    bool   is_trade_day( const datespec_t& date_ );
-    bool   is_trade_time( const code_t& c_, const timespec_t& time_ );
-    bool   is_weekend( const datespec_t& d_ );
-    bool   is_trade_datetime( const code_t& c_ );
-    bool   is_trade_datetime( const code_t& c_, const datetime_t& dt_ );
+    bool   is_trade_day( const datespec& date_ );
+    bool   is_trade_time( const code& c_, const timespec& time_ );
+    bool   is_weekend( const datespec& d_ );
+    bool   is_trade_datetime( const code& c_ );
+    bool   is_trade_datetime( const code& c_, const datetime& dt_ );
 
-    Calendar();
-
-private:
-    datespec_t previous_day( const datetime_t& dt_ );
-    bool       is_leap_year( int year_ );
-    int        month_days( int y_, int m_ );
+    calendar();
 
 private:
-    using CalSheet = rapidjson::Document;
-    void parse_year( const CalSheet& sh_ );
-    void parse_hol( const CalSheet& sh_ );
-    void parse_sess( const CalSheet& sh_ );
+    datespec previous_day( const datetime& dt_ );
+    bool     is_leap_year( int year_ );
+    int      month_days( int y_, int m_ );
+
+private:
+    using cal_sheet = rapidjson::Document;
+    void parse_year( const cal_sheet& sh_ );
+    void parse_hol( const cal_sheet& sh_ );
+    void parse_sess( const cal_sheet& sh_ );
 
 private:
     static constexpr int kMaxSessCnt = 10;
 
-    struct sess_t {
+    struct session {
         int start, end;
     };
 
-    using InsSession  = std::vector<sess_t>;
+    using InsSession  = std::vector<session>;
     using SessionRepo = std::map<ins_t, InsSession>;
 
     using Holiday     = std::vector<int>;

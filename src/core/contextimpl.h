@@ -33,49 +33,49 @@ SOFTWARE.
 
 NVX_NS_BEGIN
 
-struct IPosition;
-struct OrderMgmt;
+struct position;
+struct order_mgmt;
 
 struct context_impl_t {
-    quotation_t qut;
-    fund_t      fund;
-    nvxerr_t    error;
+    tick     qut;
+    fund     fund;
+    nvxerr_t error;
 };
 
-struct ContextIntf : IContext {
-    ContextIntf( OrderMgmt* mgmt_ );
+struct context_intf : context {
+    context_intf( order_mgmt* mgmt_ );
 
-    void update_qut( const quotation_t& qut_ );
-    void update_fund( const fund_t& fund_ );
+    void update_qut( const tick& qut_ );
+    void update_fund( const fund& fund_ );
     void update_error( const nvxerr_t& err_ );
 
 private:
-    const quotation_t& qut() const override;
-    const fund_t       fund() const override;
-    Aspect*            load( const code_t&   symbol_,
-                             const period_t& period_,
-                             int             count_ ) override;
+    const tick& qut() const override;
+    const fund  fund() const override;
+    aspect*     load( const code&   symbol_,
+                      const Period& period_,
+                      int           count_ ) override;
 
-    oid_t open( const code_t& c_,
-                vol_t         qty_,
-                price_t       sl_    = 0,
-                price_t       tp_    = 0,
-                price_t       price_ = 0,
-                otype_t       mode_  = otype_t::market );
+    oid open( const code& c_,
+              vol         qty_,
+              price       sl_    = 0,
+              price       tp_    = 0,
+              price       price_ = 0,
+              otype       mode_  = otype::market );
 
-    nvx_st close( const code_t& c_,
-                  vol_t         qty_,
-                  price_t       price_ = 0,
-                  otype_t       mode_  = otype_t::market );
+    nvx_st close( const code& c_,
+                  vol         qty_,
+                  price       price_ = 0,
+                  otype       mode_  = otype::market );
 
-    IPosition* qry_long( const code_t& c_ ) override;
-    IPosition* qry_short( const code_t& c_ ) override;
-    datetime_t time() const override;
-    nvxerr_t   error() const override;
+    position* qry_long( const code& c_ ) override;
+    position* qry_short( const code& c_ ) override;
+    datetime  time() const override;
+    nvxerr_t  error() const override;
 
 private:
     context_impl_t _impl;
-    OrderMgmt*     _mgmt;
+    order_mgmt*    _mgmt;
 };
 
 NVX_NS_END

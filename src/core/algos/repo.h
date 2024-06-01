@@ -34,7 +34,7 @@ SOFTWARE.
 #include "../ns.h"
 #include "all.h"
 
-#define BEGIN_ALGO_REPO() static std::map<string_t, algo_creator_t> _s_algo_repo = {
+#define BEGIN_ALGO_REPO() static std::map<xstring, algo_creator_t> _s_algo_repo = {
 
 #define END_ALGO_REPO() \
     }                   \
@@ -50,7 +50,7 @@ SOFTWARE.
 NVX_NS_BEGIN
 
 #define MA "Ma"
-#define KLINE "Kline"
+#define KLINE "kline"
 
 BEGIN_ALGO_REPO()
 

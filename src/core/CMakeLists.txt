@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.18)
 project(novax VERSION 1.0.0 LANGUAGES CXX)
 
 
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++17 -g -Wall -Wextra")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++17 -g -Wall")
 
 set(MODULE_ROOT ${CMAKE_CURRENT_SOURCE_DIR})

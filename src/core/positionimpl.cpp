@@ -29,37 +29,37 @@ SOFTWARE.
 
 NVX_NS_BEGIN
 
-PositionImpl::PositionImpl( const code_t& code_, bool long_ ) {
+position_impl::position_impl( const code& code_, bool long_ ) {
     _p.symbol = code_;
     _long     = long_;
 
     reset();
 }
 
-void PositionImpl::reset() {
+void position_impl::reset() {
     memset( &_p, 0x00, sizeof( pos_item_t ) );
 }
 
-nvx_st PositionImpl::stop( vol_t qty_, price_t price_ ) {
+nvx_st position_impl::stop( vol qty_, price price_ ) {
 }
 
-nvx_st PositionImpl::profit( vol_t qty_, price_t price_ ) {
+nvx_st position_impl::profit( vol qty_, price price_ ) {
 }
 
-price_t PositionImpl::avg_dealt() {
+price position_impl::avg_dealt() {
 }
 
-vol_t PositionImpl::qty() {
+vol position_impl::qty() {
 }
 
-kidx_t PositionImpl::last_entry() {
+kidx position_impl::last_entry() {
 }
 
-kidx_t PositionImpl::last_exit() {
+kidx position_impl::last_exit() {
 }
 
-vol_t PositionImpl ::herge( vol_t qty_, price_t price_ ) {
-    vol_t act_closed = std::min( p->qty, update_.qty );
+vol position_impl ::herge( vol qty_, price price_ ) {
+    vol act_closed = std::min( p->qty, update_.qty );
 
     if ( p->qty <= act_closed )
         LOG_INFO( "over sell/cover of qty:" );
@@ -69,9 +69,9 @@ vol_t PositionImpl ::herge( vol_t qty_, price_t price_ ) {
 
     p->qty -= act_closed;
     // todo
-    [[maybe_unused]] money_t close_value = update_.price * act_closed;
+    [[maybe_unused]] money close_value = update_.price * act_closed;
 
-    p->close_profit += ( src_.dir == odir_t::sell
+    p->close_profit += ( src_.dir == ord_dir::sell
                              ? update_.price - p->price  // 卖平仓的利润是卖出价格 - 买入价格
                              : p->price - update_.price )
                        * act_closed;
@@ -87,7 +87,7 @@ vol_t PositionImpl ::herge( vol_t qty_, price_t price_ ) {
 
 // 所以我们的最好做法是把每个合约的仓位统一成一条，然后算出平均价，每次有成交的时候就简单的处理就好,否则还要区分昨仓，今仓
 // 如果这样就会出现合约同时持有long和short，也就是说一个合约应该有两条记录，[0] long汇总 [1]short汇总
-void PositionImpl::accum( vol_t qty_, price_t price_ ) {
+void position_impl::accum( vol qty_, price price_ ) {
 
     p->qty += update_.traded;
     p->price      = ( src_.qty * src_.price + update_.traded * update_.price ) / p->qty;

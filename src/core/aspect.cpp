@@ -36,7 +36,7 @@ SOFTWARE.
 
 NVX_NS_BEGIN
 
-void Aspect::debug() {
+void aspect::debug() {
     std::cout << "##aspect dump##\n";
     std::cout << "indicators=" << _algos.size() << std::endl;
 
@@ -47,19 +47,19 @@ void Aspect::debug() {
     }
 }
 
-Kline& Aspect::kline( kidx_t index_ ) {
+kline& aspect::kline( kidx index_ ) {
     return *_k;
 }
 
-const code_t& Aspect::code() const {
+const code& aspect::code() const {
     return _symbol;
 }
 
-inline bool Aspect::loaded() const {
+inline bool aspect::loaded() const {
     return !_symbol.empty();
 }
 
-Aspect::~Aspect() {
+aspect::~aspect() {
     delete _k;
 
     for ( auto& i : _algos ) {
@@ -69,26 +69,26 @@ Aspect::~Aspect() {
     _algos.clear();
 }
 
-nvx_st Aspect::load( const code_t& code_, const period_t& p_, int count_ ) {
+nvx_st aspect::load( const code& code_, const Period& p_, int count_ ) {
     if ( loaded() ) return 0;
 
     _symbol = code_;
-    _k      = new Kline( code_, p_, count_ );
+    _k      = new kline( code_, p_, count_ );
 
     NVX_ASSERT( _k );
 
     return NVX_OK;
 }
 
-void Aspect::update( const quotation_t& q_ ) {
+void aspect::update( const tick& q_ ) {
     _k->calc( q_, 0 );
 
     for ( auto& i : _algos ) {
-        dynamic_cast<IAlgo*>( i.i )->calc( q_, 0 );
+        dynamic_cast<algo*>( i.i )->calc( q_, 0 );
     }
 }
 
-nvx_st Aspect::addi( IIndicator* i_ ) {
+nvx_st aspect::addi( indicator* i_ ) {
     if ( !i_ ) return NVX_OK;
 
     auto itr = std::find_if( _algos.begin(), _algos.end(), [ & ]( const prii_t& pi_ ) { return pi_.i == i_; } );
@@ -104,7 +104,7 @@ nvx_st Aspect::addi( IIndicator* i_ ) {
     return NVX_OK;
 }
 
-Aspect::Aspect( Data* data_ )
+aspect::aspect( Data* data_ )
     : _data( data_ ) {}
 
 NVX_NS_END

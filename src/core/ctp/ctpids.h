@@ -45,16 +45,16 @@ NVX_NS_BEGIN
 namespace ctp {
 
 template <typename T, typename = std::enable_if_t<std::is_array_v<T>>>
-struct Encaps {
+struct encpas {
     enum { LENGTH = sizeof( T ) };
 
-    Encaps() = default;
-    Encaps( const T& ex_ ) {
+    encpas() = default;
+    encpas( const T& ex_ ) {
         memcpy( _data, &ex_, LENGTH );
         _data[ LENGTH ] = 0;
     }
 
-    Encaps( const Encaps& ex_ ) {
+    encpas( const encpas& ex_ ) {
         memcpy( _data, &ex_._data, sizeof( _data ) );
     }
 
@@ -70,7 +70,7 @@ struct Encaps {
         memcpy( ref_, _data, LENGTH );
     }
 
-    bool operator==( const Encaps& r_ ) {
+    bool operator==( const encpas& r_ ) {
         return ( this == &r_ ) || ( 0 == memcmp( _data, r_._data, LENGTH ) );
     }
 
@@ -78,7 +78,7 @@ struct Encaps {
         return 0 == memcmp( _data, r_, LENGTH );
     }
 
-    bool operator!=( const Encaps& r_ ) {
+    bool operator!=( const encpas& r_ ) {
         return ( this != &r_ ) && ( 0 != memcmp( _data, r_._data, LENGTH ) );
     }
 
@@ -86,16 +86,16 @@ struct Encaps {
         return 0 != memcmp( _data, r_, LENGTH );
     }
 
-    Encaps& operator=( const Encaps& r_ ) {
+    encpas& operator=( const encpas& r_ ) {
         if ( this == &r_ ) return *this;
 
         memcpy( _data, r_._data, sizeof( _data ) );
         return *this;
     }
 
-    Encaps& operator=( const T& r_ ) {
-        memcpy( _data, r_, Encaps<T>::LENGTH );
-        _data[ Encaps<T>::LENGTH ] = 0;
+    encpas& operator=( const T& r_ ) {
+        memcpy( _data, r_, encpas<T>::LENGTH );
+        _data[ encpas<T>::LENGTH ] = 0;
 
         return *this;
     }
@@ -108,46 +108,47 @@ protected:
     char _data[ LENGTH + 1 ] = { 0 };
 };
 
-struct ref_t : Encaps<TThostFtdcOrderRefType> {
-    explicit ref_t( const TThostFtdcOrderRefType& r_ )
-        : Encaps( r_ ) {}
+struct ordref : encpas<TThostFtdcOrderRefType> {
+    explicit ordref( const TThostFtdcOrderRefType& r_ )
+        : encpas( r_ ) {}
 
-    explicit ref_t( unsigned ref_ ) {
+    explicit ordref( unsigned ref_ ) {
         from( ref_ );
     }
 
-    explicit ref_t( const ref_t& r_ )
-        : Encaps( r_ ) {}
+    explicit ordref( const ordref& r_ )
+        : encpas( r_ ) {}
 
-    ref_t() {
+    ordref() {
         memset( _data, '0', LENGTH );
     }
 
-    ref_t& operator=( int r_ ) {
+    ordref& operator=( int r_ ) {
         from( r_ );
         return *this;
     }
 
-    ref_t& operator+=( int diff_ ) {
+    ordref& operator+=( int diff_ ) {
         from( int_val() + diff_ );
         return *this;
     }
 
-    ref_t& operator++() {
+    //-++ordref()
+    ordref& operator++() {
         from( int_val() + 1 );
         return *this;
     }
 
-    ref_t operator+( int diff_ ) {
-        return ref_t( int_val() + diff_ );
+    ordref operator+( int diff_ ) {
+        return ordref( int_val() + diff_ );
     }
 
     bool operator==( unsigned ref_ ) {
         return int_val() == ref_;
     }
 
-    bool operator==( const ref_t& ref_ ) {
-        return Encaps::operator==( ref_ );
+    bool operator==( const ordref& ref_ ) {
+        return encpas::operator==( ref_ );
     }
 
     unsigned int_val() const {
@@ -166,38 +167,38 @@ private:
     }
 };
 
-struct sess_t {
+struct session {
     int front = 0;
     int conn  = 0;
 
-    bool operator==( const sess_t& s_ ) {
+    bool operator==( const session& s_ ) {
         return front == s_.front && conn == s_.conn;
     }
 };
 
-using ctpex_t = Encaps<TThostFtdcExchangeIDType>;
-using exoid_t = Encaps<TThostFtdcOrderSysIDType>;
+using ctpex_t = encpas<TThostFtdcExchangeIDType>;
+using exOid   = encpas<TThostFtdcOrderSysIDType>;
 
-struct fsr_t {
-    sess_t ss;
-    ref_t  ref;
+struct sess_ref {
+    session ss;
+    ordref  ref;
 
-    fsr_t() = default;
-    fsr_t( int f_, int s_, const ref_t& r_ )
+    sess_ref() = default;
+    sess_ref( int f_, int s_, const ordref& r_ )
         : ss( { f_, s_ } )
         , ref( r_ ) {}
 
-    bool operator==( const fsr_t& r_ ) {
+    bool operator==( const sess_ref& r_ ) {
         return ( this == &r_ ) || ( ss == r_.ss && ref == r_.ref );
     }
 };
 
-struct order_id_t {
-    fsr_t   fsr;
-    ctpex_t ex;
-    exoid_t id;
+struct ord_id {
+    sess_ref fsr;
+    ctpex_t  ex;
+    exOid    id;
 
-    order_id_t() = default;
+    ord_id() = default;
     bool has_sysid() {
         return id.is_valid();
     }
@@ -211,18 +212,18 @@ struct order_id_t {
     }
 };
 
-struct IdMgr {
-    using opt_id = std::optional<order_id_t>;
+struct id_mgr {
+    using opt_id = std::optional<ord_id>;
 
-    nvx_st insert( const order_id_t& id_ ) {
+    nvx_st insert( const ord_id& id_ ) {
         std::unique_lock<Spinner> lck{ _sp };
 
         return _ids.try_emplace( id_.fsr.ref.int_val(), id_ ).second
                    ? NVX_OK
-                   : NVX_Fail;
+                   : NVX_FAIL;
     }
 
-    nvx_st update_sysid( const fsr_t& fsr_, const ctpex_t& ex_, const exoid_t& oid_ ) {
+    nvx_st update_sysid( const sess_ref& fsr_, const ctpex_t& ex_, const exOid& oid_ ) {
         std::unique_lock<Spinner> lck{ _sp };
 
         for ( auto& [ k, v ] : _ids ) {
@@ -233,36 +234,36 @@ struct IdMgr {
             }
         }
 
-        return NVX_Fail;
+        return NVX_FAIL;
     }
 
-    void remove( const oid_t& id_ ) {
+    void remove( const oid& id_ ) {
         std::unique_lock<Spinner> lck{ _sp };
         _ids.erase( id_ );
     }
 
-    void remove( const fsr_t& ref_ ) {
+    void remove( const sess_ref& ref_ ) {
         std::unique_lock<Spinner> lck{ _sp };
         _ids.erase( std::find_if( _ids.begin(), _ids.end(), [ & ]( auto& pair ) { return pair.second.fsr == ref_; } ) );
     }
 
-    opt_id id_of( const ctpex_t& ex_, const exoid_t& oid_ ) {
+    opt_id id_of( const ctpex_t& ex_, const exOid& oid_ ) {
         std::unique_lock<Spinner> lck{ _sp };
         return id_of( std::find_if( _ids.begin(), _ids.end(), [ & ]( auto& pair ) { return pair.second.id == oid_ && pair.second.ex == ex_; } ) );
     }
 
-    opt_id id_of( const fsr_t& ref_ ) {
+    opt_id id_of( const sess_ref& ref_ ) {
         std::unique_lock<Spinner> lck{ _sp };
         return id_of( std::find_if( _ids.begin(), _ids.end(), [ & ]( auto& pair ) { return pair.second.fsr == ref_; } ) );
     }
 
-    opt_id id_of( const oid_t& id_ ) {
+    opt_id id_of( const oid& id_ ) {
         std::unique_lock<Spinner> lck{ _sp };
         return id_of( _ids.find( id_ ) );
     }
 
 private:
-    using IdMap = std::map<oid_t, order_id_t>;
+    using IdMap = std::map<oid, ord_id>;
 
     opt_id id_of( IdMap::iterator itr_ ) {
         return itr_ != _ids.end() ? opt_id( itr_->second )

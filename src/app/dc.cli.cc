@@ -28,6 +28,6 @@ SOFTWARE.
 #include "../core/datacenter.h"
 
 int main() {
-    NVX_NS::DcClient cli( 0 );
+    NVX_NS::dc_client cli( 0 );
     return cli.run();
 }

@@ -34,7 +34,7 @@ SOFTWARE.
 USE_NVX_NS
 
 TEST( REF, basic ) {
-    ctp::ref_t r( 168 );
+    ctp::ordref r( 168 );
 
     ASSERT_TRUE( r.int_val() == 168 );
     ASSERT_TRUE( strlen( r.data() ) == strlen( "1234567890123" ) );
@@ -47,16 +47,16 @@ TEST( REF, basic ) {
     r += 1000;
     ASSERT_TRUE( strcmp( "0000000001169", r.data() ) == 0 );
 
-    ctp::ref_t r2( r );
+    ctp::ordref r2( r );
     ASSERT_TRUE( strcmp( "0000000001169", r2.data() ) == 0 );
 
-    ctp::ref_t r3;
+    ctp::ordref r3;
     ASSERT_TRUE( strcmp( "0000000000000", r3.data() ) == 0 );
     r3 = r2;
 
     ASSERT_TRUE( strcmp( "0000000001169", r3.data() ) == 0 );
 
-    ctp::ref_t r4 = r3 + 1;
+    ctp::ordref r4 = r3 + 1;
     ASSERT_TRUE( strcmp( "0000000001170", r4.data() ) == 0 );
 
     TThostFtdcOrderRefType ref;
@@ -66,15 +66,15 @@ TEST( REF, basic ) {
     ASSERT_TRUE( r4 == 1170 );
 }
 
-TEST( IdMgr, basic ) {
+TEST( id_mgr, basic ) {
     TThostFtdcExchangeIDType ex = { 'a' };
     TThostFtdcOrderSysIDType id = { 'b' };
 
-    NVX_NS::ctp::fsr_t   fsr;
+    NVX_NS::ctp::sess_ref   fsr;
     NVX_NS::ctp::ctpex_t eid( ex );
-    NVX_NS::ctp::exoid_t oid( id );
+    NVX_NS::ctp::exOid oid( id );
 
-    NVX_NS::ctp::IdMgr m;
+    NVX_NS::ctp::id_mgr m;
 
     fsr.ref = 99;
 
@@ -110,13 +110,13 @@ TEST( IdMgr, basic ) {
     NVX_NS::ctp::ctpex_t eid3;
     ASSERT_FALSE( eid3.is_valid() );
 
-    NVX_NS::ctp::order_id_t id0{ fsr, ex, id };
+    NVX_NS::ctp::ord_id id0{ fsr, ex, id };
 
     ASSERT_TRUE( id0.is_valid() );
     ASSERT_TRUE( id0.has_refid() );
     ASSERT_TRUE( id0.has_sysid() );
 
-    NVX_NS::ctp::order_id_t id1{ fsr, NVX_NS::ctp::ctpex_t(), NVX_NS::ctp::exoid_t() };
+    NVX_NS::ctp::ord_id id1{ fsr, NVX_NS::ctp::ctpex_t(), NVX_NS::ctp::exOid() };
 
     ASSERT_TRUE( id1.is_valid() );
     ASSERT_TRUE( id1.has_refid() );

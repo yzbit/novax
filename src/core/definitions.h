@@ -52,26 +52,27 @@ NVX_NS_BEGIN
 
 #define NVX_ASSERT assert
 
-using nvx_st       = int;
-using id_t         = uint32_t;
-using price_t      = float;
-using vol_t        = int;  // todo double ctp都是整数仓位;
-using oid_t        = id_t;
-using string_t     = std::string;
-using stringlist_t = std::vector<std::string>;
-using text_t       = string_t;
-using money_t      = float;
-using kidx_t       = uint32_t;
+using nvx_st = int;
+// using id_t         = uint32_t;
+using price       = float;
+using vol         = int;  // todo double ctp都是整数仓位;
+using oid         = int;
+using xstring     = std::string;
+using string_list = std::vector<std::string>;
+using text        = xstring;
+using money       = float;
+using kidx        = uint32_t;
 
 enum class nvxerr_t {
     order_rejected,
 };
 
 constexpr nvx_st NVX_OK   = 0;
-constexpr nvx_st NVX_Fail = -1;
+constexpr nvx_st NVX_FAIL = -1;
 
-constexpr int kBadId = 0;
-#define IS_VALID_ID( _id_ ) ( kBadId != ( _id_ ) )
+constexpr oid NVX_BAD_OID = -1;
+
+#define IS_VALID_OID( _id_ ) ( _id_ > 0 )
 
 inline uint64_t now_ms() {
     return std::chrono::duration_cast<std::chrono::milliseconds>( std::chrono::steady_clock::now().time_since_epoch() ).count();
@@ -90,34 +91,34 @@ enum class pricetype_t {
     avg
 };
 
-struct code_t {
-    static constexpr int kMaxCodeLength = 8;
+struct code {
+    static constexpr int MAX_CODE_LENGTH = 8;
 
-    code_t( const char* code_ );
-    code_t( const string_t& str_ );
-    code_t( int c_ );
-    code_t() = default;
+    code( const char* code_ );
+    code( const xstring& str_ );
+    code( int c_ );
+    code() = default;
     char*  c_str() const;
     size_t length() const;
 
-    bool    empty() const;
-    code_t& operator=( const code_t& c_ );
+    bool  empty() const;
+    code& operator=( const code& c_ );
 
-    bool operator==( const code_t& c_ ) const;
-    bool operator!=( const code_t& c_ ) const;
+    bool operator==( const code& c_ ) const;
+    bool operator!=( const code& c_ ) const;
     bool operator!=( const char* c_ ) const;
     bool operator==( const char* c_ ) const;
-    bool operator<( const code_t& c_ ) const;
+    bool operator<( const code& c_ ) const;
 
     operator bool() const { return !!_code[ 0 ]; }
 
 private:
-    char _code[ kMaxCodeLength + 1 ] = { 0 };
+    char _code[ MAX_CODE_LENGTH + 1 ] = { 0 };
 };
 
-using ins_t = code_t;
-inline ins_t code2ins( const code_t& c_ ) {
-    char ins[ code_t::kMaxCodeLength + 1 ] = { 0 };
+using ins_code = code;
+inline ins_code code2ins( const code& c_ ) {
+    char ins[ code::MAX_CODE_LENGTH + 1 ] = { 0 };
 
     const char* sz  = c_.c_str();
     char*       dst = ins;
@@ -128,46 +129,46 @@ inline ins_t code2ins( const code_t& c_ ) {
 }
 
 struct code_hash_t {
-    std::size_t operator()( const code_t& c_ ) const {
-        static_assert( sizeof( code_t ) == 9, "bad code size ,not 8" );
+    std::size_t operator()( const code& c_ ) const {
+        static_assert( sizeof( code ) == 9, "bad code size ,not 8" );
         return std::hash<uint64_t>()( *( uint64_t* )&c_.c_str()[ 0 ] );
     }
 };
 
-struct datespec_t {
+struct datespec {
     int year, month, day, wday;
 };
 
-struct timespec_t {
+struct timespec {
     int hour, minute, second, milli;
 };
 
-struct datetime_t {
-    datespec_t d;
-    timespec_t t;
+struct datetime {
+    datespec d;
+    timespec t;
 
-    static datetime_t now();
-    datetime_t&       from_unix_time( const time_t& t_ );
-    time_t            to_unix_time() const;
-    bool              is_valid() const;
-    void              from_ctp( const char* day_, const char* time_, int milli_ );
-    string_t          to_iso() const;
-    void              print( const char* prefix = "", FILE* fp_ = nullptr ) const;
+    static datetime now();
+    datetime&       from_unix_time( const time_t& t_ );
+    time_t          to_unix_time() const;
+    bool            is_valid() const;
+    void            from_ctp( const char* day_, const char* time_, int milli_ );
+    xstring         to_iso() const;
+    void            print( const char* prefix = "", FILE* fp_ = nullptr ) const;
 };
 
 struct time_range_t {
-    datetime_t start;
-    datetime_t end;
+    datetime start;
+    datetime end;
 };
 
-using ex_t   = code_t;  // 交易所
+using ex_t   = code;  // 交易所
 using exid_t = int;
 
 #define DAY_SECONDS ( 24 * 3600u )
 #define WEEK_SECONDS ( 7 * 24 * 3600u )
 #define MONTH_SECONDS ( 31 * 3600u )
 #define YEAR_SECONDS ( 266 * 24 * 3600u )
-struct period_t {
+struct period {
     enum class type_t : uint8_t {
         milli,
         seconds,
@@ -180,7 +181,7 @@ struct period_t {
     };
 
     // todo note: 注意：如果t=year，rep > 1是没有意义的
-    period_t( const type_t& t_, int r_ );
+    Period( const type_t& t_, int r_ );
     // 转成秒--时间粒度不仅仅要和绝对时间有关系还和分割边界有关系，比如1天显然不能按照绝对秒数来算，应该按照收盘时间和开盘时间来算，每周则只能基于小时来算,分钟其实会出现跨天的状况,可以按照秒来算，同时按照自然阅读来分
     operator uint32_t();
 
@@ -251,10 +252,10 @@ private:
         return arg_t{ __VA_ARGS__ }; \
     };
 
-#define DECLARE_ARG_NAMES( ... )                \
-    stringlist_t& arg_names() {                 \
-        static stringlist_t __v{ __VA_ARGS__ }; \
-        return __v;                             \
+#define DECLARE_ARG_NAMES( ... )               \
+    string_list& arg_names() {                 \
+        static string_list __v{ __VA_ARGS__ }; \
+        return __v;                            \
     }
 
 template <typename T>
@@ -270,69 +271,69 @@ struct arg_binding_t {
 };
 
 //--inlines------------------------------------------------------------------------
-inline bool code_t::operator<( const code_t& c_ ) const {
+inline bool code::operator<( const code& c_ ) const {
     return strncmp( _code, c_._code, sizeof( _code ) ) < 0;
 }
 
-inline code_t::code_t( const char* code_ )
+inline code::code( const char* code_ )
     : _code{ 0 } {
     memcpy( _code, code_, std::min( sizeof( _code ) - 1, strlen( code_ ) ) );
 }
 
-inline char* code_t::c_str() const {
+inline char* code::c_str() const {
     return const_cast<char*>( _code );
 }
 
-inline size_t code_t::length() const {
+inline size_t code::length() const {
     return strlen( _code );
 }
 
-inline code_t::code_t( const string_t& str_ )
-    : code_t{ str_.c_str() } {
+inline code::code( const xstring& str_ )
+    : code{ str_.c_str() } {
 }
 
-inline code_t::code_t( int c_ ) {
+inline code::code( int c_ ) {
     sprintf( _code, "%d", c_ );
 }
 
-inline bool code_t::empty() const {
+inline bool code::empty() const {
     return _code[ 0 ] == '\0';
 }
 
-inline code_t& code_t::operator=( const code_t& c_ ) {
+inline code& code::operator=( const code& c_ ) {
     memcpy( _code, c_._code, sizeof( _code ) );
     return *this;
 }
 
-inline bool code_t::operator==( const char* c_ ) const {
+inline bool code::operator==( const char* c_ ) const {
     if ( length() != strlen( c_ ) ) return false;
-    return *this == code_t( c_ );
+    return *this == code( c_ );
 }
 
-inline bool code_t::operator!=( const char* c_ ) const {
+inline bool code::operator!=( const char* c_ ) const {
     if ( length() != strlen( c_ ) ) return true;
-    return *this != code_t( c_ );
+    return *this != code( c_ );
 }
 
-inline bool code_t::operator==( const code_t& c_ ) const {
+inline bool code::operator==( const code& c_ ) const {
     return ( this == &c_ ) || strncmp( _code, c_._code, sizeof( _code ) ) == 0;
 }
 
-inline bool code_t::operator!=( const code_t& c_ ) const {
+inline bool code::operator!=( const code& c_ ) const {
     return !( *this == c_ );
 }
 #if 0
-inline code_t::operator char*() {
+inline code::operator char*() {
     return _code;
 }
 
-inline code_t::operator const char*() const {
+inline code::operator const char*() const {
     return _code;
 }
 #endif
 //
 // todo note: 注意：如果t=year，rep > 1是没有意义的
-inline period_t::period_t( const type_t& t_, int r_ )
+inline Period::Period( const type_t& t_, int r_ )
     : t( t_ )
     , rep( r_ ) {
 
@@ -340,7 +341,7 @@ inline period_t::period_t( const type_t& t_, int r_ )
 }
 
 // 转成秒--时间粒度不仅仅要和绝对时间有关系还和分割边界有关系，比如1天显然不能按照绝对秒数来算，应该按照收盘时间和开盘时间来算，每周则只能基于小时来算,分钟其实会出现跨天的状况,可以按照秒来算，同时按照自然阅读来分
-inline period_t::operator uint32_t() {
+inline Period::operator uint32_t() {
     switch ( t ) {
     case type_t::milli: return 0 == rep / 1000 ? 1 : rep / 1000;
     case type_t::seconds: return rep;
@@ -407,14 +408,14 @@ inline T& array_t<T>::element( int index_ ) {
     return _data.get()[ index_ ];
 }
 
-inline datetime_t datetime_t::now() {
-    datetime_t t;
+inline datetime datetime::now() {
+    datetime t;
     t.from_unix_time( time( 0 ) );
 
     return t;
 }
 
-inline datetime_t& datetime_t::from_unix_time( const time_t& t_ ) {
+inline datetime& datetime::from_unix_time( const time_t& t_ ) {
     auto tm  = localtime( &t_ );
     d.year   = tm->tm_year + 1900;
     d.month  = tm->tm_mon + 1;
@@ -428,7 +429,7 @@ inline datetime_t& datetime_t::from_unix_time( const time_t& t_ ) {
     return *this;
 }
 
-inline time_t datetime_t::to_unix_time() const {
+inline time_t datetime::to_unix_time() const {
     struct tm t0;
     t0.tm_year = d.year - 1900;
     t0.tm_mon  = d.month - 1;
@@ -440,14 +441,14 @@ inline time_t datetime_t::to_unix_time() const {
     return mktime( &t0 );
 }
 
-inline bool datetime_t::is_valid() const {
+inline bool datetime::is_valid() const {
     return d.day != 0;
 }
 
 #define TK_DIFF ( 1000 + 100 + 10 + 1 ) * '0'
 #define H_DIFF ( 10 + 1 ) * '0'
 
-inline void datetime_t::print( const char* prefix_, FILE* fp_ ) const {
+inline void datetime::print( const char* prefix_, FILE* fp_ ) const {
     if ( !fp_ ) {
         fp_ = stdout;
     }
@@ -456,7 +457,7 @@ inline void datetime_t::print( const char* prefix_, FILE* fp_ ) const {
 }
 
 // YYYYMMDD，HH:MM:SS，MILLI ctp独有的格式
-inline void datetime_t::from_ctp( const char* day_, const char* time_, int milli_ ) {
+inline void datetime::from_ctp( const char* day_, const char* time_, int milli_ ) {
     // year  = ( day_[ 0 ] - '0' ) * 1000 + ( day_[ 1 ] - '0' ) * 100 + ( day_[ 2 ] - '0' ) * 10 + ( day_[ 3 ] - '0' );
     // month = ( day_[ 4 ] - '0' ) * 10 + ( day_[ 5 ] - '0' );
     // day   = ( day_[ 6 ] - '0' ) * 10 + ( day_[ 7 ] - '0' );
@@ -476,7 +477,7 @@ inline void datetime_t::from_ctp( const char* day_, const char* time_, int milli
     // wday = ( year % 100 + ( year % 100 ) / 4 + ( year / 100 ) / 4 - 2 * ( year / 100 ) + 26 * ( month + 1 ) / 10 + day - 1 ) % 7;
 }
 
-inline std::string datetime_t::to_iso() const {
+inline std::string datetime::to_iso() const {
     char fmt[ 64 ];
     sprintf( fmt, "%04d-%02d-%02d %02d:%02d:%02d.%03dZ", d.year, d.month, d.day, t.hour, t.minute, t.second, t.milli );
 

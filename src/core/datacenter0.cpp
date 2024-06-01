@@ -32,19 +32,19 @@ SOFTWARE.
 #include "datacenter.h"
 
 NVX_NS_BEGIN
-DcClient::DcClient( IPub* p_ )
-    : IMarket( p_ ) {
+dc_client::dc_client( pub* p_ )
+    : market( p_ ) {
 }
 
-nvx_st DcClient::start() {
+nvx_st dc_client::start() {
     return send_event( _bev, dc::StartDcEvent() );
 }
 
-nvx_st DcClient::stop() {
+nvx_st dc_client::stop() {
     return send_event( _bev, dc::StopDcEvent() );
 }
 
-nvx_st DcClient::subscribe( const code_t& code_ ) {
+nvx_st dc_client::subscribe( const code& code_ ) {
     dc::SubEvent s;
     s.code = code_;
 
@@ -55,7 +55,7 @@ nvx_st DcClient::subscribe( const code_t& code_ ) {
     return send_event( _bev, s );
 }
 
-nvx_st DcClient::unsubscribe( const code_t& code_ ) {
+nvx_st dc_client::unsubscribe( const code& code_ ) {
     dc::UnsubEvent um;
     um.code = code_;
 
@@ -67,7 +67,7 @@ nvx_st DcClient::unsubscribe( const code_t& code_ ) {
     return send_event( _bev, um );
 }
 
-void DcClient::on_event( const dc::Event* m_, struct bufferevent* bev ) {
+void dc_client::on_event( const dc::Event* m_, struct bufferevent* bev ) {
     switch ( m_->id ) {
     default: return;
     case dc::event_t::ack:
@@ -77,7 +77,7 @@ void DcClient::on_event( const dc::Event* m_, struct bufferevent* bev ) {
     }
 }
 
-void DcClient::on_ack( dc::event_t req_, char rc_ ) {
+void dc_client::on_ack( dc::event_t req_, char rc_ ) {
     // if ( req_ == mid_t::sub_data && 0 == rc_ ) {
     // }
     if ( rc_ != 0 ) {
@@ -85,34 +85,34 @@ void DcClient::on_ack( dc::event_t req_, char rc_ ) {
     }
 }
 
-void DcClient::on_tick( const quotation_t& qut_ ) {
+void dc_client::on_tick( const tick& qut_ ) {
     // todo
     // delegator()->update( qut_ );
 }
 
-void IEndpoint::read_cb( struct bufferevent* bev_, void* ctx ) {
+void endpoint::read_cb( struct bufferevent* bev_, void* ctx ) {
     auto msg = dc::recv_event( bev_ );
     if ( !msg ) return;
 
-    IEndpoint* cli = reinterpret_cast<IEndpoint*>( ctx );
+    endpoint* cli = reinterpret_cast<endpoint*>( ctx );
     // cli->on_event( msg );
 }
 
-void IEndpoint::event_cb( struct bufferevent* bev, short event_, void* ctx ) {
+void endpoint::event_cb( struct bufferevent* bev, short event_, void* ctx ) {
     printf( "dcclient on event:%d\n", event_ );
 }
 
-void IEndpoint::attach( struct bufferevent* bev_ ) {
+void endpoint::attach( struct bufferevent* bev_ ) {
     _bev = bev_;
 
-    bufferevent_setcb( _bev, &IEndpoint::read_cb, nullptr, &IEndpoint::event_cb, this );
+    bufferevent_setcb( _bev, &endpoint::read_cb, nullptr, &endpoint::event_cb, this );
     bufferevent_enable( _bev, EV_READ | EV_WRITE );
 }
 
-IEndpoint::IEndpoint() {
+endpoint::endpoint() {
 }
 
-nvx_st DcClient::run() {
+nvx_st dc_client::run() {
     struct event_base* base = event_base_new();
 
     struct sockaddr_un addr;
@@ -127,7 +127,7 @@ nvx_st DcClient::run() {
     struct bufferevent* bev = bufferevent_socket_new( base, sock, BEV_OPT_CLOSE_ON_FREE );
 
     attach( bev );
-    // bufferevent_setcb( bev, &DcClient::read_cb, nullptr, &DcClient::event_cb, this );
+    // bufferevent_setcb( bev, &dc_client::read_cb, nullptr, &dc_client::event_cb, this );
     // bufferevent_enable( bev, EV_READ | EV_WRITE );
 
     // bufferevent_write( bev, "subscribe", 9 );

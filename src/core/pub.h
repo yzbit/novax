@@ -45,11 +45,11 @@ enum class msg_type {
 };
 
 using timer_msg_t = int;
-using order_msg_t = order_update_t;
+using order_msg_t = order_update;
 using error_msg_t = nvxerr_t;
 using pos_msg_t   = int;
-using tick_msg_t  = quotation_t;
-using fund_msg_t  = fund_t;
+using tick_msg_t  = tick;
+using fund_msg_t  = fund;
 
 #define DECLARE_MSG( ... )              \
     msg_type _type = msg_type::unknown; \
@@ -106,8 +106,8 @@ inline const T& msg_t::get() const {
 
 }  // namespace pub
 
-struct IPub {
-    virtual ~IPub() {}
+struct pub {
+    virtual ~pub() {}
     virtual nvx_st post( const pub::msg_t& m_ ) = 0;
 };
 
