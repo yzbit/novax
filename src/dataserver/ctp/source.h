@@ -4,8 +4,9 @@
 #include "mdproxy.h"
 #include "tradeproxy.h"
 
+// trader先调用ReqQryInstrument查询所有合约,然后再调用md的sub函数
 namespace ctp {
-struct Source : IProvider {
+struct source : NVX_NS::provider {
     nvx_st start() override;
     nvx_st stop() override;
 
