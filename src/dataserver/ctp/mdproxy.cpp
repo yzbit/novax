@@ -47,7 +47,7 @@ NVX_NS_BEGIN
 namespace ctp {
 namespace fs = std::filesystem;
 
-mdex::mdex( pub* p_ )
+mdex::mdex( ipub* p_ )
     : market( p_ ) {
 }
 

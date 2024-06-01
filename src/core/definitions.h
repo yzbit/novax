@@ -125,10 +125,10 @@ inline ins_code code2ins( const code& c_ ) {
     while ( *sz && !std::isdigit( *sz ) )
         *dst++ = *sz++;
 
-    return ins_t( ins );
+    return ins_code( ins );
 }
 
-struct code_hash_t {
+struct code_hash {
     std::size_t operator()( const code& c_ ) const {
         static_assert( sizeof( code ) == 9, "bad code size ,not 8" );
         return std::hash<uint64_t>()( *( uint64_t* )&c_.c_str()[ 0 ] );
@@ -161,8 +161,8 @@ struct time_range_t {
     datetime end;
 };
 
-using ex_t   = code;  // 交易所
-using exid_t = int;
+using exch = code;  // 交易所
+using exid = int;
 
 #define DAY_SECONDS ( 24 * 3600u )
 #define WEEK_SECONDS ( 7 * 24 * 3600u )
@@ -181,7 +181,7 @@ struct period {
     };
 
     // todo note: 注意：如果t=year，rep > 1是没有意义的
-    Period( const type_t& t_, int r_ );
+    period( const type_t& t_, int r_ );
     // 转成秒--时间粒度不仅仅要和绝对时间有关系还和分割边界有关系，比如1天显然不能按照绝对秒数来算，应该按照收盘时间和开盘时间来算，每周则只能基于小时来算,分钟其实会出现跨天的状况,可以按照秒来算，同时按照自然阅读来分
     operator uint32_t();
 
@@ -333,7 +333,7 @@ inline code::operator const char*() const {
 #endif
 //
 // todo note: 注意：如果t=year，rep > 1是没有意义的
-inline Period::Period( const type_t& t_, int r_ )
+inline period::period( const type_t& t_, int r_ )
     : t( t_ )
     , rep( r_ ) {
 
@@ -341,7 +341,7 @@ inline Period::Period( const type_t& t_, int r_ )
 }
 
 // 转成秒--时间粒度不仅仅要和绝对时间有关系还和分割边界有关系，比如1天显然不能按照绝对秒数来算，应该按照收盘时间和开盘时间来算，每周则只能基于小时来算,分钟其实会出现跨天的状况,可以按照秒来算，同时按照自然阅读来分
-inline Period::operator uint32_t() {
+inline period::operator uint32_t() {
     switch ( t ) {
     case type_t::milli: return 0 == rep / 1000 ? 1 : rep / 1000;
     case type_t::seconds: return rep;

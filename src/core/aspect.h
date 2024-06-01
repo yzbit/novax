@@ -39,15 +39,15 @@ struct kline;
 struct data;
 struct indicator;
 struct aspect final {
-    aspect( Data* data_ );
+    aspect( data* data_ );
     ~aspect();
 
     void   update( const tick& q_ );
-    nvx_st load( const code& code_, const Period& p_, int count_ );
+    nvx_st load( const code& code_, const period& p_, int count_ );
     nvx_st addi( indicator* i_ );
 
-    const code& code() const;
-    kline&      kline( kidx index_ = 0 );
+    const code& symbol() const;
+    kline&      bar( kidx index_ = 0 );
     bool        loaded() const;
 
 private:
@@ -64,12 +64,12 @@ private:
     kline* _k        = nullptr;
 
 private:
-    Data* _data;
+    data* _data;
 };
 
 struct AspRepo {
     static AspRepo& instance();
-    aspect*         add( const code& code_, const Period& p_, int count_ );
+    aspect*         add( const code& code_, const period& p_, int count_ );
 
 private:
     using repo_t = std::vector<aspect>;

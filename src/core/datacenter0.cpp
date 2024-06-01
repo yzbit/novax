@@ -32,21 +32,21 @@ SOFTWARE.
 #include "datacenter.h"
 
 NVX_NS_BEGIN
-dc_client::dc_client( pub* p_ )
+dc_client::dc_client( ipub* p_ )
     : market( p_ ) {
 }
 
 nvx_st dc_client::start() {
-    return send_event( _bev, dc::StartDcEvent() );
+    return send_event( _bev, dc::start_dc_event() );
 }
 
 nvx_st dc_client::stop() {
-    return send_event( _bev, dc::StopDcEvent() );
+    return send_event( _bev, dc::stop_dc_event() );
 }
 
 nvx_st dc_client::subscribe( const code& code_ ) {
-    dc::SubEvent s;
-    s.code = code_;
+    dc::sub_event s;
+    s.c = code_;
 
     //    {
     //      std::unique_lock<std::mutex> _lck{ _mtx };
@@ -56,8 +56,8 @@ nvx_st dc_client::subscribe( const code& code_ ) {
 }
 
 nvx_st dc_client::unsubscribe( const code& code_ ) {
-    dc::UnsubEvent um;
-    um.code = code_;
+    dc::unsub_event um;
+    um.c = code_;
 
     //    {
     //        std::unique_lock<std::mutex> _lck{ _mtx };
@@ -67,13 +67,13 @@ nvx_st dc_client::unsubscribe( const code& code_ ) {
     return send_event( _bev, um );
 }
 
-void dc_client::on_event( const dc::Event* m_, struct bufferevent* bev ) {
+void dc_client::on_event( const dc::event* m_, struct bufferevent* bev ) {
     switch ( m_->id ) {
     default: return;
     case dc::event_t::ack:
-        return on_ack( reinterpret_cast<const dc::AckEvent*>( m_ )->req, reinterpret_cast<const dc::AckEvent*>( m_ )->rc );
+        return on_ack( reinterpret_cast<const dc::ack_event*>( m_ )->req, reinterpret_cast<const dc::ack_event*>( m_ )->rc );
     case dc::event_t::data_tick:
-        return on_tick( reinterpret_cast<const dc::QutEvent*>( m_ )->qut );
+        return on_tick( reinterpret_cast<const dc::qut_event*>( m_ )->qut );
     }
 }
 

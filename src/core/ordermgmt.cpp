@@ -75,6 +75,7 @@ nvx_st portfolio::update( const order_update& upt_ ) {
 }
 
 position_impl* portfolio::pos( const code& code_, dist_t d_ ) {
+#if 0
     if ( auto found = std::find( _repo.begin(),
                                  _repo.end(),
                                  [ & ]( position_impl* p ) {
@@ -85,11 +86,13 @@ position_impl* portfolio::pos( const code& code_, dist_t d_ ) {
          found != _repo.end() ) {
         return *found;
     }
+#endif
 
     return nullptr;
 }
 
 position_impl* portfolio::add( const code& code_, dist_t d_ ) {
+#if 0
     auto p = pos( code_, d_ );
     if ( p ) return p;
 
@@ -103,6 +106,7 @@ position_impl* portfolio::add( const code& code_, dist_t d_ ) {
             return _repo[ i ];
         }
     }
+#endif
 
     return nullptr;
 }
@@ -112,35 +116,33 @@ portfolio::portfolio() {
 }
 
 //-----order book
-order* ordbook::find( oid id_ ) {
+order* ord_book::find( oid id_ ) {
     auto found = _ords.find( id_ );
 
     return found == _ords.end() ? nullptr
                                 : &found->second;
 }
 
-ordbook::ordbook( oid init_id_ )
-    : _start_id( init_id_ ) {
+ord_book::ord_book() {
 }
 
-ordbook::~ordbook() {
+ord_book::~ord_book() {
 }
 
-order* ordbook::append( order& order_ ) {
+order* ord_book::append( order& order_ ) {
     order_.id = oid();
     _ords.try_emplace( order_.id, order_ );
     return &_ords[ order_.id ];
 }
 
-size_t ordbook::count() const {
+size_t ord_book::count() const {
     return _ords.size();
 }
 
 //------------------------
 order_mgmt::~order_mgmt() {}
-order_mgmt::order_mgmt( broker* ib_, id_t id_start_ )
-    : _orders( id_start_ )
-    , _ib( ib_ ) {}
+order_mgmt::order_mgmt( broker* ib_ )
+    : _ib( ib_ ) {}
 
 nvx_st order_mgmt::start() { return _ib->start(); }
 nvx_st order_mgmt::stop() { return _ib->stop(); }
@@ -149,8 +151,9 @@ oid order_mgmt::put( ord_dir     dir_,
                      const code& code_,
                      vol         qty_,
                      price       price_,
-                     otype       mode_,
+                     ord_type    mode_,
                      const text& remark_ ) {
+#if 0
     auto r   = order( code_, qty_, price_, mode_, dir_ );
     r.remark = remark_;
 
@@ -162,7 +165,10 @@ oid order_mgmt::put( ord_dir     dir_,
     _orders.append( r );
 
     LOG_INFO( "order count in book: [ %lu ]", _orders.count() );
+
     return r.id;
+#endif
+    return 0;
 }
 
 oid order_mgmt::close( const code& code_ ) {
@@ -174,7 +180,7 @@ oid order_mgmt::close( const code& code_ ) {
 oid order_mgmt::sellshort( const code& code_,
                            vol         qty_,
                            price       price_,
-                           otype       mode_,
+                           ord_type    mode_,
                            const text& remark_ ) {
     LOG_TAGGED( "om", "short: code=%s qty%d price=%.2f mode=%d r=%s", code_.c_str(), qty_, price_, mode_, remark_.c_str() );
 
@@ -184,7 +190,7 @@ oid order_mgmt::sellshort( const code& code_,
 oid order_mgmt::buylong( const code& code_,
                          vol         qty_,
                          price       price_,
-                         otype       mode_,
+                         ord_type    mode_,
                          const text& remark_ ) {
     LOG_TAGGED( "om", "long: code=%s qty%d price=%.2f sl=%d, tp=%d, r=%s", code_.c_str(), qty_, price_, ( int )mode_, remark_.c_str() );
 
@@ -192,6 +198,8 @@ oid order_mgmt::buylong( const code& code_,
 }
 
 oid order_mgmt::cancel( oid id_ ) {
+
+#if 0
     LOG_TAGGED( "om", "del order: %u", id_ );
     auto r = _orders.find( id_ );
 
@@ -200,32 +208,35 @@ oid order_mgmt::cancel( oid id_ ) {
         return NVX_FAIL;
     }
 
-    if ( r->status != ostatus_t::pending
-         && r->status != ostatus_t::partial_dealed
-         && r->status != ostatus_t::patial_canelled ) {
+    if ( r->status != ord_status::pending
+         && r->status != ord_status::partial_dealed
+         && r->status != ord_status::patial_canelled ) {
         LOG_TAGGED( "om", "can not cancel order, id=%u status=%d", id_, r->status );
         return NVX_FAIL;
     }
 
     return _ib->cancel( *r );
-}
 
-nvx_st order_mgmt::remove( oid id_ ) {
-#if 0
-    _orders.erase( id_ );
 #endif
+    return 0;
+}
+#if 0
+nvx_st order_mgmt::remove( oid id_ ) {
+
+    _orders.erase( id_ );
+
     return NVX_OK;
 }
-
+#endif
 void order_mgmt::update_ord( const order_update& upt_ ) {
 #if 0
     auto o = get( upt_.id );
     if ( !o ) return;
 
     LOG_INFO( "upt status %d", upt_.status );
-    // NVX_ASSERT( status_ != ostatus_t::dealt );
+    // NVX_ASSERT( status_ != ord_status::dealt );
 
-    if ( ostatus_t::cancelled == status_ ) {
+    if ( ord_status::cancelled == status_ ) {
         LOG_INFO( "close order: id=%u ", upt_.id );
         remove( upt_.id );
     }
@@ -243,7 +254,7 @@ void order_mgmt::update_ord( const order_update& upt_ ) {
 #endif
 }
 
-position* order_mgmt::position( const code& code_, bool long_ ) {
+position* order_mgmt::pos_of( const code& code_, bool long_ ) {
     return _pf.pos( code_,
                     long_ ? portfolio::dist_t::netlong
                           : portfolio::dist_t::netshort );
@@ -252,20 +263,21 @@ position* order_mgmt::position( const code& code_, bool long_ ) {
 void order_mgmt::update_position() {
 }
 
-oid order_mgmt::sell( const code& code_,
-                      const vol   qty_,
-                      const price price_,
-                      const otype mode_,
-                      const text& remark_ ) {
+oid order_mgmt::sell( const code&    code_,
+                      const vol      qty_,
+                      const price    price_,
+                      const ord_type mode_,
+                      const text&    remark_ ) {
     LOG_TAGGED( "om", "sell: code=%s qty=%d price=%.2f, mode=%d, r=%s", code_.c_str(), qty_, price_, ( int )mode_, remark_.c_str() );
 
+#if 0
     auto p = _pf.pos( code_, portfolio::dist_t::netlong );
-    if ( !p || 0 == p->qty ) {
+    if ( !p || 0 == p->qty() ) {
         LOG_TAGGED( "om", "no long position to be closed" );
         return NVX_BAD_OID;
     }
 
-    vol   q = p->qty >= qty_ ? qty_ : p->qty;
+    vol   q = p->qty() >= qty_ ? qty_ : p->qty();
     order r( _orders.oid(), code_, q, price_, mode_, ord_dir::cover );
 
     if ( NVX_OK != _ib->put( r ) ) {
@@ -276,18 +288,20 @@ oid order_mgmt::sell( const code& code_,
     _orders.append( r );
 
     return r.id;
+#endif
+    return 0;
 }
 
-oid order_mgmt::buy( const code& code_,
-                     const vol   qty_,
-                     const price price_,
-                     const otype mode_,
-                     const text& remark_ ) {
+oid order_mgmt::buy( const code&    code_,
+                     const vol      qty_,
+                     const price    price_,
+                     const ord_type mode_,
+                     const text&    remark_ ) {
 
     LOG_TAGGED( "om", "buy: code=%s qty=%d price=%.2f, mode=%d, r=%s", code_.c_str(), qty_, price_, ( int )mode_, remark_.c_str() );
-
+#if 0
     auto p = _pf.pos( code_, portfolio::dist_t::netshort );
-    if ( !p || 0 == p->qty ) {
+    if ( !p || 0 == p->qty() ) {
         LOG_TAGGED( "om", "no short position to be closed" );
         return NVX_BAD_OID;
     }
@@ -296,21 +310,24 @@ oid order_mgmt::buy( const code& code_,
 
     close( p, qty_, price_, mode_ );
 
-    vol q = p->qty >= qty_ ? qty_ : p->qty;
+    vol q = p->qty() >= qty_ ? qty_ : p->qty();
 
-    order r( _orders.oid(), code_, q, price_, mode_, ord_dir::cover );
+    order r( _orders.gen_id(), code_, q, price_, mode_, ord_dir::cover );
 
     if ( NVX_OK != _ib->put( r ) ) {
-        LOG_INFO( "close position failed,id=%u ,sym=%s", r_.id, r_.code.c_str() );
+        // LOG_INFO( "close position failed,id=%u ,sym=%s", r_.id, r_.code.c_str() );
         return NVX_BAD_OID;
     }
 
     _orders.append( r );
 
     return r.id;
+#endif
+    return 0;
 }
 
 // stop loss--可能同时持有空单和多单看,价格分别是p1和p2,而  p2 > price_ > p1
+#if 0
 oid order_mgmt::stop( const code& code_, vol qty_, price price_ ) {
     auto pos = position( code_, true );
     if ( !pos ) {
@@ -324,5 +341,6 @@ oid gain( const code& code_, vol qty_, price price_ ) {
 
     return NVX_BAD_OID;
 }
+#endif
 
 NVX_NS_END

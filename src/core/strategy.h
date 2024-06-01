@@ -33,10 +33,9 @@ SOFTWARE.
 
 NVX_NS_BEGIN
 
-struct Context;
-
+struct context;
 struct strategy {
-    enum class ntf_t {
+    enum class ntf {
         error,
         clock,
         order,
@@ -46,8 +45,8 @@ struct strategy {
 
     virtual ~strategy() {}
 
-    virtual nvx_st init()                                    = 0;
-    virtual nvx_st invoke( strategy::ntf_t n_, context* c_ ) = 0;
+    virtual nvx_st init()                                  = 0;
+    virtual nvx_st invoke( strategy::ntf n_, context* c_ ) = 0;
 };
 
 NVX_NS_END

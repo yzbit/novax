@@ -38,58 +38,58 @@ enum class msg_type {
     unknown,
     tick,
     order,
-    fund,
+    acct,
     position,
     error,
     timer
 };
 
-using timer_msg_t = int;
-using order_msg_t = order_update;
-using error_msg_t = nvxerr_t;
-using pos_msg_t   = int;
-using tick_msg_t  = tick;
-using fund_msg_t  = fund;
+using timer_msg = int;
+using order_msg = order_update;
+using error_msg = nvxerr_t;
+using pos_msg   = int;
+using tick_msg  = tick;
+using acct_msg  = funds;
 
 #define DECLARE_MSG( ... )              \
     msg_type _type = msg_type::unknown; \
     char     _data[ MaxTypeSize<__VA_ARGS__>::value ]
 
-struct msg_t {
-    DECLARE_MSG( tick_msg_t, fund_msg_t );
+struct msg {
+    DECLARE_MSG( tick_msg, acct_msg );
 
     msg_type type() const { return _type; }
-    msg_t();
-    msg_t& operator=( const msg_t& oth_ );
+    msg();
+    msg& operator=( const msg& oth_ );
 
     template <typename T, typename U = std::remove_cv_t<std::remove_reference_t<T>>>
-    msg_t( const T& t_ );
+    msg( const T& t_ );
 
     template <typename T>
     const T& get() const;
 };
 
 //-----impl
-inline msg_t::msg_t() {
+inline msg::msg() {
     memset( _data, 0x00, sizeof( _data ) );
     _type = msg_type::unknown;
 }
 
-inline msg_t& msg_t::operator=( const msg_t& oth_ ) {
+inline msg& msg::operator=( const msg& oth_ ) {
     _type = oth_._type;
     memcpy( _data, oth_._data, sizeof( _data ) );
     return *this;
 }
 
 template <typename T, typename U>
-inline msg_t::msg_t( const T& t_ ) {
+inline msg::msg( const T& t_ ) {
     memset( _data, 0x00, sizeof( _data ) );
 
-    if constexpr ( std::is_same_v<U, tick_msg_t> ) {
+    if constexpr ( std::is_same_v<U, tick_msg> ) {
         _type = msg_type::tick;
     }
-    else if constexpr ( std::is_same_v<U, fund_msg_t> ) {
-        _type = msg_type::fund;
+    else if constexpr ( std::is_same_v<U, acct_msg> ) {
+        _type = msg_type::acct;
     }
     else {
         _type = msg_type::unknown;
@@ -100,15 +100,15 @@ inline msg_t::msg_t( const T& t_ ) {
 }
 
 template <typename T>
-inline const T& msg_t::get() const {
+inline const T& msg::get() const {
     return *reinterpret_cast<const T*>( _data );
 }
 
 }  // namespace pub
 
-struct pub {
-    virtual ~pub() {}
-    virtual nvx_st post( const pub::msg_t& m_ ) = 0;
+struct ipub {
+    virtual ~ipub() {}
+    virtual nvx_st post( const pub::msg& m_ ) = 0;
 };
 
 #define PUB( m ) post( m )

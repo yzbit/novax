@@ -46,7 +46,7 @@ int main() {
     LOG_ENABLE_STDOUT();
 
     auto* a = new cub::aspect();
-    a->load( "rb2410", cub::Period{ cub::Period::type_t::min, 1 }, 40 );
+    a->load( "rb2410", cub::period{ cub::period::type_t::min, 1 }, 40 );
     auto i = new TestI();
     a->addi( i );
     a->debug();

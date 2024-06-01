@@ -47,56 +47,56 @@ struct Clock : clock {
         return _c;
     }
 
-    time_t now( const exid_t& ex_ ) override;
-    void   tune( const datetime& dt_, exid_t ex_ );
+    time_t now( const exid& ex_ ) override;
+    void   tune( const datetime& dt_, exid ex_ );
     void   reset( CThostFtdcRspUserLoginField* pRspUserLogin_ );
 
 private:
-    std::map<exid_t, time_t> _drifts;
+    std::map<exid, time_t> _drifts;
 };
 
 inline Clock::Clock() {
-    _drifts.try_emplace( ( exid_t )extype_t::SHFE, 0 );
-    _drifts.try_emplace( ( exid_t )extype_t::DCE, 0 );
-    _drifts.try_emplace( ( exid_t )extype_t::FFEX, 0 );
-    _drifts.try_emplace( ( exid_t )extype_t::INE, 0 );
-    _drifts.try_emplace( ( exid_t )extype_t::GFEX, 0 );
-    _drifts.try_emplace( ( exid_t )extype_t::CZCE, 0 );
+    _drifts.try_emplace( ( exid )extype_t::SHFE, 0 );
+    _drifts.try_emplace( ( exid )extype_t::DCE, 0 );
+    _drifts.try_emplace( ( exid )extype_t::FFEX, 0 );
+    _drifts.try_emplace( ( exid )extype_t::INE, 0 );
+    _drifts.try_emplace( ( exid )extype_t::GFEX, 0 );
+    _drifts.try_emplace( ( exid )extype_t::CZCE, 0 );
 }
 
-time_t Clock::now( const exid_t& ex_ ) {
+time_t Clock::now( const exid& ex_ ) {
     return _drifts.count( ex_ ) > 0 ? _drifts[ ex_ ] + time( 0 ) : time( 0 );
 }
 
-void Clock::tune( const datetime& dt_, exid_t ex_ ) {
+void Clock::tune( const datetime& dt_, exid ex_ ) {
     if ( _drifts.count( ex_ ) <= 0 ) {
         LOG_INFO( "can not tune clock of exid=%d", ex_ );
-        return NVX_FAIL;
+        return;
     }
 
     _drifts[ ex_ ] = dt_.to_unix_time() - time( 0 );
-
-    return NVX_OK;
 }
 
-void Clock::reset( CThostFtdcRspUserLoginField* pRspUserLogin_ ) {
-    dt.from_ctp( pRspUserLogin->TradingDay, pRspUserLogin->SHFETime, 0 );
-    CLOCK.tune( dt, ( int )extype_t::SHFE );
+void Clock::reset( CThostFtdcRspUserLoginField* f_ ) {
+    datetime dt;
 
-    dt.from_ctp( pRspUserLogin->TradingDay, pRspUserLogin->DCETime, 0 );
-    CLOCK.tune( dt, ( int )extype_t::DCE );
+    dt.from_ctp( f_->TradingDay, f_->SHFETime, 0 );
+    tune( dt, ( int )extype_t::SHFE );
 
-    dt.from_ctp( pRspUserLogin->TradingDay, pRspUserLogin->CZCETime, 0 );
-    CLOCK.tune( dt, ( int )extype_t::CZCE );
+    dt.from_ctp( f_->TradingDay, f_->DCETime, 0 );
+    tune( dt, ( int )extype_t::DCE );
 
-    dt.from_ctp( pRspUserLogin->TradingDay, pRspUserLogin->FFEXTime, 0 );
-    CLOCK.tune( dt, ( int )extype_t::FFEX );
+    dt.from_ctp( f_->TradingDay, f_->CZCETime, 0 );
+    tune( dt, ( int )extype_t::CZCE );
 
-    dt.from_ctp( pRspUserLogin->TradingDay, pRspUserLogin->INETime, 0 );
-    CLOCK.tune( dt, ( int )extype_t::INE );
+    dt.from_ctp( f_->TradingDay, f_->FFEXTime, 0 );
+    tune( dt, ( int )extype_t::FFEX );
 
-    dt.from_ctp( pRspUserLogin->TradingDay, pRspUserLogin->GFEXTime, 0 );
-    CLOCK.tune( dt, ( int )extype_t::GFEX );
+    dt.from_ctp( f_->TradingDay, f_->INETime, 0 );
+    tune( dt, ( int )extype_t::INE );
+
+    dt.from_ctp( f_->TradingDay, f_->GFEXTime, 0 );
+    tune( dt, ( int )extype_t::GFEX );
 }
 }  // namespace ctp
 

@@ -35,13 +35,13 @@ TEST( concurrentq, basic ) {
     moodycamel::ConcurrentQueue<NVX_NS::pub::msg_t> q;
 
     NVX_NS::pub::tick_msg_t tick = { 0 };
-    NVX_NS::pub::fund_msg_t fund = { 0 };
+    NVX_NS::pub::fund_msg_t funds = { 0 };
 
     tick.ask     = 99;
-    fund.balance = 77;
+    funds.balance = 77;
 
     q.enqueue( tick );
-    q.enqueue( fund );
+    q.enqueue( funds );
 
     NVX_NS::pub::msg_t m;
 

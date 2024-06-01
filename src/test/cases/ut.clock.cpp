@@ -30,7 +30,7 @@ SOFTWARE.
 #include <stdio.h>
 #include <time.h>
 
-void foo( NVX_NS::exid_t id_, const NVX_NS::datetime& dt_ ) {
+void foo( NVX_NS::exid id_, const NVX_NS::datetime& dt_ ) {
     ASSERT_TRUE( id_ == -1 || id_ == 2 );
 
     if ( id_ == -1 )

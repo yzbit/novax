@@ -59,57 +59,57 @@ enum class event_t : int8_t {
     data_tick
 };
 
-struct AckEvent {
+struct ack_event {
     event_t id = event_t::ack;
     event_t req;
     char    rc;
 };
 
-struct QutEvent {
+struct qut_event {
     event_t id = event_t::data_tick;
     tick    qut;
 };
 
-struct SubEvent {
+struct sub_event {
     event_t id = event_t::sub_data;
-    code    code;
+    code    c;
 };
 
-struct StopDcEvent {
+struct stop_dc_event {
     event_t id = event_t::stop_dc;
 };
 
-struct StartDcEvent {
+struct start_dc_event {
     event_t id = event_t::start_dc;
 };
 
-struct UnsubEvent {
+struct unsub_event {
     event_t id = event_t::unsub_data;
-    code    code;
+    code    c;
 };
 
 // 实际发送消息的时候没必要发送固定长度的Msg，那是浪费，是什么消息就发送什么消息即可，根据id把消息转成对应下msg即可
 // 问题是如何知道消息长度呢,如何根据消息id判断消息长度，最好是静态的，否则recv消息的时候可能是截断的？
 // 如何保证消息收到的是完整的
 // msg消息可以无损的转成任何xxMsg，前提是数据收的很全
-union Event {
-    event_t      id;
-    StartDcEvent startdc;  // todo
-    StopDcEvent  stopdc;   // todo
-    SubEvent     sub;
-    UnsubEvent   unsub;
-    QutEvent     qut;
+union event {
+    event_t        id;
+    start_dc_event startdc;  // todo
+    stop_dc_event  stopdc;   // todo
+    sub_event      sub;
+    unsub_event    unsub;
+    qut_event      qut;
 };
 
 #define MAX_EVENT_LEN 1024
-struct EventHdr {
+struct event_hdr {
     short len;
     char  data[ MAX_EVENT_LEN ];
 };
 
 template <typename M>
 int send_event( struct bufferevent* bev_, const M& m_ ) {
-    static EventHdr h;
+    static event_hdr h;
 
     h.len = sizeof( M );
     memcpy( h.data, &m_, h.len );
@@ -117,8 +117,8 @@ int send_event( struct bufferevent* bev_, const M& m_ ) {
     return bufferevent_write( bev_, &h, sizeof( short ) + h.len );
 }
 
-inline const Event* recv_event( struct bufferevent* bev_ ) {
-    static EventHdr h;
+inline const event* recv_event( struct bufferevent* bev_ ) {
+    static event_hdr h;
 
     size_t len = evbuffer_get_length( bufferevent_get_input( bev_ ) );
     if ( len < sizeof( short ) ) {
@@ -135,7 +135,7 @@ inline const Event* recv_event( struct bufferevent* bev_ ) {
         return nullptr;
     }
 
-    return reinterpret_cast<Event*>( &h );
+    return reinterpret_cast<event*>( &h );
 }
 }  // namespace dc
 
@@ -147,7 +147,7 @@ protected:
     void attach( struct bufferevent* bev_ );
 
 private:
-    virtual void on_event( const dc::Event* m_, struct bufferevent* bev ) = 0;
+    virtual void on_event( const dc::event* m_, struct bufferevent* bev ) = 0;
     virtual void on_ack( dc::event_t req_, char rc_ )                     = 0;
 
 private:
@@ -159,7 +159,7 @@ private:
 };
 
 struct dc_client : market, endpoint {
-    dc_client( pub* data_ );
+    dc_client( ipub* data_ );
 
     nvx_st start() override;
     nvx_st stop() override;
@@ -168,7 +168,7 @@ struct dc_client : market, endpoint {
     nvx_st run();
 
 private:
-    void on_event( const dc::Event* m_, struct bufferevent* bev ) override;
+    void on_event( const dc::event* m_, struct bufferevent* bev ) override;
     void on_ack( dc::event_t req_, char rc_ ) override;
     void on_tick( const tick& qut_ );
 
@@ -181,9 +181,9 @@ private:
     struct bufferevent* _bev = nullptr;
 };
 
-struct sub_t {
-    ins_t code;
-    void* socket;
+struct subs {
+    ins_code code;
+    void*    socket;
 };
 
 struct dc_server : endpoint {
@@ -191,7 +191,7 @@ struct dc_server : endpoint {
     nvx_st run();
 
 private:
-    void on_event( const dc::Event* m_, struct bufferevent* bev ) override;
+    void on_event( const dc::event* m_, struct bufferevent* bev ) override;
 
 private:
     void        update_subs();
@@ -205,9 +205,9 @@ private:
 private:
 #define MAX_CACHE_CNT 128
 
-    moodycamel::ConcurrentQueue<sub_t> _candicates;
-    std::vector<sub_t>                 _subs;
-    ring_buff<tick, MAX_CACHE_CNT>     _cache;
+    moodycamel::ConcurrentQueue<subs> _candicates;
+    std::vector<subs>                 _subs;
+    ring_buff<tick, MAX_CACHE_CNT>    _cache;
 };
 
 NVX_NS_END

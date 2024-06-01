@@ -38,7 +38,7 @@ struct order_mgmt;
 
 struct context_impl_t {
     tick     qut;
-    fund     fund;
+    funds    acct;
     nvxerr_t error;
 };
 
@@ -46,14 +46,14 @@ struct context_intf : context {
     context_intf( order_mgmt* mgmt_ );
 
     void update_qut( const tick& qut_ );
-    void update_fund( const fund& fund_ );
+    void update_fund( const funds& fund_ );
     void update_error( const nvxerr_t& err_ );
 
 private:
     const tick& qut() const override;
-    const fund  fund() const override;
+    const funds acct() const override;
     aspect*     load( const code&   symbol_,
-                      const Period& period_,
+                      const period& period_,
                       int           count_ ) override;
 
     oid open( const code& c_,
@@ -61,12 +61,12 @@ private:
               price       sl_    = 0,
               price       tp_    = 0,
               price       price_ = 0,
-              otype       mode_  = otype::market );
+              ord_type    mode_  = ord_type::market );
 
     nvx_st close( const code& c_,
                   vol         qty_,
                   price       price_ = 0,
-                  otype       mode_  = otype::market );
+                  ord_type    mode_  = ord_type::market );
 
     position* qry_long( const code& c_ ) override;
     position* qry_short( const code& c_ ) override;

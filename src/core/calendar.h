@@ -39,7 +39,7 @@ SOFTWARE.
 
 NVX_NS_BEGIN
 
-struct canlendar {
+struct calendar {
     nvx_st load_schedule( const char* cal_file_ );
     bool   is_trade_day();
     bool   is_trade_day( const datespec& date_ );
@@ -68,14 +68,15 @@ private:
         int start, end;
     };
 
-    using InsSession  = std::vector<session>;
-    using SessionRepo = std::map<ins_t, InsSession>;
+    using ins_session  = std::vector<session>;
+    using session_repo = std::map<ins_code, ins_session>;
 
-    using Holiday     = std::vector<int>;
-    using HolidayRepo = std::map<int, Holiday>;
-    int         _year;
-    HolidayRepo _holidays;
-    SessionRepo _sessions;
+    using holiday      = std::vector<int>;
+    using holiday_repo = std::map<int, holiday>;
+
+    int          _year;
+    holiday_repo _holidays;
+    session_repo _sessions;
 };
 
 NVX_NS_END

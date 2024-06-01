@@ -39,26 +39,26 @@ struct context {
     static context* create();
 
     virtual const tick& qut() const        = 0;
-    virtual const fund       fund() const       = 0;
-    virtual aspect*            load( const code&   symbol_,
-                                     const Period& period_,
-                                     int             count_ ) = 0;
+    virtual const funds acct() const       = 0;
+    virtual aspect*     load( const code&   symbol_,
+                              const period& period_,
+                              int           count_ ) = 0;
 
     virtual oid open( const code& c_,
-                        vol         qty_,
-                        price       sl_    = 0,
-                        price       tp_    = 0,
-                        price       price_ = 0,
-                        otype       mode_  = otype::market ) = 0;
+                      vol         qty_,
+                      price       sl_    = 0,
+                      price       tp_    = 0,
+                      price       price_ = 0,
+                      ord_type    mode_  = ord_type::market ) = 0;
 
-    virtual nvx_st     close( const code& c_,
-                              vol         qty_,
-                              price       price_ = 0,
-                              otype       mode_  = otype::market ) = 0;
-    virtual position* qry_long( const code& c_ )             = 0;
-    virtual position* qry_short( const code& c_ )            = 0;
-    virtual datetime time() const                             = 0;
-    virtual nvxerr_t   error() const                            = 0;
+    virtual nvx_st    close( const code& c_,
+                             vol         qty_,
+                             price       price_ = 0,
+                             ord_type    mode_  = ord_type::market ) = 0;
+    virtual position* qry_long( const code& c_ )                 = 0;
+    virtual position* qry_short( const code& c_ )                = 0;
+    virtual datetime  time() const                               = 0;
+    virtual nvxerr_t  error() const                              = 0;
     virtual ~context();
 };
 

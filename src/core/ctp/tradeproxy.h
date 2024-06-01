@@ -46,13 +46,13 @@ NVX_NS_BEGIN
 namespace ctp {
 
 struct trader : broker, CThostFtdcTraderSpi {
-    trader( pub* tr_, int id_start_ref_ );
+    trader( ipub* tr_, int id_start_ref_ = 0 );
 
 protected:
     nvx_st start() override;
     nvx_st stop() override;
-    nvx_st cancel( const oid& id_ ) = 0;
-    oid    put( const code& instrument_, vol qty_, price price_, otype mode_, ord_dir dir_ ) override;
+    nvx_st cancel( const oid& id_ ) override;
+    oid    put( const code& instrument_, vol qty_, price price_, ord_type mode_, ord_dir dir_ ) override;
 
 private:
     nvx_st login();
@@ -64,7 +64,6 @@ private:
     nvx_st qry_marginrate();
     nvx_st qry_commission();
     nvx_st qry_position();
-    nvx_st qry_instruments();
 
 private:
     ord_dir cvt_direction( const TThostFtdcDirectionType& di_, const TThostFtdcCombOffsetFlagType& comb_ );

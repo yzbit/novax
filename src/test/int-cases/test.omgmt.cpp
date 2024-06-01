@@ -50,8 +50,8 @@ int main() {
     auto om = new cub::order_mgmt( 0 );
 
     om->start();
-    auto ids = om->sellshort( "rb2410", 1, 6543.0, cub::otype::market );
-    auto idl = om->buylong( "cu2410", 1, 6543.0, cub::otype::market );
+    auto ids = om->sellshort( "rb2410", 1, 6543.0, cub::ord_type::market );
+    auto idl = om->buylong( "cu2410", 1, 6543.0, cub::ord_type::market );
 
     om->position( "rb2410" );
 

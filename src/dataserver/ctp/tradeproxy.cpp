@@ -46,7 +46,7 @@ NVX_NS_BEGIN
 
 namespace ctp {
 
-trader::trader( pub* p_, int id_start_ref_ )
+trader::trader( ipub* p_, int id_start_ref_ )
     : broker( p_ )
     , _last_ref{ id_start_ref_ } {}
 

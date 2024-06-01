@@ -61,12 +61,12 @@ private:
 };
 
 // todo. sync to disk.
-struct ordbook {
-    ordbook( oid init_id_ );
-    ~ordbook();
+struct ord_book {
+    ord_book();
+    ~ord_book();
 
     size_t count() const;
-    oid    oid();
+    // oid    gen_id();
     order* find( oid id_ );
     order* append( order& order_ );
 
@@ -83,7 +83,7 @@ private:
 
 //--------------------------
 struct order_mgmt {
-    order_mgmt( broker* ib_, oid id_start_ );
+    order_mgmt( broker* ib_ );
     ~order_mgmt();
 
     nvx_st start();
@@ -93,49 +93,44 @@ struct order_mgmt {
     oid buylong( const code& code_,
                  vol         qty_,
                  price       price_,
-                 otype       mode_,
+                 ord_type    mode_,
                  const text& remark );
     oid sell( const code& code_,
               vol         qty_,
               price       price_,
-              otype       mode_,
+              ord_type    mode_,
               const text& remark );
     oid sellshort( const code& code_,
                    vol         qty_,
                    price       price_,
-                   otype       mode_,
+                   ord_type    mode_,
                    const text& remark );
     oid buy( const code& code_,
              vol         qty_,
              price       price_,
-             otype       mode_,
+             ord_type    mode_,
              const text& remark );
 
-    // 这里不能用oid好像，因为order id最终会转化为position,当然因为我们其实是记得自己的订单有多少转为了position的
-    // 可以先只支持单腿操作，也就是如果既有空单又有多单，那么选择合适的
-    // 有没有可能一个价格同时是多单和空单的止损单，多单价格p1，空单价格p0，多单的止损必须是小于p1，空单的止损是大于p0，只要p1>p>p0，就成立, 此时你很难讲p是给谁做止损的
-    oid stop( const code& code_, vol qty_, price price_ );
-    oid gain( const code& code_, vol qty_, price price_ );
     oid cancel( oid id_ );
     oid close( const code& code_ );
 
-    position* position( const code& code_, bool long_ );
+    position* pos_of( const code& code_, bool long_ );
     void      update_ord( const order_update& ord_ );
     void      update_position();
 
 private:
-    oid close( position* p_, vol qty_ );
+    // oid close( position* p_, vol qty_ );
     oid put( ord_dir     dir_,
              const code& code_,
              vol         qty_,
              price       price_,
-             otype       mode_,
+             ord_type    mode_,
              const text& remark_ );
     // nvx_st remove( oid id );
 
 private:
     portfolio _pf;
-    ordbook   _orders;
+    ord_book  _orders;
 
 private:
     broker* _ib;

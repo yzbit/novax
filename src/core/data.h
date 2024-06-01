@@ -44,7 +44,7 @@ NVX_NS_BEGIN
 struct aspect;
 struct market;
 struct data {
-    data();
+    data( market* market_ );
     ~data();
 
     void    update( const tick& tick_ );
@@ -52,7 +52,7 @@ struct data {
     nvx_st  stop();
     nvx_st  attach( aspect* a_ );
     nvx_st  dettach( aspect* a_ );
-    aspect* attach( const code& symbol_, const Period& period_, int count_ );
+    aspect* attach( const code& symbol_, const period& period_, int count_ );
 
 private:
     std::list<aspect*> _aspects;

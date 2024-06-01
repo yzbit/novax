@@ -37,13 +37,13 @@ SOFTWARE.
 NVX_NS_BEGIN
 
 struct kline : algo {
-    kline( const code& code_, const Period& p_, size_t series_count_ );
+    kline( const code& code_, const period& p_, size_t series_count_ );
 
     void calc( const tick& q_, int bar_count_ ) override;
 
     candle&     bar( int index_ = 0 );
     const tick& qut() const;
-    Period      period() const;
+    period      cycle() const;
     const code& symbol() const;
 
 private:
@@ -52,13 +52,13 @@ private:
 private:
     tick     _qut;
     code     _symbol;
-    Period   _period;
+    period   _period;
     datetime _curr_start;  // 当前k的起始时间
 
 private:
-    using BarSeries = series<candle_t>;
+    using bar_series = series<candle>;
 
-    BarSeries* _bars = nullptr;
+    bar_series* _bars = nullptr;
 };
 
 NVX_NS_END

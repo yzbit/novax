@@ -36,7 +36,7 @@ SOFTWARE.
 NVX_NS_BEGIN
 
 struct clock {
-    virtual time_t now( const exid_t& ex_ ) = 0;
+    virtual time_t now( const exid& ex_ ) = 0;
     virtual ~clock() {}
 };
 

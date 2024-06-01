@@ -33,7 +33,7 @@ struct TestStrategy : NVX_NS::strategy {
         return NVX_NS::NVX_OK;
     }
 
-    NVX_NS::nvx_st invoke( NVX_NS::strategy::notify_t n_, NVX_NS::context* c_ ) override {
+    NVX_NS::nvx_st invoke( NVX_NS::strategy::ntf n_, NVX_NS::context* c_ ) override {
         return NVX_NS::NVX_OK;
     }
 };

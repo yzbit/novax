@@ -33,22 +33,22 @@ SOFTWARE.
 
 NVX_NS_BEGIN
 
-int subject::post( const pub::msg_t& m_ ) {
+int subject::post( const pub::msg& m_ ) {
     return _pub ? _pub->post( m_ ) : -1;
 }
 
-broker::broker( pub* pub_ )
+broker::broker( ipub* pub_ )
     : subject( pub_ ){};
 
-market::market( pub* pub_ )
+market::market( ipub* pub_ )
     : subject( pub_ ) {
 }
 
-market* create_market( pub* p_ ) {
+market* create_market( ipub* p_ ) {
     return new dc_client( p_ );
 }
 
-broker* create_broker( pub* p_ ) {
+broker* create_broker( ipub* p_ ) {
     return new ctp::trader( p_ );
 }
 

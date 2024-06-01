@@ -49,7 +49,7 @@ NVX_NS_BEGIN
 namespace ctp {
 
 struct trader : broker, CThostFtdcTraderSpi {
-    trader( pub* tr_, int id_start_ref_ );
+    trader( ipub* tr_, int id_start_ref_ );
 
 protected:
     nvx_st start() override;

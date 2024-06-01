@@ -39,20 +39,20 @@ struct position_impl : position {
     void        accum( vol qty_, price price_ );
     void        reset();
 
-private:
-    nvx_st stop( vol qty_, price price_ ) override;
-    nvx_st profit( vol qty_, price price_ ) override;
+    nvx_st stop( vol qty_, price price_, stop_mode t_ ) override;
+    nvx_st gain( vol qty_, price price_ ) override;
     price  avg_dealt() override;
     vol    qty() override;
-    kidx   last_entry() override;
-    kidx   last_exit() override;
+    nvx_st close() override { return 0; }
+    // kidx   last_entry() override;
+    // kidx   last_exit() override;
 
 private:
     position_impl() = delete;
 
 private:
-    bool       _long;
-    pos_item_t _p;
+    bool     _long;
+    pos_item _p;
 };
 
 NVX_NS_END

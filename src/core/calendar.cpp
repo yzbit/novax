@@ -94,7 +94,7 @@ void calendar::parse_hol( const cal_sheet& sh_ ) {
     }
 
     for ( auto it = sh_[ "holidays" ].MemberBegin(); it != sh_[ "holidays" ].MemberEnd(); ++it ) {
-        Holiday days;
+        holiday days;
 
         int month = std::stoi( it->name.GetString() );
         int i     = 0;
@@ -114,9 +114,9 @@ void calendar::parse_sess( const cal_sheet& sh_ ) {
     }
 
     for ( auto it = sh_[ "sessions" ].MemberBegin(); it != sh_[ "sessions" ].MemberEnd(); ++it ) {
-        ins_t code = it->name.GetString();
+        ins_code code = it->name.GetString();
 
-        InsSession periods;
+        ins_session periods;
         periods.reserve( kMaxSessCnt );
 
         for ( auto sess = it->value.Begin(); sess != it->value.End(); ++sess ) {

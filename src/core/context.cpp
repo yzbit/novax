@@ -45,8 +45,8 @@ void context_intf::update_qut( const tick& qut_ ) {
     _impl.qut = qut_;
 }
 
-void context_intf::update_fund( const fund& fund_ ) {
-    _impl.fund = fund_;
+void context_intf::update_fund( const funds& fund_ ) {
+    _impl.acct = fund_;
 }
 
 void context_intf::update_error( const nvxerr_t& err_ ) {
@@ -61,18 +61,18 @@ const tick& context_intf::qut() const {
     return _impl.qut;
 }
 
-const fund context_intf::fund() const {
-    return _impl.fund;
+const funds context_intf::acct() const {
+    return _impl.acct;
 }
 
-aspect* context_intf::load( const code& symbol_, const Period& period_, int count_ ) {
+aspect* context_intf::load( const code& symbol_, const period& period_, int count_ ) {
 
     // return ASP.add( symbol_, period_, count_ );
     // todo
     return nullptr;
 }
 
-oid context_intf::open( const code& c_, vol qty_, price sl_, price tp_, price price_, otype mode_ ) {
+oid context_intf::open( const code& c_, vol qty_, price sl_, price tp_, price price_, ord_type mode_ ) {
     if ( qty_ < 0 )
         return _mgmt->sellshort( c_, qty_, price_, mode_, "" );
     else if ( qty_ > 0 )
@@ -85,7 +85,7 @@ oid context_intf::open( const code& c_, vol qty_, price sl_, price tp_, price pr
     return 0;
 }
 
-oid context_intf::close( const code& c_, vol qty_, price price_, otype mode_ ) {
+oid context_intf::close( const code& c_, vol qty_, price price_, ord_type mode_ ) {
     if ( qty_ < 0 ) {
         return _mgmt->buy( c_, qty_, price_, mode_, "" );
     }
@@ -102,12 +102,11 @@ datetime context_intf::time() const {
 }
 
 position* context_intf::qry_long( const code& c_ ) {
-    return _mgmt->position( c_, true );
+    return _mgmt->pos_of( c_, true );
 }
 
 position* context_intf::qry_short( const code& c_ ) {
-
-    return _mgmt->position( c_, false );
+    return _mgmt->pos_of( c_, false );
 }
 
 NVX_NS_END

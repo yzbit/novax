@@ -33,17 +33,17 @@ SOFTWARE.
 #define BAR_TRACK 0
 NVX_NS_BEGIN
 
-kline::kline( const code& code_, const Period& p_, size_t series_count_ )
+kline::kline( const code& code_, const period& p_, size_t series_count_ )
     : _symbol( code_ )
     , _period( p_ )
-    , _bars( new BarSeries( series_count_ ) ) {
+    , _bars( new bar_series( series_count_ ) ) {
 }
 
-candle_t& kline::bar( int index_ ) {
+candle& kline::bar( int index_ ) {
     return _bars->get( index_ );
 }
 
-Period kline::period() const {
+period kline::cycle() const {
     return _period;
 }
 
@@ -114,7 +114,7 @@ void kline::calc( const tick& q_, int total_ ) {
         return;
     }
 
-    candle_t* k = nullptr;
+    candle* k = nullptr;
 
     if ( is_new_bar( q_ ) ) {
         // 结束上一个，并且开始下一个，但是对于新开始的来说，上个并不存在
@@ -125,7 +125,7 @@ void kline::calc( const tick& q_, int total_ ) {
 
             _bars->shift();
             k = &bar();
-            memset( k, 0, sizeof( candle_t ) );
+            memset( k, 0, sizeof( candle ) );
         }
 
         k->time   = q_.time;  // 开始时间

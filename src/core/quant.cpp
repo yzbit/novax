@@ -43,25 +43,27 @@ NVX_NS_BEGIN
 
 struct quant_impl;
 
-struct quant_pub : pub {
+struct quant_pub : ipub {
     quant_pub( quant_impl& q );
 
+    using con_queue = moodycamel::ConcurrentQueue<pub::msg>;
+
 private:
-    nvx_st post( const pub::msg_t& m_ ) override;
+    nvx_st post( const pub::msg& m_ ) override;
     nvx_st process();
 
 private:
     static nvx_st thread_fun( quant_pub& pub_ );
+    quant_impl&   quant() { return _q; }
+    con_queue&    queue() { return _msg_q; }
 
 private:
-    using msgq_t = moodycamel::ConcurrentQueue<pub::msg_t>;
-
     bool             _running = false;
-    msgq_t           _q;
+    con_queue        _msg_q;
     std::future<int> _fut;
 
 private:
-    quant_impl& _quant;
+    quant_impl& _q;
 };
 
 struct quant_impl : quant {
@@ -70,7 +72,7 @@ struct quant_impl : quant {
 
 private:
     nvx_st execute( strategy* s_ ) override;
-    nvx_st invoke( strategy::notify_t n_ ) {
+    nvx_st invoke( strategy::ntf n_ ) {
         // return _s->invoke( n_, _c );
         return NVX_OK;
     }
@@ -79,18 +81,18 @@ private:
     static void thread_fun( quant_impl& q_ );
 
 private:
-    nvx_st on_tick( const pub::tick_msg_t& tick_ );
-    nvx_st on_fund( const pub::fund_msg_t& tick_ );
-    nvx_st on_error( const pub::error_msg_t& err_ );
-    nvx_st on_order( const pub::order_msg_t& err_ );
-    nvx_st on_position( const pub::pos_msg_t& err_ );
-    nvx_st on_clock( const pub::timer_msg_t& err_ );
+    nvx_st on_tick( const pub::tick_msg& tick_ );
+    nvx_st on_fund( const pub::acct_msg& tick_ );
+    nvx_st on_error( const pub::error_msg& err_ );
+    nvx_st on_order( const pub::order_msg& err_ );
+    nvx_st on_position( const pub::pos_msg& err_ );
+    nvx_st on_clock( const pub::timer_msg& err_ );
 
 protected:
-    Data*         data();
-    order_mgmt*   mgmt();
-    strategy*     strategy();
-    context_intf* context();
+    data*         d();
+    order_mgmt*   m();
+    strategy*     s();
+    context_intf* c();
 
 private:
     data*         _data = nullptr;
@@ -104,52 +106,52 @@ private:
 
 //----------
 quant_pub::quant_pub( quant_impl& q_ )
-    : _quant{ q_ }
-    , _running{ true } {
+    : _running{ true }
+    , _q{ q_ } {
     // todo
     //  _fut = std::async( std::launch::async, &quant_pub::thread_fun, *this );
 }
 
 nvx_st quant_pub::process() {
-    pub::msg_t m;
+    pub::msg m;
 
     uint64_t last = now_ms();
     for ( ;; ) {
         if ( now_ms() - last >= 1000 ) {
-            post( pub::timer_msg_t() );
+            post( pub::timer_msg() );
             last = now_ms();
         }
 
         if ( !_running ) break;
 
-        if ( !_q.try_dequeue( m ) ) {
+        if ( !queue().try_dequeue( m ) ) {
             std::this_thread::yield();
             continue;
         }
 
         switch ( m.type() ) {
-        default: return _quant.on_error( pub::error_msg_t() );
+        default: return _q.on_error( pub::error_msg() );
         case pub::msg_type::timer:
-            return _quant.on_clock( m.get<pub::timer_msg_t>() );
+            return _q.on_clock( m.get<pub::timer_msg>() );
         case pub::msg_type::tick:
             // todo 如果后面还有一个tick（数据堆积了），最好是先处理完再调用invoke?
-            return _quant.on_tick( m.get<pub::tick_msg_t>() );
-        case pub::msg_type::fund:
-            return _quant.on_fund( m.get<pub::fund_msg_t>() );
+            return quant().on_tick( m.get<pub::tick_msg>() );
+        case pub::msg_type::acct:
+            return quant().on_fund( m.get<pub::acct_msg>() );
         case pub::msg_type::order:
-            return _quant.on_order( m.get<pub::order_msg_t>() );
+            return quant().on_order( m.get<pub::order_msg>() );
         case pub::msg_type::error:
-            return _quant.on_error( m.get<pub::error_msg_t>() );
+            return quant().on_error( m.get<pub::error_msg>() );
         case pub::msg_type::position:
-            return _quant.on_position( m.get<pub::pos_msg_t>() );
+            return quant().on_position( m.get<pub::pos_msg>() );
         }
     }
 
     return 0;
 }
 
-nvx_st quant_pub::post( const pub::msg_t& m_ ) {
-    return _q.enqueue( m_ ) ? 0 : -1;
+nvx_st quant_pub::post( const pub::msg& m_ ) {
+    return queue().enqueue( m_ ) ? 0 : -1;
 }
 
 nvx_st quant_pub::thread_fun( quant_pub& pub_ ) {
@@ -177,10 +179,10 @@ quant& quant::instance() {
     return _impl;
 }
 
-Data*         quant_impl::data() { return _data; }
-order_mgmt*   quant_impl::mgmt() { return _mgmt; }
-strategy*     quant_impl::strategy() { return _s; }
-context_intf* quant_impl::context() { return _ctx; }
+data*         quant_impl::d() { return _data; }
+order_mgmt*   quant_impl::m() { return _mgmt; }
+strategy*     quant_impl::s() { return _s; }
+context_intf* quant_impl::c() { return _ctx; }
 
 nvx_st quant_impl::execute( strategy* s_ ) {
     _s = s_;
@@ -191,36 +193,36 @@ nvx_st quant_impl::execute( strategy* s_ ) {
     return NVX_OK;
 }
 
-nvx_st quant_impl::on_clock( const pub::timer_msg_t& err_ ) {
-    return invoke( strategy::notify_t::clock );
+nvx_st quant_impl::on_clock( const pub::timer_msg& err_ ) {
+    return invoke( strategy::ntf::clock );
 }
 
-nvx_st quant_impl::on_tick( const pub::tick_msg_t& tick_ ) {
-    data()->update( tick_ );
-    context()->update_qut( tick_ );
-    return invoke( strategy::notify_t::tick );
+nvx_st quant_impl::on_tick( const pub::tick_msg& tick_ ) {
+    d()->update( tick_ );
+    c()->update_qut( tick_ );
+    return invoke( strategy::ntf::tick );
 }
 
-nvx_st quant_impl::on_fund( const pub::fund_msg_t& fund_ ) {
-    context()->update_fund( fund_ );
-    return invoke( strategy::notify_t::instate );
+nvx_st quant_impl::on_fund( const pub::acct_msg& fund_ ) {
+    c()->update_fund( fund_ );
+    return invoke( strategy::ntf::instate );
 }
 
-nvx_st quant_impl::on_error( const pub::error_msg_t& err_ ) {
+nvx_st quant_impl::on_error( const pub::error_msg& err_ ) {
 #if 0
     context()->update_err( err_ );
-    return invoke( strategy::notify_t::error );
+    return invoke( strategy::ntf::error );
 #endif
     return NVX_OK;
 }
 
-nvx_st quant_impl::on_order( const pub::order_msg_t& ord_ ) {
-    mgmt()->update_ord( ord_ );
-    return invoke( strategy::notify_t::order );
+nvx_st quant_impl::on_order( const pub::order_msg& ord_ ) {
+    m()->update_ord( ord_ );
+    return invoke( strategy::ntf::order );
 }
 
-nvx_st quant_impl::on_position( const pub::pos_msg_t& err_ ) {
-    return invoke( strategy::notify_t::instate );
+nvx_st quant_impl::on_position( const pub::pos_msg& err_ ) {
+    return invoke( strategy::ntf::instate );
 }
 
 NVX_NS_END

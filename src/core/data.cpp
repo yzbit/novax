@@ -69,10 +69,10 @@ nvx_st data::attach( aspect* a_ ) {
 
 nvx_st data::dettach( aspect* a_ ) {
     if ( !a_ ) return NVX_FAIL;
-    return _market->unsubscribe( a_->code() );
+    return _market->unsubscribe( a_->symbol() );
 }
 
-aspect* data::attach( const code& symbol_, const Period& period_, int count_ ) {
+aspect* data::attach( const code& symbol_, const period& period_, int count_ ) {
     if ( _market->subscribe( symbol_ ) < 0 )
         return nullptr;
 
@@ -83,7 +83,7 @@ aspect* data::attach( const code& symbol_, const Period& period_, int count_ ) {
     return a;
 }
 
-data::~Data() {
+data::~data() {
     _jobs->shutdown();
     delete _jobs;
     for ( auto as : _aspects ) {

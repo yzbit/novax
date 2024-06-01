@@ -122,13 +122,13 @@ using duration  = std::chrono::microseconds;
 namespace detail {
 
 // The event structure that holds the information about a timer.
-struct Event {
+struct event {
     timer_id  id;
     timestamp start;
     duration  period;
     handler_t handler;
     bool      valid;
-    Event()
+    event()
         : id( 0 )
         , start( duration::zero() )
         , period( duration::zero() )
@@ -136,21 +136,21 @@ struct Event {
         , valid( false ) {
     }
     template <typename Func>
-    Event( timer_id id, timestamp start, duration period, Func&& handler )
+    event( timer_id id, timestamp start, duration period, Func&& handler )
         : id( id )
         , start( start )
         , period( period )
         , handler( std::forward<Func>( handler ) )
         , valid( true ) {
     }
-    Event( Event&& r )                 = default;
-    Event& operator=( Event&& ev )     = default;
-    Event( const Event& r )            = delete;
-    Event& operator=( const Event& r ) = delete;
+    event( event&& r )                 = default;
+    event& operator=( event&& ev )     = default;
+    event( const event& r )            = delete;
+    event& operator=( const event& r ) = delete;
 };
 
 // A time event structure that holds the next timeout and a reference to its
-// Event struct.
+// event struct.
 struct Time_event {
     timestamp next;
     timer_id  ref;
@@ -174,7 +174,7 @@ class Timer {
     bool done = false;
 
     // The vector that holds all active events.
-    std::vector<detail::Event> events;
+    std::vector<detail::event> events;
     // Sorted queue that has the next timeout at its top.
     std::multiset<detail::Time_event> time_events;
 
@@ -222,13 +222,13 @@ public:
         // a new one.
         if ( free_ids.empty() ) {
             id = events.size();
-            detail::Event e( id, when, period, std::move( handler ) );
+            detail::event e( id, when, period, std::move( handler ) );
             events.push_back( std::move( e ) );
         }
         else {
             id = free_ids.top();
             free_ids.pop();
-            detail::Event e( id, when, period, std::move( handler ) );
+            detail::event e( id, when, period, std::move( handler ) );
             events[ id ] = std::move( e );
         }
         time_events.insert( detail::Time_event{ when, id } );
@@ -241,8 +241,8 @@ public:
      * Overloaded `add` function that uses a `std::chrono::duration` instead of a
      * `time_point` for the first timeout.
      */
-    template <class Rep, class Period>
-    inline timer_id add( const std::chrono::duration<Rep, Period>& when, handler_t&& handler, const duration& period = duration::zero() ) {
+    template <class Rep, class period>
+    inline timer_id add( const std::chrono::duration<Rep, period>& when, handler_t&& handler, const duration& period = duration::zero() ) {
         return add( clock::now() + std::chrono::duration_cast<std::chrono::microseconds>( when ),
                     std::move( handler ),
                     period );

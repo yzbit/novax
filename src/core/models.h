@@ -41,7 +41,7 @@ enum class variety_t {
     bitcoin,
 };
 
-struct fund {
+struct funds {
     money    withdraw;    // 取款
     money    cashin;      // 存钱
     money    balance;     // 余额
@@ -77,7 +77,7 @@ struct candle {
     price height() { return high - low; }
     price bar_mid() { return ( high + low ) / 2; }
     price body_mid() { return ( open + close ) / 2; }
-    price price() { return close; }
+    price figure() { return close; }
     price uppers() { return high - body_up(); }
     price lowers() { return body_low() - low; }
     price body_up() { return std::max( close, open ); }
@@ -88,11 +88,11 @@ struct candle {
     bool black() { return close < open; }
     bool green() { return black(); }
     bool doji() { return fabs( close - open ) < 1e-4; }
-    bool embrace( candle_t& o ) { return body_up() >= o.body_up() && body_low() <= o.body_low(); }
+    bool embrace( candle& o ) { return body_up() >= o.body_up() && body_low() <= o.body_low(); }
     bool close_beyond() { return close > ( high + low ) / 2; }
     bool close_under() { return close < ( high + low ) / 2; }
-    bool step_beyond( const candle_t& oth_ ) { return high > oth_.high && low > oth_.low && close > oth_.close; }
-    bool step_below( const candle_t& oth_ ) { return low < oth_.low && close < oth_.close && high < oth_.high; }
+    bool step_beyond( const candle& oth_ ) { return high > oth_.high && low > oth_.low && close > oth_.close; }
+    bool step_below( const candle& oth_ ) { return low < oth_.low && close < oth_.close && high < oth_.high; }
 
 // k线的开始时间，主要是调试用，确保K线分割合理正确
 #ifdef CUB_DEBUG
@@ -105,7 +105,7 @@ struct candle {
 
 // real time ticks
 struct tick {
-    code     code;
+    code     symbol;
     int      ex;        // 交易所
     vol      volume;    // 成交仓位
     money    turnover;  // 成交额
@@ -133,7 +133,7 @@ enum class ord_dir {
     cover,
 };
 
-enum class otype {
+enum class ord_type {
     limit,
     stop,
     cond,    // 条件单-似乎有点复杂，tbd
@@ -145,7 +145,7 @@ enum class otype {
     fam,     // 立即成交，其余使用市价交易 = fak+market
 };
 
-enum class ostatus {
+enum class ord_status {
     // todo noneed, create          = 0x0001,
     pending         = 0x0002,
     partial         = 0x0004,
@@ -163,33 +163,35 @@ enum class ostatus {
 };
 
 struct order {
-    oid      id       = NVX_BAD_OID;  //! 订单id
-    code     code     = "";           //! 代码，RB1910
-    Ex       ex       = "";           //! 交易所，SHEX
-    price    price    = .0;           //! 期望成交价格，已成交价格
-    price    tp_price = .0;           //! 止盈价格
-    price    sl_price = .0;           //! 止损价格
-    vol      qty      = .0;           //! 期望成交数量, 已成交数量
-    vol      traded   = .0;           //! 已经成交
-    ord_dir  dir      = dir_t::none;  //! 方向，买、卖、平
-    ostatus  status   = ostatus::pending;
-    otype    mode     = type_t::market;
-    bool     today    = true;             //! 今仓，昨仓
-    datetime datetime = datetime::now();  //! 成交或者下单的时间、日期
-    xstring  remark   = "#";              //! 如果会非常频繁的创建和拷贝订单，这里最好是用数组--string的实现必须健壮,考虑到各种可能的诡异操作~
+    order() = default;
+    order( oid id_, const code& c_, const vol v_, const price p_, const ord_type& t_, const ord_dir& d_ );
+    oid        id       = NVX_BAD_OID;    //! 订单id
+    code       symbol   = "";             //! 代码，RB1910
+    exch       ex       = "";             //! 交易所，SHEX
+    price      limit    = .0;             //! 期望成交价格，已成交价格
+    price      tp_price = .0;             //! 止盈价格
+    price      sl_price = .0;             //! 止损价格
+    vol        qty      = .0;             //! 期望成交数量, 已成交数量
+    vol        traded   = .0;             //! 已经成交
+    ord_dir    dir      = ord_dir::none;  //! 方向，买、卖、平
+    ord_status status   = ord_status::pending;
+    ord_type   mode     = ord_type::market;
+    bool       today    = true;             //! 今仓，昨仓
+    datetime   dt       = datetime::now();  //! 成交或者下单的时间、日期
+    xstring    remark   = "#";              //! 如果会非常频繁的创建和拷贝订单，这里最好是用数组--string的实现必须健壮,考虑到各种可能的诡异操作~
 };
 
 struct order_update {
-    oid     id;
-    vol     qty;
-    price   price;
-    ord_dir dir;
-    ostatus status;
+    oid        id;
+    vol        qty;
+    price      dealt;
+    ord_dir    dir;
+    ord_status status;
 };
 
-struct PosItem {
+struct pos_item {
     code    symbol;
-    price   price;
+    price   dealt;
     price   last_price;
     money   profit;
     money   close_profit;
@@ -200,7 +202,7 @@ struct PosItem {
     datetime update_time;
 };
 
-struct Performance {
+struct performance {
     int   records;  // 交易多少次
     money profit;   // 总利润盈利多少
     money commission;
@@ -227,11 +229,11 @@ struct Performance {
     array_t<money> profits;  // 每次有平仓都记录一下利润，用于画曲线
 };
 
-struct MarginRate {
+struct margin_rate {
     xstring broker;
     xstring investor;
     code    instrument;
-    ex_t    ex;
+    exch    ex;
     char    investor_range;   // ctp 投资者范围
     bool    is_relative;      // 是否相对交易所收取
     bool    hedge;            // 投机套保标志
@@ -242,13 +244,13 @@ struct MarginRate {
 };
 
 //---inlines
-inline order::order( oid id_, const code& c_, const vol v_, const price p_, const type_t& t_, const dir_t& d_ ) {
-    id    = id_;
-    code  = c_;
-    qty   = v_;
-    price = p_;
-    mode  = t_;
-    dir   = d_;
+inline order::order( oid id_, const code& c_, const vol v_, const price p_, const ord_type& t_, const ord_dir& d_ ) {
+    id     = id_;
+    symbol = c_;
+    qty    = v_;
+    limit  = p_;
+    mode   = t_;
+    dir    = d_;
 }
 
 NVX_NS_END

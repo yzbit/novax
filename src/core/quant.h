@@ -38,7 +38,7 @@ struct strategy;
 struct quant {
     static quant& instance();
     virtual ~quant() {}
-    virtual clock* clock()                 = 0;  //?
+    // virtual clock* clock()                 = 0;  //?
     virtual nvx_st execute( strategy* s_ ) = 0;
 };
 

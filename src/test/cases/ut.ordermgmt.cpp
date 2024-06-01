@@ -118,7 +118,7 @@ struct SimBroker : NVX_NS::broker {
     int start() override { return 0; }
     int stop() override { return 0; }
     int put( const NVX_NS::order& o_ ) override {
-        delegator()->update_ord( o_.id, NVX_NS::ostatus_t::cancelled );
+        delegator()->update_ord( o_.id, NVX_NS::ord_status::cancelled );
         return 0;
     }
 

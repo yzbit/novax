@@ -35,43 +35,45 @@ SOFTWARE.
 NVX_NS_BEGIN
 
 struct subject {
-    subject( pub* pub_ )
+    subject( ipub* pub_ )
         : _pub( pub_ ) {}
 
     virtual ~subject() {}
 
 protected:
-    int post( const pub::msg_t& m_ );
+    int post( const pub::msg& m_ );
 
 private:
-    pub* _pub = nullptr;
+    ipub* _pub = nullptr;
 };
 
 struct broker : subject {
-    enum class Type {
+    enum class type {
         ctp
     };
 
-    broker( pub* pub_ );
-    static broker* create( Type t_, pub* pub_ );
+    broker( ipub* pub_ );
+    static broker* create( type t_, ipub* pub_ );
 
     virtual nvx_st start()             = 0;
     virtual nvx_st stop()              = 0;
     virtual oid    put( const code& instrument_,
                         vol         qty_,
                         price       price_,
-                        otype       mode_,
+                        ord_type    mode_,
                         ord_dir     dir_ ) = 0;
 
     virtual nvx_st cancel( const oid& id_ ) = 0;
 };
 
 struct market : subject {
-    enum class
-        static market*
-        create( Type t_, pub* pub_ );
+    enum class type {
+        ctp
+    };
 
-    market( pub* pub_ );
+    market( ipub* pub_ );
+    static market* create( type t_, ipub* pub_ );
+
     virtual nvx_st start()                          = 0;
     virtual nvx_st stop()                           = 0;
     virtual nvx_st subscribe( const code& code_ )   = 0;

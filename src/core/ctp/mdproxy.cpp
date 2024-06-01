@@ -31,7 +31,9 @@ SOFTWARE.
 
 #include "../log.hpp"
 #include "../models.h"
+#include "clock.h"
 #include "comm.h"
+
 // todo debug
 #include "../utils.hpp"
 
@@ -47,49 +49,37 @@ NVX_NS_BEGIN
 namespace ctp {
 namespace fs = std::filesystem;
 
-mdex::mdex( pub* p_ )
+mdex::mdex( ipub* p_ )
     : market( p_ ) {
 }
 
 nvx_st mdex::subscribe( const code& code_ ) {
-    std::unique_lock<std::mutex> lock{ _sub_mtx };
-
-    LOG_TAGGED( "ctp",
-                "subscribe svc=%d, code=%s, pending sub=%d pending_unsub=%d",
-                _is_svc_online,
-                code_.c_str(),
-                ( int )_sub_symbols.size(),
-                ( int )_unsub_symbols.size() );
-
-    _sub_symbols.insert( code_ );
-    _unsub_symbols.erase( code_ );
-
-    if ( _is_svc_online ) {
-        sub( const_cast<code&>( code_ ) );
-    }
-
-    return NVX_OK;
-}
-
-nvx_st mdex::sub( code& code_ ) {
     CTP_CHECK_READY( NVX_FAIL );
 
-    char* c = code_.c_str();
-    return _api->SubscribeMarketData( &c, 1 );
+    char* c  = code_.c_str();
+    auto  rc = _api->SubscribeMarketData( &c, 1 );
+
+    if ( 0 == rc ) {
+        LOG_INFO( "subscribe code [%s] sent", code_.c_str() );
+        return NVX_OK;
+    }
+
+    LOG_INFO( "subscribe code [%s] failed", code_.c_str() );
+    return rc;
 }
 
-nvx_st mdex::unsub( code& code_ ) {
+nvx_st mdex::unsubscribe( const code& code_ ) {
     CTP_CHECK_READY( NVX_FAIL );
 
     char* c  = code_.c_str();
     auto  rc = _api->UnSubscribeMarketData( &c, 1 );
 
     if ( 0 == rc ) {
-        LOG_INFO( "subscribe code [%s] sent", code_.c_str() )
+        LOG_INFO( "unsubscribe code [%s] sent", code_.c_str() );
         return NVX_OK;
     }
 
-    LOG_INFO( "subscribe code [%s] failed", code_.c_str() )
+    LOG_INFO( "unsubscribe code [%s] failed", code_.c_str() );
     return rc;
 }
 
@@ -191,28 +181,9 @@ void mdex::OnRspUserLogin( CThostFtdcRspUserLoginField* pRspUserLogin, CThostFtd
               pRspUserLogin->SessionID,
               pRspUserLogin->MaxOrderRef );
 
-    datetime dt = { 0 };
-
     LOG_TAGGED( "ctp", "tune clock of exchanges" );
     CTP_CLOCK.reset( pRspUserLogin );
-
-    {
-        LOG_TAGGED( "ctp", "login ok , process subcribtion" );
-        for ( auto& c : _sub_symbols ) {
-            LOG_INFO( "=> %s", c.c_str() );
-        }
-
-        LOG_INFO( "unsubcribtion" );
-        for ( auto& c : _unsub_symbols ) {
-            LOG_INFO( "=> %s", c.c_str() );
-        }
-
-        std::unique_lock<std::mutex> lock{ _sub_mtx };
-        unsub();
-        sub();
-
-        _is_svc_online = true;
-    }
+    _is_svc_online = true;
 }
 
 void mdex::OnRspUserLogout( CThostFtdcUserLogoutField* pUserLogout, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) {
@@ -224,13 +195,13 @@ void mdex::OnRspUserLogout( CThostFtdcUserLogoutField* pUserLogout, CThostFtdcRs
 
 void mdex::OnRtnDepthMarketData( CThostFtdcDepthMarketDataField* f ) {
     // fprintf( stderr, "r quote\n" );
-    pub::tick_msg_t q;
+    pub::tick_msg q;
 
     q.time.from_ctp( f->TradingDay, f->UpdateTime, f->UpdateMillisec );
     q.ex       = cvt_ex( f->ExchangeID );  // 模拟盘是[\0]
     q.last     = f->LastPrice;
     q.volume   = f->Volume;
-    q.code     = f->InstrumentID;
+    q.symbol   = f->InstrumentID;
     q.opi      = f->OpenInterest;
     q.ask      = f->AskPrice1;
     q.askvol   = f->AskVolume1;
@@ -254,7 +225,7 @@ void mdex::OnRtnDepthMarketData( CThostFtdcDepthMarketDataField* f ) {
              q.ex,
              q.last,
              q.volume,
-             q.code.c_str(),
+             q.symbol.c_str(),
              q.opi,
              q.ask,
              q.askvol,

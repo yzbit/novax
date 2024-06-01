@@ -35,19 +35,19 @@ SOFTWARE.
 
 NVX_NS_BEGIN
 
-struct dc_pub : pub {
+struct dc_pub : ipub {
     dc_pub( dc_server* d_ )
         : _srv( d_ ) {
     }
 
-    const tick& qut_from_pub( const pub::tick_msg_t& m_ ) const {
+    const tick& qut_from_pub( const pub::tick_msg& m_ ) const {
         return m_;
     }
 
-    int post( const pub::msg_t& m_ ) override {
+    int post( const pub::msg& m_ ) override {
         if ( m_.type() != pub::msg_type::tick ) return -1;
 
-        _srv->update( qut_from_pub( m_.get<pub::tick_msg_t>() ) );
+        _srv->update( qut_from_pub( m_.get<pub::tick_msg>() ) );
         return 0;
     }
 
@@ -68,16 +68,16 @@ void dc_server::update( const tick& tick_ ) {
 #endif
 }
 
-void dc_server::on_event( const dc::Event* m_, struct bufferevent* bev_ ) {
+void dc_server::on_event( const dc::event* m_, struct bufferevent* bev_ ) {
     switch ( m_->id ) {
     default: break;
     case dc::event_t::sub_data: {
-        const dc::SubEvent* sub = reinterpret_cast<const dc::SubEvent*>( m_ );
-        _candicates.enqueue( { sub->code, bev_ } );
+        const dc::sub_event* sub = reinterpret_cast<const dc::sub_event*>( m_ );
+        _candicates.enqueue( { sub->c, bev_ } );
     } break;
     case dc::event_t::unsub_data: {
-        const dc::SubEvent* sub = reinterpret_cast<const dc::SubEvent*>( m_ );
-        _candicates.enqueue( { sub->code, 0 } );
+        const dc::sub_event* sub = reinterpret_cast<const dc::sub_event*>( m_ );
+        _candicates.enqueue( { sub->c, 0 } );
     } break;
     }
 }
@@ -104,7 +104,7 @@ nvx_st dc_server::run() {
 }
 
 void dc_server::update_subs() {
-    sub_t s;
+    subs s;
     while ( _candicates.try_dequeue( s ) ) {
         if ( !s.socket ) {
             _subs.erase( std::remove_if( _subs.begin(), _subs.end(), [ & ]( const auto& v ) { return v.code == s.code; } ) );

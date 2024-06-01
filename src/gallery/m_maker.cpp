@@ -41,8 +41,8 @@ void MarketMaker::on_refresh( Context& c ) {
 
         //下多条腿,还是分别下
 
-        c.buylong( "btc/usdt", 0.001, buy_price, otype::fok );
-        c.sellshort( "btc/usdt", 0.001, sell_price, otype::fok );
+        c.buylong( "btc/usdt", 0.001, buy_price, ord_type::fok );
+        c.sellshort( "btc/usdt", 0.001, sell_price, ord_type::fok );
     }
 
     c.close();

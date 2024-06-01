@@ -48,7 +48,7 @@ NVX_NS_BEGIN
 
 namespace ctp {
 struct mdex : market, CThostFtdcMdSpi {
-    mdex( pub* p_ );
+    mdex( ipub* p_ );
 
 protected:
     nvx_st start() override;

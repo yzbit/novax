@@ -47,11 +47,11 @@ void aspect::debug() {
     }
 }
 
-kline& aspect::kline( kidx index_ ) {
+kline& aspect::bar( kidx index_ ) {
     return *_k;
 }
 
-const code& aspect::code() const {
+const code& aspect::symbol() const {
     return _symbol;
 }
 
@@ -69,7 +69,7 @@ aspect::~aspect() {
     _algos.clear();
 }
 
-nvx_st aspect::load( const code& code_, const Period& p_, int count_ ) {
+nvx_st aspect::load( const code& code_, const period& p_, int count_ ) {
     if ( loaded() ) return 0;
 
     _symbol = code_;
@@ -104,7 +104,7 @@ nvx_st aspect::addi( indicator* i_ ) {
     return NVX_OK;
 }
 
-aspect::aspect( Data* data_ )
+aspect::aspect( data* data_ )
     : _data( data_ ) {}
 
 NVX_NS_END

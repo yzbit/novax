@@ -58,7 +58,7 @@ struct encpas {
         memcpy( _data, &ex_._data, sizeof( _data ) );
     }
 
-    char* data() {
+    const char* data() const {
         return _data;
     }
 
@@ -119,6 +119,9 @@ struct ordref : encpas<TThostFtdcOrderRefType> {
     explicit ordref( const ordref& r_ )
         : encpas( r_ ) {}
 
+    explicit ordref( ordref& r_ )
+        : encpas( r_ ) {}
+
     ordref() {
         memset( _data, '0', LENGTH );
     }
@@ -149,6 +152,10 @@ struct ordref : encpas<TThostFtdcOrderRefType> {
 
     bool operator==( const ordref& ref_ ) {
         return encpas::operator==( ref_ );
+    }
+
+    bool operator<( const ordref& ref_ ) {
+        return int_val() < ref_.int_val();
     }
 
     unsigned int_val() const {

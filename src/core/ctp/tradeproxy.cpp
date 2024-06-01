@@ -46,7 +46,7 @@ NVX_NS_BEGIN
 
 namespace ctp {
 
-trader::trader( pub* p_, int id_start_ref_ )
+trader::trader( ipub* p_, int id_start_ref_ )
     : broker( p_ )
     , _last_ref{ id_start_ref_ } {}
 
@@ -100,17 +100,17 @@ nvx_st trader::qry_fund() {
     CTP_CHECK_READY( NVX_FAIL );
 
     CThostFtdcQryTradingAccountField acct = {};
-    strncpy( acct.BrokerID, _settings.i.broker.c_str(), sizoef( acct.BrokerID ) );
+    strncpy( acct.BrokerID, _settings.i.broker.c_str(), sizeof( acct.BrokerID ) );
     strncpy( acct.InvestorID, _settings.i.id.c_str(), sizeof( acct.InvestorID ) );
     strncpy( acct.CurrencyID, "CNY", sizeof( acct.CurrencyID ) );
 
     auto rc = _api->ReqQryTradingAccount( &acct, req_id() );
     if ( 0 == rc ) {
-        LOG_INFO( "fund qry sent" );
+        LOG_INFO( "funds qry sent" );
         return NVX_OK;
     }
 
-    LOG_INFO( "fund qry fail=%d", rc );
+    LOG_INFO( "funds qry fail=%d", rc );
     return NVX_FAIL;
 }
 
@@ -147,7 +147,7 @@ void trader::reconnected( const session& s_, const ordref& max_ref_ ) {
 
     if ( _last_ref < max_ref_ ) {
         LOG_INFO( "reset start id [%s] to [%s]", _last_ref.data(), max_ref_.data() );
-        _last_ref = r;
+        _last_ref = max_ref_;
     }
 
     // if ( !_settled ) {
@@ -159,23 +159,8 @@ nvx_st trader::qry_position() {
     return NVX_OK;
 }
 
-nxt_st trader::qry_instruments() {
-    CTP_CHECK_READY( NVX_FAIL );
-
-    CThostFtdcQryInstrumentField ins = {};
-
-    auto rc = ReqQryInstrument( &ins, req_id );
-
-    if ( 0 == rc ) {
-        LOG_INFO( "qry ins sent" );
-        return NVX_OK;
-    }
-
-    LOG_INFO( "qry ins fail=%d", rc );
-    return NVX_FAIL;
-}
-
 nvx_st trader::cancel( const oid& id_ ) {
+#if 0
     CTP_CHECK_READY( NVX_FAIL );
 
     CThostFtdcInputOrderActionField r = {};
@@ -230,24 +215,25 @@ nvx_st trader::cancel( const oid& id_ ) {
     }
 
     LOG_INFO( "delete req fail=%d", rc );
+#endif
     return NVX_FAIL;
 }
 
-oid trader::put( const code& instrument_, vol qty_, price price_, otype mode_, ord_dir dir_ ) {
+oid trader::put( const code& instrument_, vol qty_, price price_, ord_type mode_, ord_dir dir_ ) {
     LOG_INFO( "xPutOrder@ctp准备下单" );
     CTP_CHECK_READY( NVX_BAD_OID );
 
     CThostFtdcInputOrderField r = {};
 
-    ordref ref = ++_last_ref;
+    ordref ref;  // todo = ++_last_ref;
     LOG_INFO( "new order id=%s, %u", ref.data(), ref.int_val() );
 
     ref.copy_to( r.OrderRef );
 
     strncpy( r.BrokerID, _settings.i.broker.c_str(), sizeof( r.BrokerID ) );
     strncpy( r.InvestorID, _settings.i.id.c_str(), sizeof( r.InvestorID ) );
-    strncpy( r.UserID, _settings.i.id.c_str(), sizeof( filed.UserID ) );
-    strncpy( r.InstrumentID, code_.c_str(), sizeof( r.InstrumentID ) );
+    strncpy( r.UserID, _settings.i.id.c_str(), sizeof( r.UserID ) );
+    strncpy( r.InstrumentID, instrument_.c_str(), sizeof( r.InstrumentID ) );
 
     r.IsSwapOrder         = 0;
     r.ForceCloseReason    = THOST_FTDC_FCC_NotForceClose;
@@ -262,32 +248,32 @@ oid trader::put( const code& instrument_, vol qty_, price price_, otype mode_, o
 
     LOG_INFO( "order mode:%d", mode_ );
 
-    switch ( o_.mode ) {
+    switch ( mode_ ) {
     default:
         LOG_INFO( "不存在的订单模式:%d", mode_ );
         return NVX_FAIL;
 
-    case otype::market:
+    case ord_type::market:
         r.OrderPriceType  = THOST_FTDC_OPT_AnyPrice;
         r.TimeCondition   = THOST_FTDC_TC_IOC;
         r.VolumeCondition = THOST_FTDC_VC_AV;
         r.LimitPrice      = 0;
         break;
 
-    case otype::fak:
+    case ord_type::fak:
         r.OrderPriceType  = THOST_FTDC_OPT_LimitPrice;
         r.TimeCondition   = THOST_FTDC_TC_IOC;
         r.VolumeCondition = THOST_FTDC_VC_MV;
         r.MinVolume       = 1;
         break;
 
-    case otype::fok:
+    case ord_type::fok:
         r.OrderPriceType  = THOST_FTDC_OPT_LimitPrice;
         r.TimeCondition   = THOST_FTDC_TC_IOC;
         r.VolumeCondition = THOST_FTDC_VC_CV;
         break;
 
-    case otype::wok:
+    case ord_type::wok:
         r.OrderPriceType  = THOST_FTDC_OPT_LimitPrice;
         r.TimeCondition   = THOST_FTDC_TC_GFD;  //! 当日有效
         r.VolumeCondition = THOST_FTDC_VC_AV;
@@ -296,7 +282,7 @@ oid trader::put( const code& instrument_, vol qty_, price price_, otype mode_, o
 
     LOG_INFO( "order direction: %d", dir_ );
 
-    switch ( o_.dir ) {
+    switch ( dir_ ) {
     default:
         LOG_INFO( "bad order direction: %d", dir_ );
         return NVX_FAIL;
@@ -510,7 +496,8 @@ void trader::OnRspAuthenticate( CThostFtdcRspAuthenticateField* pRspAuthenticate
 }
 
 void trader::OnRspUserLogin( CThostFtdcRspUserLoginField* pRspUserLogin, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) {
-    reconnected( { pRspUserLogin->FrontID, pRspUserLogin->SessionID }, { pRspUserLogin->MaxOrderRef } );
+    // todo
+    // reconnected( { pRspUserLogin->FrontID, pRspUserLogin->SessionID }, { pRspUserLogin->MaxOrderRef } );
 }
 
 void trader::OnRspError( CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) {
@@ -521,7 +508,7 @@ void trader::OnFrontDisconnected( int nReason ) {
     LOG_INFO( "front disconnted:reason=%d", nReason );
 }
 
-[[deprecated]] void trader::OnHeartBeatWarning( int nTimeLapse ) {
+void trader::OnHeartBeatWarning( int nTimeLapse ) {
 }
 
 void trader::OnRspUserLogout( CThostFtdcUserLogoutField* pUserLogout, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) {
@@ -549,7 +536,7 @@ void trader::OnRspOrderInsert( CThostFtdcInputOrderField* f_, CThostFtdcRspInfoF
     }
 
     // todo
-    // delegator()->update_ord( id->fsr.ref.int_val(), ostatus_t::cancelled );
+    // delegator()->update_ord( id->fsr.ref.int_val(), ord_status::cancelled );
 }
 
 void trader::OnRspOrderAction( CThostFtdcInputOrderActionField* f_, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) {
@@ -563,7 +550,7 @@ void trader::OnRspOrderAction( CThostFtdcInputOrderActionField* f_, CThostFtdcRs
     }
 
     // todo
-    //  delegator()->update_ord( id->fsr.ref.int_val(), ostatus_t::aborted );
+    //  delegator()->update_ord( id->fsr.ref.int_val(), ord_status::aborted );
 }
 
 ord_dir trader::cvt_direction( const TThostFtdcDirectionType& di_, const TThostFtdcCombOffsetFlagType& comb_ ) {
@@ -633,22 +620,23 @@ void trader::OnRtnOrder( CThostFtdcOrderField* f_ ) {
     case THOST_FTDC_OST_Touched:
     case THOST_FTDC_OST_Unknown:
         // todo
-        // return delegator()->update_ord( oid, ostatus_t::pending );
+        // return delegator()->update_ord( oid, ord_status::pending );
         return;
 
     case THOST_FTDC_OST_PartTradedQueueing:
     case THOST_FTDC_OST_AllTraded:
     case THOST_FTDC_OST_PartTradedNotQueueing: {  // todo
+#if 0
         order o;
 
         o.id     = oid;
         o.qty    = f_->VolumeTraded;
         o.remark = f_->StatusMsg;
 
-        o.datetime.from_ctp( f_->InsertDate, f_->InsertTime, 0 );
+        o.dt.from_ctp( f_->InsertDate, f_->InsertTime, 0 );
         o.code = f_->InstrumentID;
 
-        o.status = ostatus_t::dealt;
+        o.status = ord_status::dealt;
         LOG_INFO( "order dir %d %s", f_->Direction, f_->CombOffsetFlag );
 
         o.dir = cvt_direction( f_->Direction, f_->CombOffsetFlag );
@@ -660,13 +648,14 @@ void trader::OnRtnOrder( CThostFtdcOrderField* f_ ) {
 
         // todo
         // return delegator()->update_ord( o );
+#endif
         return;
     } break;
 
     case THOST_FTDC_OST_Canceled:
         LOG_INFO( "撤单原因: %d", f_->OrderSubmitStatus );
         // todo
-        // return delegator()->update_ord( oid, ostatus_t::cancelled );
+        // return delegator()->update_ord( oid, ord_status::cancelled );
         return;
     }
 }
@@ -679,21 +668,22 @@ void trader::OnRtnTrade( CThostFtdcTradeField* f_ ) {
         return;
     }
 
+#if 0
     order o;
 
     o.id = id.value().fsr.ref.int_val();
     o.datetime.from_ctp( f_->TradeDate, f_->TradeTime, 0 );
     o.qty   = f_->Volume;
     o.code  = f_->InstrumentID;
-    o.price = f_->price;
+    o.limit = f_->price;
     o.dir   = cvt_direction( f_->Direction, f_->OffsetFlag );
 
     if ( ord_dir::none == o.dir ) {
         LOG_INFO( "bad order direction'" );
     }
-
+#endif
     // todo
-    // delegator()->update_ord( id->fsr.ref.int_val(), ostatus_t::finished );
+    // delegator()->update_ord( id->fsr.ref.int_val(), ord_status::finished );
     qry_fund();
 }
 
@@ -708,7 +698,7 @@ void trader::OnErrRtnOrderInsert( CThostFtdcInputOrderField* f_, CThostFtdcRspIn
     }
 
     // todo
-    // delegator()->update_ord( id->fsr.ref.int_val(), ostatus_t::error );
+    // delegator()->update_ord( id->fsr.ref.int_val(), ord_status::error );
 }
 
 void trader::OnErrRtnOrderAction( CThostFtdcOrderActionField* f_, CThostFtdcRspInfoField* pRspInfo ) {
@@ -732,7 +722,7 @@ void trader::OnErrRtnOrderAction( CThostFtdcOrderActionField* f_, CThostFtdcRspI
     }
 
     // todo
-    // delegator()->update_ord( id->fsr.ref.int_val(), ostatus_t::aborted );
+    // delegator()->update_ord( id->fsr.ref.int_val(), ord_status::aborted );
 }
 
 void trader::OnRspQryInstrument( CThostFtdcInstrumentField* pInstrument, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) {
@@ -740,7 +730,7 @@ void trader::OnRspQryInstrument( CThostFtdcInstrumentField* pInstrument, CThostF
 
 void trader::OnRspQryTradingAccount( CThostFtdcTradingAccountField* pTradingAccount, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) {
     LOG_INFO( "qry account,errid=%d msg=%s", pRspInfo->ErrorID, pRspInfo->ErrorMsg );
-    pub::fund_msg_t f;
+    pub::acct_msg f;
 
     f.available  = pTradingAccount->Available;
     f.commission = pTradingAccount->Commission;

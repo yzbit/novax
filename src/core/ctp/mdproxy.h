@@ -45,24 +45,20 @@ NVX_NS_BEGIN
 
 namespace ctp {
 struct mdex : market, CThostFtdcMdSpi {
-    mdex( IPub* p_ );
+    mdex( ipub* p_ );
 
 protected:
-    NvxSt start() override;
-    NvxSt stop() override;
-    NvxSt subscribe( const Code& code_ ) override;
-    NvxSt unsubscribe( const Code& code_ ) override;
+    nvx_st start() override;
+    nvx_st stop() override;
+    nvx_st subscribe( const code& code_ ) override;
+    nvx_st unsubscribe( const code& code_ ) override;
 
 private:
-    NvxSt init();
-    NvxSt login();
-    NvxSt sub();
-    NvxSt unsub();
-    NvxSt sub( Code& code_ );
-    NvxSt unsub( Code& code_ );
+    nvx_st init();
+    nvx_st login();
 
 private:
-    std::unique_ptr<char*[]> set2arr( std::set<Code>& s );
+    std::unique_ptr<char*[]> set2arr( std::set<code>& s );
 
 private:
     // ctp overrides
