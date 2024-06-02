@@ -38,6 +38,7 @@ SOFTWARE.
 #include <rapidjson/writer.h>
 #include <sstream>
 
+#include "../calendar.h"
 #include "../definitions.h"
 #include "../log.hpp"
 #include "../ns.h"
@@ -197,6 +198,20 @@ inline int setting::load( const char* file_ ) {
                 c.token.c_str() );
 
     return 0;
+}
+
+inline bool in_trade_time() {
+    if ( !CAL.is_trade_day() ) return false;
+
+    auto dt = datetime::now();
+
+    // OnRspAuthenticate 接口返回的“CTP:还没有初始化, 这个错误是什么意思”
+    // 此时ctp系统还没有初始化完成，可以简单的理解为系统还没有准备好。期货公司柜台系统一般会在早、晚8点之前准备好，各位投资者的程序可以这个时间点之后启动，没有必要太早启动程序，不同期货公司启动时间不太一致
+
+    // 15:30->20:30
+    // 3->8:30
+    auto n = dt.t.hour * 100 + dt.t.minute;
+    return !( ( n >= 1530 && n <= 2030 ) || ( n >= 300 && n <= 830 ) );
 }
 }  // namespace ctp
 

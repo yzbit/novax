@@ -27,7 +27,10 @@ SOFTWARE.
 
 #ifndef AB88A976_581A_4E7C_A4D4_45CCCE67B257
 #define AB88A976_581A_4E7C_A4D4_45CCCE67B257
+#include <condition_variable>
 #include <ctp/ThostFtdcTraderApi.h>
+#include <future>
+#include <mutex>
 #include <unordered_map>
 #include <vector>
 
@@ -38,6 +41,7 @@ SOFTWARE.
 #include "../proxy.h"
 #include "comm.h"
 #include "ctpids.h"
+#include "gateway.h"
 
 NVX_NS_BEGIN
 
@@ -45,7 +49,7 @@ NVX_NS_BEGIN
 
 namespace ctp {
 
-struct trader : broker, CThostFtdcTraderSpi {
+struct trader : broker, gateway, CThostFtdcTraderSpi {
     trader( ipub* tr_, int id_start_ref_ = 0 );
 
 protected:
@@ -66,6 +70,10 @@ private:
     nvx_st qry_position();
 
 private:
+    void on_init() override;
+    void on_release() override;
+
+private:
     ord_dir cvt_direction( const TThostFtdcDirectionType& di_, const TThostFtdcCombOffsetFlagType& comb_ );
     ord_dir cvt_direction( const TThostFtdcDirectionType& di_, const TThostFtdcOffsetFlagType& comb_ );
 
@@ -75,6 +83,7 @@ private:
 private:
     void reconnected( const session& s_, const ordref& max_ref_ );
     bool settled() { return _settled; }
+    void daemon();
 
 private:
     setting _settings;

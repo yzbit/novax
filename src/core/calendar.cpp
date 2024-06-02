@@ -36,6 +36,11 @@ SOFTWARE.
 
 NVX_NS_BEGIN
 
+calendar& calendar::instance() {
+    static calendar _c;
+    return _c;
+}
+
 calendar::calendar() {
     _year = datetime::now().d.year;
 }
@@ -117,7 +122,7 @@ void calendar::parse_sess( const cal_sheet& sh_ ) {
         ins_code code = it->name.GetString();
 
         ins_session periods;
-        periods.reserve( kMaxSessCnt );
+        periods.reserve( MAX_SESSION_CNT );
 
         for ( auto sess = it->value.Begin(); sess != it->value.End(); ++sess ) {
             std::string session = sess->GetString();
@@ -158,7 +163,7 @@ void calendar::parse_sess( const cal_sheet& sh_ ) {
             }
         }
 
-        assert( periods.size() <= kMaxSessCnt );
+        assert( periods.size() <= MAX_SESSION_CNT );
 
         _sessions.try_emplace( code, periods );
     }

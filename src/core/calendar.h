@@ -40,6 +40,8 @@ SOFTWARE.
 NVX_NS_BEGIN
 
 struct calendar {
+    static calendar& instance();
+
     nvx_st load_schedule( const char* cal_file_ );
     bool   is_trade_day();
     bool   is_trade_day( const datespec& date_ );
@@ -62,7 +64,7 @@ private:
     void parse_sess( const cal_sheet& sh_ );
 
 private:
-    static constexpr int kMaxSessCnt = 10;
+    static constexpr int MAX_SESSION_CNT = 10;
 
     struct session {
         int start, end;
@@ -80,5 +82,7 @@ private:
 };
 
 NVX_NS_END
+
+#define CAL NVX_NS::calendar::instance()
 
 #endif /* BB813C61_80B5_4C65_966A_8F423BC7ECEA */

@@ -56,6 +56,14 @@ nvx_st trader::start() {
         return NVX_FAIL;
     }
 
+    if ( !gateway::is_running() ) {
+        gateway::daemon();
+    }
+
+    return NVX_OK;
+}
+
+void trader::on_init() {
     LOG_INFO( "RegisterSpi@注册ctp交易网关" );
     std::string flow = _settings.flow_path;
 
@@ -80,18 +88,17 @@ nvx_st trader::start() {
 
     LOG_INFO( "{ctp} init" );
     _api->Init();
+}
 
-    //_api.join
-
-    return NVX_OK;
+void trader::on_release() {
+    // ctp 手册建议:
+    _api->RegisterSpi( nullptr );
+    _api->Release();
 }
 
 nvx_st trader::stop() {
     LOG_INFO( "ReleaseSpi@释放ctp交易网关" );
-
-    // ctp 手册建议:
-    _api->RegisterSpi( nullptr );
-    _api->Release();
+    gateway::teardown();
 
     return NVX_OK;
 }
@@ -506,6 +513,8 @@ void trader::OnRspError( CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool 
 
 void trader::OnFrontDisconnected( int nReason ) {
     LOG_INFO( "front disconnted:reason=%d", nReason );
+
+    gateway::respawn();
 }
 
 void trader::OnHeartBeatWarning( int nTimeLapse ) {

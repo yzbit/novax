@@ -37,6 +37,7 @@ SOFTWARE.
 #include "../ns.h"
 #include "../proxy.h"
 #include "comm.h"
+#include "gateway.h"
 
 // #define CTP_MD_SETTING_FILE "ctp_md.json"
 // #define CTP_MD_SETTING_FILE "/home/ubuntu/code/cub/src/core/ctp/ctp_md.json"
@@ -44,7 +45,7 @@ SOFTWARE.
 NVX_NS_BEGIN
 
 namespace ctp {
-struct mdex : market, CThostFtdcMdSpi {
+struct mdex : market, gateway, CThostFtdcMdSpi {
     mdex( ipub* p_ );
 
 protected:
@@ -56,15 +57,15 @@ protected:
 private:
     nvx_st init();
     nvx_st login();
+    void   resub();
 
 private:
-    std::unique_ptr<char*[]> set2arr( std::set<code>& s );
+    void on_init() override;
+    void on_release() override;
 
 private:
-    // ctp overrides
     void OnFrontConnected() override;
     void OnFrontDisconnected( int nReason ) override;
-    void OnHeartBeatWarning( int nTimeLapse ) override;
     void OnRspUserLogin( CThostFtdcRspUserLoginField* pRspUserLogin, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) override;
     void OnRspUserLogout( CThostFtdcUserLogoutField* pUserLogout, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) override;
     void OnRspQryMulticastInstrument( CThostFtdcMulticastInstrumentField* pMulticastInstrument, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) override;
@@ -82,10 +83,9 @@ private:
     bool             _is_svc_online = false;
 
 private:
-    bool _running = false;
-
-private:
-    static id_t session_id();
+    int            _req_id = 1;
+    std::set<code> _subs;
+    std::mutex     _mutex;
 };
 }  // namespace ctp
 NVX_NS_END

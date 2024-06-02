@@ -29,6 +29,7 @@ SOFTWARE.
 
 #include "mdproxy.h"
 
+#include "../calendar.h"
 #include "../log.hpp"
 #include "../models.h"
 #include "clock.h"
@@ -56,11 +57,19 @@ mdex::mdex( ipub* p_ )
 nvx_st mdex::subscribe( const code& code_ ) {
     CTP_CHECK_READY( NVX_FAIL );
 
+    if ( !_is_svc_online ) {
+        LOG_INFO( "user not login ,cant not sub" );
+        return NVX_FAIL;
+    }
+
     char* c  = code_.c_str();
     auto  rc = _api->SubscribeMarketData( &c, 1 );
 
     if ( 0 == rc ) {
         LOG_INFO( "subscribe code [%s] sent", code_.c_str() );
+
+        std::unique_lock<std::mutex> lck{ _mutex };
+        _subs.insert( code_ );
         return NVX_OK;
     }
 
@@ -71,21 +80,24 @@ nvx_st mdex::subscribe( const code& code_ ) {
 nvx_st mdex::unsubscribe( const code& code_ ) {
     CTP_CHECK_READY( NVX_FAIL );
 
+    if ( !_is_svc_online ) {
+        LOG_INFO( "user not login ,cant not unsub" );
+        return NVX_FAIL;
+    }
+
     char* c  = code_.c_str();
     auto  rc = _api->UnSubscribeMarketData( &c, 1 );
 
     if ( 0 == rc ) {
         LOG_INFO( "unsubscribe code [%s] sent", code_.c_str() );
+
+        std::unique_lock<std::mutex> lck{ _mutex };
+        _subs.erase( code_ );
         return NVX_OK;
     }
 
     LOG_INFO( "unsubscribe code [%s] failed", code_.c_str() );
     return rc;
-}
-
-id_t mdex::session_id() {
-    static id_t _rid = 0;
-    return ++_rid;
 }
 
 nvx_st mdex::login() {
@@ -95,32 +107,44 @@ nvx_st mdex::login() {
     strncpy( login_req.UserID, _settings.i.name.c_str(), sizeof( login_req.UserID ) );
     strncpy( login_req.Password, _settings.i.password.c_str(), sizeof( login_req.Password ) );
 
-    auto session = session_id();
-
-    int rt = this->_api->ReqUserLogin( &login_req, session );
+    int rt = this->_api->ReqUserLogin( &login_req, ++_req_id );
     if ( !rt ) {
-        LOG_INFO( "i> LqSvcMarket::xLogin sucessfully, sess=%u\n", ( unsigned )session );
+        LOG_INFO( "i> LqSvcMarket::xLogin sucessfully, sess=%u\n", ( unsigned )_req_id );
         return NVX_OK;
     }
     else {
         LOG_INFO( "c> LqSvcMarket::xLogin failed\n" );
         return NVX_FAIL;
     }
-
-    return 0;
 }
 
 nvx_st mdex::start() {
-    LOG_TAGGED( "ctp", "start to run ,state=%d", _running );
-    if ( _running ) return NVX_OK;
-    _running = true;
+    if ( is_running() ) return NVX_OK;
 
     return init();
 }
 
 nvx_st mdex::stop() {
-    LOG_TAGGED( "ctp", "stop running ,[do NOTHING] state=%d", _running );
+    gateway::teardown();
     return NVX_OK;
+}
+
+void mdex::on_init() {
+    LOG_TAGGED( "md", "reinit md api" );
+    _api = CThostFtdcMdApi::CreateFtdcMdApi( _settings.flow_path.c_str(), false );  // true: udp mode
+    _api->RegisterSpi( this );
+
+    for ( auto& f : _settings.frontend ) {
+        _api->RegisterFront( const_cast<char*>( f.c_str() ) );
+    }
+
+    _api->Init();
+}
+
+void mdex::on_release() {
+    _api->Release();
+    LOG_INFO( "spawn md user" );
+    LOG_TAGGED( "ctp", "md api exit with code=%d", _api->Join() );
 }
 
 nvx_st mdex::init() {
@@ -132,20 +156,8 @@ nvx_st mdex::init() {
     }
 
     LOG_INFO( "ctp md init,flow=%s,font=%s", _settings.flow_path.c_str(), _settings.frontend[ 0 ].c_str() );
-    std::thread( [ & ]() {
-        _api = CThostFtdcMdApi::CreateFtdcMdApi( _settings.flow_path.c_str(), false );  // true: udp mode
-        _api->RegisterSpi( this );
 
-        for ( auto& f : _settings.frontend ) {
-            _api->RegisterFront( const_cast<char*>( f.c_str() ) );
-        }
-
-        _api->Init();
-
-        LOG_INFO( "spawn md user" );
-        auto rc = _api->Join();
-        LOG_TAGGED( "ctp", "md api exit with code=%d", rc );
-    } ).detach();
+    gateway::daemon();
 
     return NVX_OK;
 }
@@ -160,10 +172,7 @@ void mdex::OnFrontDisconnected( int nReason ) {
     LOG_INFO( "ctp ex md disconnected,reason=%d", nReason );
 
     _is_svc_online = false;
-}
-
-//! as doc: this is decrecated
-void mdex::OnHeartBeatWarning( int nTimeLapse ) {
+    respawn();
 }
 
 // todo
@@ -184,6 +193,30 @@ void mdex::OnRspUserLogin( CThostFtdcRspUserLoginField* pRspUserLogin, CThostFtd
     LOG_TAGGED( "ctp", "tune clock of exchanges" );
     CTP_CLOCK.reset( pRspUserLogin );
     _is_svc_online = true;
+
+    resub();
+}
+
+void mdex::resub() {
+    std::unique_lock<std::mutex> lck{ _mutex };
+
+    LOG_INFO( "resub all codes=%d", ( int )_subs.size() );
+
+    auto arr = std::make_unique<char*[]>( _subs.size() );
+    int  n   = 0;
+
+    for ( auto& s : _subs ) {
+        arr[ n++ ] = s.c_str();
+    }
+
+    auto rc = _api->SubscribeMarketData( arr.get(), _subs.size() );
+
+    if ( 0 == rc ) {
+        LOG_INFO( "subscribe code sent" );
+        return;
+    }
+
+    LOG_INFO( "subscribe code failed code=%d", rc );
 }
 
 void mdex::OnRspUserLogout( CThostFtdcUserLogoutField* pUserLogout, CThostFtdcRspInfoField* pRspInfo, int nRequestID, bool bIsLast ) {
