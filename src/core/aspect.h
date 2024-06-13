@@ -42,15 +42,14 @@ struct aspect final {
     aspect( data* data_ );
     ~aspect();
 
-    void   update( const tick& q_ );
-    nvx_st load( const code& code_, const period& p_, int count_ );
-    nvx_st addi( indicator* i_ );
-
-    const code& symbol() const;
+    void        update( const tick& q_ );
+    nvx_st      addi( indicator* i_ );
     kline&      bar( kidx index_ = 0 );
-    bool        loaded() const;
+    nvx_st      load( const code& code_, const period& p_, int count_ );
+    const code& symbol() const;
 
 private:
+    bool loaded() const;
     void debug();
     struct prii_t {
         int        p;

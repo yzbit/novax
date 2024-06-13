@@ -38,18 +38,14 @@ struct indicator {
         addi
     };
 
-    virtual const char* name() const { return "indi##"; }
-    virtual size_t      nvalue() { return 1; }
-    virtual type        type() { return type::main; }
-    virtual double      at( int track_, int index_ ) { return .0; }
+    virtual nvx_st      calc( const tick& t_, const kline& k_ ) = 0;
+    virtual const char* name()                                  = 0;
+
+    virtual size_t nvalue() { return 1; }
+    virtual type   type() { return type::main; }
+    virtual double at( int track_, int index_ ) { return .0; }
 
     virtual ~indicator() {}
-};
-
-struct algo {
-    virtual void calc( const tick& qut_, int total_bars_ ) = 0;
-
-    virtual ~algo() {}
 };
 
 // struct Ma:IAlogo, indicator

@@ -29,7 +29,7 @@ SOFTWARE.
 #include "../core/definitions.h"
 #include "../core/log.hpp"
 #include "../core/models.h"
-#include "../core/order_mgmt.h"
+#include "../core/ord_mgmt.h"
 #include "../core/proxy.h"
 
 namespace cub {
@@ -47,7 +47,7 @@ struct XContext : cub::MgmtContext {
 int main() {
     LOG_ENABLE_STDOUT();
 
-    auto om = new cub::order_mgmt( 0 );
+    auto om = new cub::ord_mgmt( 0 );
 
     om->start();
     auto ids = om->sellshort( "rb2410", 1, 6543.0, cub::ord_type::market );

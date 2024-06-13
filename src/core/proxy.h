@@ -28,10 +28,13 @@ SOFTWARE.
 #ifndef B6D90468_E9C6_4FE4_A0C4_197D3CC5F83F
 #define B6D90468_E9C6_4FE4_A0C4_197D3CC5F83F
 
+#include <memory>
+
 #include "definitions.h"
 #include "models.h"
 #include "ns.h"
 #include "pub.h"
+
 NVX_NS_BEGIN
 
 struct subject {
@@ -53,26 +56,27 @@ struct broker : subject {
     };
 
     broker( ipub* pub_ );
-    static broker* create( type t_, ipub* pub_ );
 
-    virtual nvx_st start()             = 0;
-    virtual nvx_st stop()              = 0;
-    virtual oid    put( const code& instrument_,
-                        vol         qty_,
-                        price       price_,
-                        ord_type    mode_,
-                        ord_dir     dir_ ) = 0;
+    static std::unique_ptr<broker> create( type t_, ipub* pub_ );
+
+    virtual nvx_st start() = 0;
+    virtual nvx_st stop()  = 0;
+
+    virtual oid put( const code& sym_, vol qty_, price limit_, ord_dir odir_, price stop_, stop_dir sdir_, ord_type type_ ) = 0;
 
     virtual nvx_st cancel( const oid& id_ ) = 0;
 };
 
 struct market : subject {
     enum class type {
-        ctp
+        ctp,
+        dc,
+        file
     };
 
     market( ipub* pub_ );
-    static market* create( type t_, ipub* pub_ );
+
+    static std::unique_ptr<market> create( type t_, ipub* pub_ );
 
     virtual nvx_st start()                          = 0;
     virtual nvx_st stop()                           = 0;

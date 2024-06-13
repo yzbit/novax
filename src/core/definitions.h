@@ -63,7 +63,7 @@ using text        = xstring;
 using money       = float;
 using kidx        = uint32_t;
 
-enum class nvxerr_t {
+enum class nvxerr {
     order_rejected,
 };
 
@@ -164,14 +164,15 @@ struct time_range_t {
 using exch = code;  // 交易所
 using exid = int;
 
-#define DAY_SECONDS ( 24 * 3600u )
-#define WEEK_SECONDS ( 7 * 24 * 3600u )
-#define MONTH_SECONDS ( 31 * 3600u )
-#define YEAR_SECONDS ( 266 * 24 * 3600u )
+#define DAY_SECONDS ( 24 * 3600l )
+#define WEEK_SECONDS ( 7 * 24 * 3600l )
+#define MONTH_SECONDS ( 31 * 3600l )
+#define YEAR_SECONDS ( 266 * 24 * 3600l )
+
 struct period {
-    enum class type_t : uint8_t {
+    enum class base : uint8_t {
         milli,
-        seconds,
+        second,
         min,
         hour,
         day,
@@ -180,34 +181,30 @@ struct period {
         year
     };
 
-    // todo note: 注意：如果t=year，rep > 1是没有意义的
-    period( const type_t& t_, int r_ );
-    // 转成秒--时间粒度不仅仅要和绝对时间有关系还和分割边界有关系，比如1天显然不能按照绝对秒数来算，应该按照收盘时间和开盘时间来算，每周则只能基于小时来算,分钟其实会出现跨天的状况,可以按照秒来算，同时按照自然阅读来分
-    operator uint32_t();
+    constexpr period( int r_, base b_ )
+        : r( r_ )
+        , b( b_ ) {}
 
-    type_t t;
-    int    rep;
+    int  r = 0;
+    base b = base::second;
 };
 
-template <typename T>
-struct array_t {
-    array_t( int n );
-
-    T&   operator[]( int index_ );
-    T&   get( int index_ );
-    void set( const T& t_, int index_ );
-    void set( const T&& t_, int index_ );
-    int  size() const;
-    void for_each( std::function<bool( T& t_ )> op_ );
-
-private:
-    bool is_valid( int index_ ) const;
-    T&   element( int index_ );
-
-private:
-    int                _size;
-    std::unique_ptr<T> _data;
-};
+constexpr period pd_one_second     = period( 1, period::base::second );
+constexpr period pd_five_seconds   = period( 5, period::base::second );
+constexpr period pd_ten_seconds    = period( 10, period::base::second );
+constexpr period pd_thirty_seconds = period( 30, period::base::second );
+constexpr period pd_one_minute     = period( 1, period::base::min );
+constexpr period pd_five_minutes   = period( 5, period::base::min );
+constexpr period pd_ten_minutes    = period( 10, period::base::min );
+constexpr period pd_thrity_minutes = period( 10, period::base::min );
+constexpr period pd_one_hour       = period( 1, period::base::hour );
+constexpr period pd_two_hours      = period( 2, period::base::hour );
+constexpr period pd_four_hours     = period( 4, period::base::hour );
+constexpr period pd_eight_hours    = period( 8, period::base::hour );
+constexpr period pd_one_day        = period( 1, period::base::day );
+constexpr period pd_one_week       = period( 1, period::base::week );
+constexpr period pd_one_month      = period( 1, period::base::month );
+constexpr period pd_one_year       = period( 1, period::base::year );
 
 #define _( _literal_ ) std::string( _literal_ )
 
@@ -331,15 +328,8 @@ inline code::operator const char*() const {
     return _code;
 }
 #endif
-//
-// todo note: 注意：如果t=year，rep > 1是没有意义的
-inline period::period( const type_t& t_, int r_ )
-    : t( t_ )
-    , rep( r_ ) {
 
-    NVX_ASSERT( ( uint32_t )( *this ) <= 1 * 365 * 24 * 3600 );
-}
-
+#if 0
 // 转成秒--时间粒度不仅仅要和绝对时间有关系还和分割边界有关系，比如1天显然不能按照绝对秒数来算，应该按照收盘时间和开盘时间来算，每周则只能基于小时来算,分钟其实会出现跨天的状况,可以按照秒来算，同时按照自然阅读来分
 inline period::operator uint32_t() {
     switch ( t ) {
@@ -357,6 +347,7 @@ inline period::operator uint32_t() {
     return 0;
 }
 
+// todo deprecated.
 //
 template <typename T>
 inline array_t<T>::array_t( int n )
@@ -407,6 +398,8 @@ template <typename T>
 inline T& array_t<T>::element( int index_ ) {
     return _data.get()[ index_ ];
 }
+
+#endif
 
 inline datetime datetime::now() {
     datetime t;

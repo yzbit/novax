@@ -32,6 +32,7 @@ SOFTWARE.
 
 #include "clock.h"
 #include "concurrentqueue.h"
+#include "config.h"
 #include "context.h"
 #include "contextimpl.h"
 #include "data.h"
@@ -71,11 +72,7 @@ struct quant_impl : quant {
     ~quant_impl();
 
 private:
-    nvx_st execute( strategy* s_ ) override;
-    nvx_st invoke( strategy::ntf n_ ) {
-        // return _s->invoke( n_, _c );
-        return NVX_OK;
-    }
+    nvx_st execute( std::unique_ptr<strategy> s_ ) override;
 
 private:
     static void thread_fun( quant_impl& q_ );
@@ -89,16 +86,15 @@ private:
     nvx_st on_clock( const pub::timer_msg& err_ );
 
 protected:
-    data*         d();
-    order_mgmt*   m();
-    strategy*     s();
-    context_intf* c();
+    ord_mgmt& m() { return _ctx->mgmt(); }
 
 private:
-    data*         _data = nullptr;
-    order_mgmt*   _mgmt = nullptr;
-    strategy*     _s    = nullptr;
-    context_intf* _ctx  = nullptr;
+    std::unique_ptr<strategy>     _strat = nullptr;
+    std::shared_ptr<data>         _data  = nullptr;
+    std::shared_ptr<context_intf> _ctx   = nullptr;
+
+private:
+    config _cfg;
 
 private:
     friend class quant_pub;
@@ -117,9 +113,10 @@ nvx_st quant_pub::process() {
 
     uint64_t last = now_ms();
     for ( ;; ) {
-        if ( now_ms() - last >= 1000 ) {
+        auto now = now_ms();
+        if ( now - last >= 1000 ) {
             post( pub::timer_msg() );
-            last = now_ms();
+            last = now;
         }
 
         if ( !_running ) break;
@@ -160,18 +157,16 @@ nvx_st quant_pub::thread_fun( quant_pub& pub_ ) {
 
 //-------quant_impl-------------------------------------
 quant_impl::~quant_impl() {
-    delete _data;
-    delete _ctx;
-    delete _mgmt;
-    delete _s;
 }
 
 quant_impl::quant_impl() {
-#if 0
-    _data = new Data();
-    _mgmt = new order_mgmt();
-    _ctx  = new context_intf( _mgmt );
-#endif
+    static quant_pub pub( *this );
+
+    auto market = market::create( market::type::ctp, &pub );
+    auto broker = broker::create( broker::type::ctp, &pub );
+
+    _data = std::make_shared<data>( std::move( market ) );
+    _ctx  = std::make_shared<context_intf>( std::move( broker ), _data );
 }
 
 quant& quant::instance() {
@@ -179,50 +174,49 @@ quant& quant::instance() {
     return _impl;
 }
 
-data*         quant_impl::d() { return _data; }
-order_mgmt*   quant_impl::m() { return _mgmt; }
-strategy*     quant_impl::s() { return _s; }
-context_intf* quant_impl::c() { return _ctx; }
+nvx_st quant_impl::execute( std::unique_ptr<strategy> s_ ) {
+    _strat.swap( s_ );
+    assert( _strat );
 
-nvx_st quant_impl::execute( strategy* s_ ) {
-    _s = s_;
-    _s->init();
-    for ( ;; )
+    if ( NVX_OK != _strat->on_init( &_cfg, _ctx.get() ) ) {
+        LOG_INFO( "strage init failed .quit. name=[%s]", _strat->name() );
+        return NVX_FAIL;
+    }
+
+    // todo .quit command.
+    for ( ;; ) {
         ::sleep( 1 );
+    }
+
     delete this;
     return NVX_OK;
 }
 
 nvx_st quant_impl::on_clock( const pub::timer_msg& err_ ) {
-    return invoke( strategy::ntf::clock );
+    datetime dt = datetime::now();
+    return _strat->on_clock( &dt, _ctx.get() );
 }
 
 nvx_st quant_impl::on_tick( const pub::tick_msg& tick_ ) {
-    d()->update( tick_ );
-    c()->update_qut( tick_ );
-    return invoke( strategy::ntf::tick );
+    _data->update( tick_ );
+    return _strat->on_tick( &tick_, _ctx.get() );
 }
 
 nvx_st quant_impl::on_fund( const pub::acct_msg& fund_ ) {
-    c()->update_fund( fund_ );
-    return invoke( strategy::ntf::instate );
+    return _strat->on_instate( &fund_, _ctx.get() );
 }
 
 nvx_st quant_impl::on_error( const pub::error_msg& err_ ) {
-#if 0
-    context()->update_err( err_ );
-    return invoke( strategy::ntf::error );
-#endif
-    return NVX_OK;
+    return _strat->on_error( &err_, _ctx.get() );
 }
 
 nvx_st quant_impl::on_order( const pub::order_msg& ord_ ) {
-    m()->update_ord( ord_ );
-    return invoke( strategy::ntf::order );
+    m().update( ord_ );
+    return _strat->on_order( ord_.id, _ctx.get() );
 }
 
 nvx_st quant_impl::on_position( const pub::pos_msg& err_ ) {
-    return invoke( strategy::ntf::instate );
+    return _strat->on_instate( nullptr, _ctx.get() );
 }
 
 NVX_NS_END

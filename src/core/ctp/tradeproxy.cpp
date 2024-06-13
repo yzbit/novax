@@ -48,7 +48,7 @@ namespace ctp {
 
 trader::trader( ipub* p_, int id_start_ref_ )
     : broker( p_ )
-    , _last_ref{ id_start_ref_ } {}
+    , _last_ref{ ( unsigned )id_start_ref_ } {}
 
 nvx_st trader::start() {
     if ( _settings.load( CTP_TRADE_SETTING_FILE ) < 0 ) {
@@ -94,6 +94,7 @@ void trader::on_release() {
     // ctp 手册建议:
     _api->RegisterSpi( nullptr );
     _api->Release();
+    _api->Join();
 }
 
 nvx_st trader::stop() {
@@ -226,13 +227,13 @@ nvx_st trader::cancel( const oid& id_ ) {
     return NVX_FAIL;
 }
 
-oid trader::put( const code& instrument_, vol qty_, price price_, ord_type mode_, ord_dir dir_ ) {
+oid trader::put( const code& sym_, vol qty_, price limit_, ord_dir odir_, price stop_, stop_dir sdir_, ord_type type_ ) {
     LOG_INFO( "xPutOrder@ctp准备下单" );
     CTP_CHECK_READY( NVX_BAD_OID );
 
     CThostFtdcInputOrderField r = {};
 
-    ordref ref;  // todo = ++_last_ref;
+    ordref ref ; ++_last_ref;
     LOG_INFO( "new order id=%s, %u", ref.data(), ref.int_val() );
 
     ref.copy_to( r.OrderRef );
@@ -240,25 +241,46 @@ oid trader::put( const code& instrument_, vol qty_, price price_, ord_type mode_
     strncpy( r.BrokerID, _settings.i.broker.c_str(), sizeof( r.BrokerID ) );
     strncpy( r.InvestorID, _settings.i.id.c_str(), sizeof( r.InvestorID ) );
     strncpy( r.UserID, _settings.i.id.c_str(), sizeof( r.UserID ) );
-    strncpy( r.InstrumentID, instrument_.c_str(), sizeof( r.InstrumentID ) );
+    strncpy( r.InstrumentID, sym_.c_str(), sizeof( r.InstrumentID ) );
 
     r.IsSwapOrder         = 0;
     r.ForceCloseReason    = THOST_FTDC_FCC_NotForceClose;
     r.MinVolume           = 0;
     r.ContingentCondition = THOST_FTDC_CC_Immediately;
     r.VolumeTotalOriginal = ( TThostFtdcVolumeType )qty_;
-    r.LimitPrice          = price_;
+    r.LimitPrice          = limit_;
     r.CombHedgeFlag[ 0 ]  = THOST_FTDC_HF_Speculation;
     r.ForceCloseReason    = THOST_FTDC_FCC_NotForceClose;
     r.IsAutoSuspend       = 0;
     r.UserForceClose      = 0;
 
-    LOG_INFO( "order mode:%d", mode_ );
+    LOG_INFO( "order mode:%d", type_ );
 
-    switch ( mode_ ) {
+    switch ( type_ ) {
     default:
-        LOG_INFO( "不存在的订单模式:%d", mode_ );
+        LOG_INFO( "不存在的订单模式:%d", type_ );
         return NVX_FAIL;
+
+    case ord_type::limit:
+        r.TimeCondition = THOST_FTDC_TC_GFD;  // 当天有效
+        break;
+
+    case ord_type::cond_market:
+        r.LimitPrice = 0;
+        [[fallthrough]];
+
+    case ord_type::cond_limit:
+        r.StopPrice     = stop_;
+        r.TimeCondition = THOST_FTDC_TC_GTC;
+
+        if ( odir_ == ord_dir::cover || sdir_ == stop_dir::above )
+            r.ContingentCondition = THOST_FTDC_CC_LastPriceGreaterEqualStopPrice;
+        else if ( odir_ == ord_dir::sell || sdir_ == stop_dir::below )
+            r.ContingentCondition = THOST_FTDC_CC_LastPriceLesserEqualStopPrice;
+        else {
+            assert( 0 );
+        }
+        break;
 
     case ord_type::market:
         r.OrderPriceType  = THOST_FTDC_OPT_AnyPrice;
@@ -280,18 +302,18 @@ oid trader::put( const code& instrument_, vol qty_, price price_, ord_type mode_
         r.VolumeCondition = THOST_FTDC_VC_CV;
         break;
 
-    case ord_type::wok:
-        r.OrderPriceType  = THOST_FTDC_OPT_LimitPrice;
-        r.TimeCondition   = THOST_FTDC_TC_GFD;  //! 当日有效
-        r.VolumeCondition = THOST_FTDC_VC_AV;
-        break;
+        // case ord_type::wok:
+        // r.OrderPriceType  = THOST_FTDC_OPT_LimitPrice;
+        // r.TimeCondition   = THOST_FTDC_TC_GFD;  //! 当日有效
+        // r.VolumeCondition = THOST_FTDC_VC_AV;
+        // break;
     }
 
-    LOG_INFO( "order direction: %d", dir_ );
+    LOG_INFO( "order direction: %d", odir_ );
 
-    switch ( dir_ ) {
+    switch ( odir_ ) {
     default:
-        LOG_INFO( "bad order direction: %d", dir_ );
+        LOG_INFO( "bad order direction: %d", odir_ );
         return NVX_FAIL;
 
     case ord_dir::p_long:

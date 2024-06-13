@@ -28,6 +28,8 @@ SOFTWARE.
 #ifndef E93F5C75_9223_409D_8F98_DFFDE2E179BF
 #define E93F5C75_9223_409D_8F98_DFFDE2E179BF
 
+#include <config.h>
+
 #include "models.h"
 #include "ns.h"
 
@@ -35,18 +37,16 @@ NVX_NS_BEGIN
 
 struct context;
 struct strategy {
-    enum class ntf {
-        error,
-        clock,
-        order,
-        tick,
-        instate
-    };
-
     virtual ~strategy() {}
 
-    virtual nvx_st init()                                  = 0;
-    virtual nvx_st invoke( strategy::ntf n_, context* c_ ) = 0;
+    virtual xstring name()                                 = 0;
+    virtual nvx_st  on_init( config* cfg_, context* c_ )   = 0;
+    virtual nvx_st  on_tick( const tick* q_, context* c_ ) = 0;
+
+    virtual nvx_st on_error( const nvxerr* err_, context* c_ ) { return NVX_OK; }
+    virtual nvx_st on_clock( const datetime* dt_, context* c_ ) { return NVX_OK; }
+    virtual nvx_st on_order( oid id_, context* c_ ) { return NVX_OK; }
+    virtual nvx_st on_instate( const void* par_, context* c_ ) { return NVX_OK; }
 };
 
 NVX_NS_END

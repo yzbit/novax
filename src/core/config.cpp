@@ -24,30 +24,8 @@ SOFTWARE.
 * \author: yaozn(zinan@outlook.com)
 * \date: 2024
 **********************************************************************************/
-
-#ifndef C2E26F98_58D2_4FB6_9B05_CB4ED59A65C3
-#define C2E26F98_58D2_4FB6_9B05_CB4ED59A65C3
-
-#include "definitions.h"
-#include "models.h"
+#include "config.h"
 
 NVX_NS_BEGIN
-struct aspect;
-struct position;
-
-struct context {
-    virtual aspect* load( const code& symbol_, const period& period_, int count_ ) = 0;
-    virtual nvx_st  calloff( const oid& id_ )                                      = 0;
-
-    virtual oid shorting( const code& c_, vol qty_, price price_, ord_type type_, const text& remark_ )                                            = 0;
-    virtual oid longing( const code& c_, vol qty_, price price_, ord_type type_, const text& remark_ )                                             = 0;
-    virtual oid trapping( const code& c_, vol qty_, price limit_, ord_dir dir_, price stop_, stop_dir sdir_, ord_type type_, const text& remark_ ) = 0;
-
-    virtual position* qry_long( const code& c_ )  = 0;
-    virtual position* qry_short( const code& c_ ) = 0;
-    virtual ~context() {}
-};
 
 NVX_NS_END
-
-#endif /* C2E26F98_58D2_4FB6_9B05_CB4ED59A65C3 */

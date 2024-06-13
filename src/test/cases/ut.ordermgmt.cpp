@@ -25,7 +25,7 @@ SOFTWARE.
 * \date: 2024
 **********************************************************************************/
 
-#include <core/order_mgmt.h>
+#include <core/ord_mgmt.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <novax.h>
@@ -80,7 +80,7 @@ struct FakeBroker : NVX_NS::broker {
 };
 
 TEST( Mgmt, simpleput ) {
-    NVX_NS::order_mgmt m;
+    NVX_NS::ord_mgmt m;
     FakeBroker        fb( &m );
 
     EXPECT_CALL( fb, start() ).WillOnce( testing::Return( 0 ) );
@@ -101,7 +101,7 @@ TEST( Mgmt, simpleput ) {
 }
 
 TEST( Mgmt, putfail ) {
-    NVX_NS::order_mgmt m;
+    NVX_NS::ord_mgmt m;
     FakeBroker        fb( &m );
 
     EXPECT_CALL( fb, put( testing::_ ) ).Times( 1 ).WillRepeatedly( testing::Return( -1 ) );
@@ -132,7 +132,7 @@ struct SimBroker : NVX_NS::broker {
 };
 
 TEST( Mgmt, position ) {
-    NVX_NS::order_mgmt m;
+    NVX_NS::ord_mgmt m;
 
     SimBroker fb( &m );
 

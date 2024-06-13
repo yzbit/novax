@@ -46,7 +46,7 @@ enum class msg_type {
 
 using timer_msg = int;
 using order_msg = order_update;
-using error_msg = nvxerr_t;
+using error_msg = nvxerr;
 using pos_msg   = int;
 using tick_msg  = tick;
 using acct_msg  = funds;

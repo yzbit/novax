@@ -29,31 +29,41 @@ SOFTWARE.
 #define B0FD204B_DBB0_4DB4_BA81_807E439AA053
 
 #include "definitions.h"
-#include "indicator.h"
 #include "models.h"
 #include "ns.h"
 #include "series.h"
 
 NVX_NS_BEGIN
 
-struct kline : algo {
+struct kline {
     kline( const code& code_, const period& p_, size_t series_count_ );
-
-    void calc( const tick& q_, int bar_count_ ) override;
+    void update( const tick& q_ );
 
     candle&     bar( int index_ = 0 );
     const tick& qut() const;
     period      cycle() const;
     const code& symbol() const;
+    size_t      count() const;
 
 private:
     bool is_new_bar( const tick& q_ );
+    void normalize();
 
 private:
-    tick     _qut;
-    code     _symbol;
-    period   _period;
-    datetime _curr_start;  // 当前k的起始时间
+    struct stamp {
+        unsigned day;
+        unsigned time;
+    };
+
+    stamp qut_stamp( const tick& q_ );
+
+private:
+    code    _symbol;
+    period  _period;
+    tick    _qut       = {};
+    candle* _bar       = nullptr;
+    int     _gathered  = 0;
+    stamp   _lst_stamp = {};  //! reduce cal
 
 private:
     using bar_series = series<candle>;

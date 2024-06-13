@@ -36,9 +36,9 @@ SOFTWARE.
 
 NVX_NS_BEGIN
 
-data::data( market* market_ )
-    : _market( market_ ) {
-    _jobs = task_queue::create( 4 );
+data::data( std::unique_ptr<market> market_ ) {
+    _market = market_.get();
+    _jobs   = task_queue::create( 4 );
 }
 
 void data::update( const tick& tick_ ) {
@@ -51,14 +51,6 @@ void data::update( const tick& tick_ ) {
     while ( _jobs->busy() ) {
         std::this_thread::yield();
     }
-}
-
-nvx_st data::start() {
-    return _market->start();
-}
-
-nvx_st data::stop() {
-    return _market->stop();
 }
 
 nvx_st data::attach( aspect* a_ ) {
@@ -86,6 +78,7 @@ aspect* data::attach( const code& symbol_, const period& period_, int count_ ) {
 data::~data() {
     _jobs->shutdown();
     delete _jobs;
+    delete _market;
     for ( auto as : _aspects ) {
         delete as;
     }

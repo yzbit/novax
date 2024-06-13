@@ -28,6 +28,7 @@ SOFTWARE.
 #ifndef C4704959_F4BE_4EAA_9C19_9CD09E83DA7D
 #define C4704959_F4BE_4EAA_9C19_9CD09E83DA7D
 #include <functional>
+#include <memory>
 
 #include "definitions.h"
 #include "ns.h"
@@ -38,8 +39,8 @@ struct strategy;
 struct quant {
     static quant& instance();
     virtual ~quant() {}
-    // virtual clock* clock()                 = 0;  //?
-    virtual nvx_st execute( strategy* s_ ) = 0;
+
+    virtual nvx_st execute( std::unique_ptr<strategy> s_ ) = 0;
 };
 
 NVX_NS_END

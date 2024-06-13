@@ -1,14 +1,16 @@
 #!/bin/bash
 
+clear
+
 cd $(dirname $0)
 root=$(pwd)
 
-cd lib/googletest
-rm -rf build/
-mkdir build && cd build
+#cd lib/googletest
+#rm -rf build/
+#mkdir build && cd build
 
-cmake -DCMAKE_INSTALL_PREFIX=../../gtest .. 
-make -j10 && make install
+#cmake -DCMAKE_INSTALL_PREFIX=../../gtest .. 
+#make -j10 && make install
 
 cd $root
 echo "-----$root"

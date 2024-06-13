@@ -37,76 +37,79 @@ SOFTWARE.
 #include "strategy.h"
 
 NVX_NS_BEGIN
-
-context_intf::context_intf( order_mgmt* m_ )
-    : _mgmt( m_ ) {}
-
-void context_intf::update_qut( const tick& qut_ ) {
-    _impl.qut = qut_;
-}
-
-void context_intf::update_fund( const funds& fund_ ) {
-    _impl.acct = fund_;
-}
-
-void context_intf::update_error( const nvxerr_t& err_ ) {
-    _impl.error = err_;
-}
-
-nvxerr_t context_intf::error() const {
-    return _impl.error;
-}
-
-const tick& context_intf::qut() const {
-    return _impl.qut;
-}
-
-const funds context_intf::acct() const {
-    return _impl.acct;
+context_intf::context_intf( std::unique_ptr<broker> ib_, std::shared_ptr<data> d_ ) {
+    _ib   = ib_.get();
+    _data = d_;
 }
 
 aspect* context_intf::load( const code& symbol_, const period& period_, int count_ ) {
+    auto a = _data->attach( symbol_, period_, count_ );
 
-    // return ASP.add( symbol_, period_, count_ );
-    // todo
-    return nullptr;
-}
-
-oid context_intf::open( const code& c_, vol qty_, price sl_, price tp_, price price_, ord_type mode_ ) {
-    if ( qty_ < 0 )
-        return _mgmt->sellshort( c_, qty_, price_, mode_, "" );
-    else if ( qty_ > 0 )
-        return _mgmt->buylong( c_, qty_, price_, mode_, "" );
-    else {
-        assert( false );
-        return 0;
-    };
-
-    return 0;
-}
-
-oid context_intf::close( const code& c_, vol qty_, price price_, ord_type mode_ ) {
-    if ( qty_ < 0 ) {
-        return _mgmt->buy( c_, qty_, price_, mode_, "" );
+    if ( !a ) {
+        LOG_INFO( "create aspect failed,symbol=%s, count=%d", symbol_.c_str(), count_ );
     }
-    else if ( qty_ > 0 ) {
-        return _mgmt->sell( c_, qty_, price_, mode_, "" );
-    }
-    else {
-        return _mgmt->close( c_ );
-    }
-}
 
-datetime context_intf::time() const {
-    return datetime::now();
+    return a;
 }
 
 position* context_intf::qry_long( const code& c_ ) {
-    return _mgmt->pos_of( c_, true );
+    return _mgmt.pos_of( c_, true );
 }
 
 position* context_intf::qry_short( const code& c_ ) {
-    return _mgmt->pos_of( c_, false );
+    return _mgmt.pos_of( c_, false );
+}
+
+nvx_st context_intf::calloff( const oid& id_ ) {
+    order* ord = _mgmt.find( id_ );
+
+    if ( !ord
+         || ( ord->status != ord_status::pending
+              && ord->status != ord_status::partial_dealed
+              && ord->status != ord_status::patial_canelled ) ) {
+        LOG_TAGGED( "om", "can not cancel order, id=%u status=%d", id_, ord->status );
+        return NVX_FAIL;
+    }
+
+    ord->status = ord_status::cancelling;
+
+    return _ib->cancel( id_ );
+}
+
+oid context_intf::shorting( const code& c_, vol qty_, price price_, ord_type type_, const text& remark_ ) {
+    oid id = _ib->put( c_, qty_, price_, ord_dir::p_short, 0, stop_dir::none, type_ );
+
+    if ( id != NVX_BAD_OID ) {
+        if ( NVX_OK != _mgmt.add( id, c_, qty_, price_, ord_dir::p_short, 0, stop_dir::none, type_, remark_ ) ) {
+            LOG_INFO( "add to mgmt fail:%u", id );
+        }
+    }
+
+    return id;
+}
+
+oid context_intf::longing( const code& c_, vol qty_, price price_, ord_type type_, const text& remark_ ) {
+    oid id = _ib->put( c_, qty_, price_, ord_dir::p_long, 0, stop_dir::none, type_ );
+
+    if ( id != NVX_BAD_OID ) {
+        if ( NVX_OK != _mgmt.add( id, c_, qty_, price_, ord_dir::p_long, 0, stop_dir::none, type_, remark_ ) ) {
+            LOG_INFO( "add to mgmt fail:%u", id );
+        }
+    }
+
+    return id;
+}
+
+oid context_intf::trapping( const code& c_, vol qty_, price limit_, ord_dir dir_, price stop_, stop_dir sdir_, ord_type type_, const text& remark_ ) {
+    oid id = _ib->put( c_, qty_, limit_, dir_, stop_, sdir_, type_ );
+
+    if ( id != NVX_BAD_OID ) {
+        if ( NVX_OK != _mgmt.add( id, c_, qty_, limit_, dir_, stop_, sdir_, type_, remark_ ) ) {
+            LOG_INFO( "add to mgmt fail:%u", id );
+        }
+    }
+
+    return id;
 }
 
 NVX_NS_END

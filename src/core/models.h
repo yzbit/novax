@@ -60,7 +60,6 @@ struct funds {
 };
 
 struct candle {
-    id_t     id;
     price    high;
     price    low;
     price    close;
@@ -134,15 +133,16 @@ enum class ord_dir {
 };
 
 enum class ord_type {
-    limit,
-    stop,
-    cond,    // 条件单-似乎有点复杂，tbd
-    fak,     // fill and kill,限价立即成交其余撤单
-    market,  // 市价成交
-    fok,     // fill or kill,限价立刻成交，否则撤单
-    wok,     // 限价等5秒，不能成交立即撤单,WAIT OR KILL==普通限价单
-    pursue,  // 限价不能成交就提高1个tick追赶5次，然后撤单==循环的FAK
-    fam,     // 立即成交，其余使用市价交易 = fak+market
+    limit,        // 限价单
+    cond_market,  // 市价条件
+    cond_limit,   // 限价条件
+    fak,          // fill and kill,限价立即成交其余撤单
+    market,       // 市价成交
+    fok,          // fill or kill,限价立刻成交，否则撤单
+                  // 下面三种模式未实现
+    pursue,       // 限价不能成交就提高1个tick追赶5次，然后撤单==循环的FAK
+    fam,          // 立即成交，其余使用市价交易 = fak+market
+    wok,          // 限价等5秒，不能成交立即撤单,WAIT OR KILL==普通限价单
 };
 
 enum class ord_status {
@@ -162,23 +162,29 @@ enum class ord_status {
     error           = 0x0100
 };
 
+enum class stop_dir {
+    none,
+    above,  // 现价高于等于stop
+    below   // 现价低于等于stop
+};
+
 struct order {
-    order() = default;
-    order( oid id_, const code& c_, const vol v_, const price p_, const ord_type& t_, const ord_dir& d_ );
-    oid        id       = NVX_BAD_OID;    //! 订单id
-    code       symbol   = "";             //! 代码，RB1910
-    exch       ex       = "";             //! 交易所，SHEX
-    price      limit    = .0;             //! 期望成交价格，已成交价格
-    price      tp_price = .0;             //! 止盈价格
-    price      sl_price = .0;             //! 止损价格
-    vol        qty      = .0;             //! 期望成交数量, 已成交数量
-    vol        traded   = .0;             //! 已经成交
-    ord_dir    dir      = ord_dir::none;  //! 方向，买、卖、平
-    ord_status status   = ord_status::pending;
-    ord_type   mode     = ord_type::market;
-    bool       today    = true;             //! 今仓，昨仓
-    datetime   dt       = datetime::now();  //! 成交或者下单的时间、日期
-    xstring    remark   = "#";              //! 如果会非常频繁的创建和拷贝订单，这里最好是用数组--string的实现必须健壮,考虑到各种可能的诡异操作~
+    /// order() = default;
+    // order( oid id_, const code& c_, const vol v_, const price p_, const ord_type& t_, const ord_dir& d_ );
+    oid        id     = NVX_BAD_OID;  //! 订单id
+    code       symbol = "";           //! 代码，RB1910
+    exch       ex     = "";           //! 交易所，SHEX
+    price      limit  = .0;           //! 期望成交价格，已成交价格
+    price      stop   = .0;
+    vol        qty    = .0;  //! 期望成交数量, 已成交数量
+    vol        traded = .0;  //! 已经成交
+    ord_dir    dir    = ord_dir::none;  //! 方向，买、卖、平
+    stop_dir   sdir   = stop_dir::none;
+    ord_status status = ord_status::pending;
+    ord_type   mode   = ord_type::market;
+    bool       today  = true;             //! 今仓，昨仓
+    datetime   dt     = datetime::now();  //! 成交或者下单的时间、日期
+    xstring    remark = "#";              //! 如果会非常频繁的创建和拷贝订单，这里最好是用数组--string的实现必须健壮,考虑到各种可能的诡异操作~
 };
 
 struct order_update {
@@ -226,7 +232,7 @@ struct performance {
     int   profit_n;  // 亏损次数
     int   loss_n;    // 盈利次数
 
-    array_t<money> profits;  // 每次有平仓都记录一下利润，用于画曲线
+    // array_t<money> profits;  // 每次有平仓都记录一下利润，用于画曲线
 };
 
 struct margin_rate {
@@ -242,7 +248,7 @@ struct margin_rate {
     float   short_by_money;   /// 空头保证金率
     float   short_by_volume;  // 空头保证金费;
 };
-
+#if 0
 //---inlines
 inline order::order( oid id_, const code& c_, const vol v_, const price p_, const ord_type& t_, const ord_dir& d_ ) {
     id     = id_;
@@ -252,6 +258,7 @@ inline order::order( oid id_, const code& c_, const vol v_, const price p_, cons
     mode   = t_;
     dir    = d_;
 }
+#endif
 
 NVX_NS_END
 

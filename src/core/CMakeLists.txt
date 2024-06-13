@@ -13,8 +13,8 @@ SET(SRC
     calendar.cpp
     clock.cpp
     context.cpp
-    datacenter0.cpp
-    datacenter1.cpp
+    #datacenter0.cpp
+    #datacenter1.cpp
     data.cpp
     kline.cpp
     ordermgmt.cpp
@@ -22,7 +22,8 @@ SET(SRC
     ctp/tradeproxy.cpp
     proxy.cpp
     quant.cpp
-    dbagent.cpp
+    #dbagent.cpp
+    config.cpp
     #algos/ma.cpp
 )
 

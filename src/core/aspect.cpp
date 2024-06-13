@@ -81,10 +81,10 @@ nvx_st aspect::load( const code& code_, const period& p_, int count_ ) {
 }
 
 void aspect::update( const tick& q_ ) {
-    _k->calc( q_, 0 );
+    _k->update( q_ );
 
     for ( auto& i : _algos ) {
-        dynamic_cast<algo*>( i.i )->calc( q_, 0 );
+        i.i->calc( q_, *_k );
     }
 }
 

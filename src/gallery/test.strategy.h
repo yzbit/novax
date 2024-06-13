@@ -27,13 +27,18 @@ SOFTWARE.
 
 #include <novax.h>
 
+USE_NVX_NS
+
 struct TestStrategy : NVX_NS::strategy {
-    NVX_NS::nvx_st init() override {
-        // QUANT.data()->market()->subscribe( "rb2410" );
-        return NVX_NS::NVX_OK;
+    xstring name() {
+        return "aa";
     }
 
-    NVX_NS::nvx_st invoke( NVX_NS::strategy::ntf n_, NVX_NS::context* c_ ) override {
-        return NVX_NS::NVX_OK;
+    nvx_st on_init( config* cfg_, context* c_ ) {
+        return NVX_OK;
+    }
+
+    nvx_st on_tick( const tick* q_, context* c_ ) {
+        return NVX_OK;
     }
 };

@@ -28,54 +28,44 @@ SOFTWARE.
 #ifndef C44A4ED8_FC43_44BB_A641_DADAFD2C62CC
 #define C44A4ED8_FC43_44BB_A641_DADAFD2C62CC
 
+#include <memory>
+
 #include "definitions.h"
 #include "models.h"
+#include "ordermgmt.h"
 
 NVX_NS_BEGIN
 
 struct position;
-struct order_mgmt;
-
+struct broker;
+struct data;
 struct context_impl_t {
-    tick     qut;
-    funds    acct;
-    nvxerr_t error;
+    tick   qut;
+    funds  acct;
+    nvxerr error;
 };
 
 struct context_intf : context {
-    context_intf( order_mgmt* mgmt_ );
+    context_intf( std::unique_ptr<broker> ib_, std::shared_ptr<data> d_ );
 
-    void update_qut( const tick& qut_ );
-    void update_fund( const funds& fund_ );
-    void update_error( const nvxerr_t& err_ );
+    ord_mgmt& mgmt() { return _mgmt; }
 
 private:
-    const tick& qut() const override;
-    const funds acct() const override;
-    aspect*     load( const code&   symbol_,
-                      const period& period_,
-                      int           count_ ) override;
+    aspect* load( const code& symbol_, const period& period_, int count_ ) override;
 
-    oid open( const code& c_,
-              vol         qty_,
-              price       sl_    = 0,
-              price       tp_    = 0,
-              price       price_ = 0,
-              ord_type    mode_  = ord_type::market );
+    oid shorting( const code& c_, vol qty_, price price_, ord_type type_, const text& remark_ ) override;
+    oid longing( const code& c_, vol qty_, price price_, ord_type type_, const text& remark_ ) override;
+    oid trapping( const code& c_, vol qty_, price limit_, ord_dir dir_, price stop_, stop_dir sdir_, ord_type type_, const text& remark_ ) override;
 
-    nvx_st close( const code& c_,
-                  vol         qty_,
-                  price       price_ = 0,
-                  ord_type    mode_  = ord_type::market );
-
+    nvx_st    calloff( const oid& id_ ) override;
     position* qry_long( const code& c_ ) override;
     position* qry_short( const code& c_ ) override;
-    datetime  time() const override;
-    nvxerr_t  error() const override;
 
 private:
-    context_impl_t _impl;
-    order_mgmt*    _mgmt;
+    context_impl_t        _impl;
+    ord_mgmt              _mgmt;
+    broker*               _ib   = nullptr;
+    std::shared_ptr<data> _data = nullptr;
 };
 
 NVX_NS_END

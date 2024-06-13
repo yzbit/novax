@@ -56,7 +56,7 @@ protected:
     nvx_st start() override;
     nvx_st stop() override;
     nvx_st cancel( const oid& id_ ) override;
-    oid    put( const code& instrument_, vol qty_, price price_, ord_type mode_, ord_dir dir_ ) override;
+    oid    put( const code& sym_, vol qty_, price limit_, ord_dir odir_, price stop_, stop_dir sdir_, ord_type type_ ) override;
 
 private:
     nvx_st login();
@@ -83,7 +83,6 @@ private:
 private:
     void reconnected( const session& s_, const ordref& max_ref_ );
     bool settled() { return _settled; }
-    void daemon();
 
 private:
     setting _settings;

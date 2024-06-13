@@ -29,7 +29,7 @@ add_executable(${PROJECT_NAME} ${SRC})
 
 target_include_directories(${PROJECT_NAME}
 PRIVATE
-    ${REPO_ROOT}/lib/gtest/include
+#    ${REPO_ROOT}/lib/gtest/include
     ${REPO_ROOT}/include
     ${REPO_ROOT}/src
     ${REPO_ROOT}/lib
@@ -37,7 +37,6 @@ PRIVATE
 
 target_link_directories( ${PROJECT_NAME} 
 PRIVATE
-    ${REPO_ROOT}/lib/gtest/lib
     ${REPO_ROOT}/lib/ctp
 )
 
@@ -47,7 +46,6 @@ PRIVATE
     pthread
     atomic
     gtest
-    gmock
     event
     thosttraderapi_se.so
     thostmduserapi_se.so

@@ -60,80 +60,26 @@ private:
     PosRepo _repo;
 };
 
-// todo. sync to disk.
-struct ord_book {
-    ord_book();
-    ~ord_book();
-
-    size_t count() const;
-    // oid    gen_id();
-    order* find( oid id_ );
-    order* append( order& order_ );
-
-private:
-    void persist() {
-        // todo
-    }
-
-private:
-    std::unordered_map<oid, order> _ords;
-
-    oid _start_id;
-};
-
 //--------------------------
-struct order_mgmt {
-    order_mgmt( broker* ib_ );
-    ~order_mgmt();
+// 为什么不直接从context继承, 或者把这些实现都放在context中,然后这里只负责管理订单薄
+struct ord_mgmt {
+    ord_mgmt();
+    ~ord_mgmt();
 
-    nvx_st start();
-    nvx_st stop();
-
-    //-price=0 use market
-    oid buylong( const code& code_,
-                 vol         qty_,
-                 price       price_,
-                 ord_type    mode_,
-                 const text& remark );
-    oid sell( const code& code_,
-              vol         qty_,
-              price       price_,
-              ord_type    mode_,
-              const text& remark );
-    oid sellshort( const code& code_,
-                   vol         qty_,
-                   price       price_,
-                   ord_type    mode_,
-                   const text& remark );
-    oid buy( const code& code_,
-             vol         qty_,
-             price       price_,
-             ord_type    mode_,
-             const text& remark );
-
-    oid cancel( oid id_ );
-    oid close( const code& code_ );
+    order* find( oid id_ );
+    // nvx_st cancel( oid id_ );
+    nvx_st add( oid id, const code& c_, vol qty_, price limit_, ord_dir dir_, price stop_, stop_dir sdir_, ord_type type_, const text& remark_ );
+    void   update( const order_update& ord_ );
+    void   update_position();
 
     position* pos_of( const code& code_, bool long_ );
-    void      update_ord( const order_update& ord_ );
-    void      update_position();
-
-private:
-    // oid close( position* p_, vol qty_ );
-    oid put( ord_dir     dir_,
-             const code& code_,
-             vol         qty_,
-             price       price_,
-             ord_type    mode_,
-             const text& remark_ );
-    // nvx_st remove( oid id );
 
 private:
     portfolio _pf;
-    ord_book  _orders;
 
 private:
-    broker* _ib;
+    using ord_book = std::unordered_map<oid, order>;
+    ord_book _orders;
 };
 
 NVX_NS_END

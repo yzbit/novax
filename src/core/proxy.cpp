@@ -29,7 +29,6 @@ SOFTWARE.
 
 #include "ctp/mdproxy.h"
 #include "ctp/tradeproxy.h"
-#include "datacenter.h"
 
 NVX_NS_BEGIN
 
@@ -44,12 +43,18 @@ market::market( ipub* pub_ )
     : subject( pub_ ) {
 }
 
-market* create_market( ipub* p_ ) {
-    return new dc_client( p_ );
+std::unique_ptr<market> market::create( market::type t_, ipub* p_ ) {
+    switch ( t_ ) {
+    default: return nullptr;
+    case market::type::ctp:
+        return std::make_unique<ctp::mdex>( p_ );
+    }
+
+    return nullptr;
 }
 
-broker* create_broker( ipub* p_ ) {
-    return new ctp::trader( p_ );
+std::unique_ptr<broker> broker::create( broker::type t_, ipub* p_ ) {
+    return std::make_unique<ctp::trader>( p_ );
 }
 
 NVX_NS_END

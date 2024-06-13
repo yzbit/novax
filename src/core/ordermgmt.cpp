@@ -116,6 +116,7 @@ portfolio::portfolio() {
 }
 
 //-----order book
+#if 0
 order* ord_book::find( oid id_ ) {
     auto found = _ords.find( id_ );
 
@@ -138,97 +139,13 @@ order* ord_book::append( order& order_ ) {
 size_t ord_book::count() const {
     return _ords.size();
 }
+#endif
 
 //------------------------
-order_mgmt::~order_mgmt() {}
-order_mgmt::order_mgmt( broker* ib_ )
-    : _ib( ib_ ) {}
+ord_mgmt::~ord_mgmt() {}
+ord_mgmt::ord_mgmt() {}
 
-nvx_st order_mgmt::start() { return _ib->start(); }
-nvx_st order_mgmt::stop() { return _ib->stop(); }
-
-oid order_mgmt::put( ord_dir     dir_,
-                     const code& code_,
-                     vol         qty_,
-                     price       price_,
-                     ord_type    mode_,
-                     const text& remark_ ) {
-#if 0
-    auto r   = order( code_, qty_, price_, mode_, dir_ );
-    r.remark = remark_;
-
-    if ( 0 != _ib->put( r ) ) {
-        LOG_INFO( "put order failed, delete it;oid=[%u]", r.id );
-        return NVX_BAD_OID;
-    }
-
-    _orders.append( r );
-
-    LOG_INFO( "order count in book: [ %lu ]", _orders.count() );
-
-    return r.id;
-#endif
-    return 0;
-}
-
-oid order_mgmt::close( const code& code_ ) {
-    NVX_ASSERT( 0 );
-
-    return NVX_OK;
-}
-
-oid order_mgmt::sellshort( const code& code_,
-                           vol         qty_,
-                           price       price_,
-                           ord_type    mode_,
-                           const text& remark_ ) {
-    LOG_TAGGED( "om", "short: code=%s qty%d price=%.2f mode=%d r=%s", code_.c_str(), qty_, price_, mode_, remark_.c_str() );
-
-    return put( ord_dir::p_short, code_, qty_, price_, mode_, remark_ );
-}
-
-oid order_mgmt::buylong( const code& code_,
-                         vol         qty_,
-                         price       price_,
-                         ord_type    mode_,
-                         const text& remark_ ) {
-    LOG_TAGGED( "om", "long: code=%s qty%d price=%.2f sl=%d, tp=%d, r=%s", code_.c_str(), qty_, price_, ( int )mode_, remark_.c_str() );
-
-    return put( ord_dir::p_long, code_, qty_, price_, mode_, remark_ );
-}
-
-oid order_mgmt::cancel( oid id_ ) {
-
-#if 0
-    LOG_TAGGED( "om", "del order: %u", id_ );
-    auto r = _orders.find( id_ );
-
-    if ( !r ) {
-        LOG_TAGGED( "om", "cannot find order: %u", id_ );
-        return NVX_FAIL;
-    }
-
-    if ( r->status != ord_status::pending
-         && r->status != ord_status::partial_dealed
-         && r->status != ord_status::patial_canelled ) {
-        LOG_TAGGED( "om", "can not cancel order, id=%u status=%d", id_, r->status );
-        return NVX_FAIL;
-    }
-
-    return _ib->cancel( *r );
-
-#endif
-    return 0;
-}
-#if 0
-nvx_st order_mgmt::remove( oid id_ ) {
-
-    _orders.erase( id_ );
-
-    return NVX_OK;
-}
-#endif
-void order_mgmt::update_ord( const order_update& upt_ ) {
+void ord_mgmt::update( const order_update& upt_ ) {
 #if 0
     auto o = get( upt_.id );
     if ( !o ) return;
@@ -254,93 +171,50 @@ void order_mgmt::update_ord( const order_update& upt_ ) {
 #endif
 }
 
-position* order_mgmt::pos_of( const code& code_, bool long_ ) {
+position* ord_mgmt::pos_of( const code& code_, bool long_ ) {
     return _pf.pos( code_,
                     long_ ? portfolio::dist_t::netlong
                           : portfolio::dist_t::netshort );
 }
 
-void order_mgmt::update_position() {
+void ord_mgmt::update_position() {
 }
 
-oid order_mgmt::sell( const code&    code_,
-                      const vol      qty_,
-                      const price    price_,
-                      const ord_type mode_,
-                      const text&    remark_ ) {
-    LOG_TAGGED( "om", "sell: code=%s qty=%d price=%.2f, mode=%d, r=%s", code_.c_str(), qty_, price_, ( int )mode_, remark_.c_str() );
+nvx_st ord_mgmt::add( oid id_, const code& c_, vol qty_, price limit_, ord_dir dir_, price stop_, stop_dir sdir_, ord_type type_, const text& remark_ ) {
+    LOG_INFO( "insert new ord: id=%u,code=%s qty=%f, price=%f", id_, c_.c_str(), qty_, limit_ );
+    order ord = {
+        .id     = id_,
+        .symbol = c_,
+        .limit  = limit_,
+        .stop   = stop_,
+        .qty    = qty_,
+        .dir    = dir_,
+        .sdir   = sdir_,
+        // .type   = type_,
+        .status = ord_status::pending,
+        .remark = remark_,
+    };
 
-#if 0
-    auto p = _pf.pos( code_, portfolio::dist_t::netlong );
-    if ( !p || 0 == p->qty() ) {
-        LOG_TAGGED( "om", "no long position to be closed" );
-        return NVX_BAD_OID;
+    auto res = _orders.try_emplace( id_, ord );
+
+    if ( !res.second ) {
+        LOG_INFO( "add order faild, id=%u code=%s", id_, c_.c_str() );
+        return NVX_FAIL;
     }
 
-    vol   q = p->qty() >= qty_ ? qty_ : p->qty();
-    order r( _orders.oid(), code_, q, price_, mode_, ord_dir::cover );
-
-    if ( NVX_OK != _ib->put( r ) ) {
-        LOG_INFO( "close position failed,id=%u ,sym=%s", r_.id, r_.code.c_str() );
-        return NVX_BAD_OID;
-    }
-
-    _orders.append( r );
-
-    return r.id;
-#endif
-    return 0;
+    return NVX_OK;
 }
 
-oid order_mgmt::buy( const code&    code_,
-                     const vol      qty_,
-                     const price    price_,
-                     const ord_type mode_,
-                     const text&    remark_ ) {
+order* ord_mgmt::find( oid id_ ) {
+    LOG_TAGGED( "om", "del order: %u", id_ );
+    auto res = _orders.find( id_ );
 
-    LOG_TAGGED( "om", "buy: code=%s qty=%d price=%.2f, mode=%d, r=%s", code_.c_str(), qty_, price_, ( int )mode_, remark_.c_str() );
-#if 0
-    auto p = _pf.pos( code_, portfolio::dist_t::netshort );
-    if ( !p || 0 == p->qty() ) {
-        LOG_TAGGED( "om", "no short position to be closed" );
-        return NVX_BAD_OID;
+    if ( res == _orders.end() ) {
+        LOG_TAGGED( "om", "cannot find order: %u", id_ );
+        return nullptr;
     }
 
-    // p->close( qty_, price_, mode_ );
-
-    close( p, qty_, price_, mode_ );
-
-    vol q = p->qty() >= qty_ ? qty_ : p->qty();
-
-    order r( _orders.gen_id(), code_, q, price_, mode_, ord_dir::cover );
-
-    if ( NVX_OK != _ib->put( r ) ) {
-        // LOG_INFO( "close position failed,id=%u ,sym=%s", r_.id, r_.code.c_str() );
-        return NVX_BAD_OID;
-    }
-
-    _orders.append( r );
-
-    return r.id;
-#endif
-    return 0;
+    return &( res->second );
 }
-
-// stop loss--可能同时持有空单和多单看,价格分别是p1和p2,而  p2 > price_ > p1
-#if 0
-oid order_mgmt::stop( const code& code_, vol qty_, price price_ ) {
-    auto pos = position( code_, true );
-    if ( !pos ) {
-    }
-
-    return NVX_BAD_OID;
-}
-
-// take profit
-oid gain( const code& code_, vol qty_, price price_ ) {
-
-    return NVX_BAD_OID;
-}
-#endif
 
 NVX_NS_END

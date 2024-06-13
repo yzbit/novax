@@ -7,8 +7,11 @@ set(MODULE_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
 set(REPO_ROOT "${MODULE_ROOT}/../..")
 
 add_executable(${PROJECT_NAME}  bull.cc) 
+
+#[[
 add_executable(dc.cli dc.cli.cc)
 add_executable(dc.srv dc.srv.cc)
+]]
 
 SET(INC 
     ${REPO_ROOT}/include
@@ -33,6 +36,7 @@ target_include_directories(${PROJECT_NAME}  PRIVATE ${INC})
 target_link_directories( ${PROJECT_NAME} PRIVATE ${LINK})
 target_link_libraries(${PROJECT_NAME} PRIVATE ${LIB})
 
+#[[
 target_include_directories(dc.cli  PRIVATE ${INC})
 target_link_directories( dc.cli PRIVATE ${LINK})
 target_link_libraries(dc.cli PRIVATE ${LIB})
@@ -43,7 +47,9 @@ target_link_libraries(dc.srv PRIVATE ${LIB})
 
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
 target_compile_options(${PROJECT_NAME} PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Wall >)
+]]
 
 
 #----
-install (TARGETS dc.cli dc.srv ${PROJECT_NAME} DESTINATION .)
+#install (TARGETS dc.cli dc.srv ${PROJECT_NAME} DESTINATION .)
+install (TARGETS ${PROJECT_NAME} DESTINATION .)
