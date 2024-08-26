@@ -67,7 +67,6 @@ struct ord_mgmt {
     ~ord_mgmt();
 
     order* find( oid id_ );
-    // nvx_st cancel( oid id_ );
     nvx_st add( oid id, const code& c_, vol qty_, price limit_, ord_dir dir_, price stop_, stop_dir sdir_, ord_type type_, const text& remark_ );
     void   update( const order_update& ord_ );
     void   update_position();

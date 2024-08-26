@@ -18,6 +18,6 @@ rm -rf build/
 mkdir build && cd build/
 
 cmake -DCMAKE_INSTALL_PREFIX=../output/ ..
-make -j10 && make install
+make -j12 && make install
 cd -
 

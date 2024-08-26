@@ -121,6 +121,7 @@ struct tick {
     price    last;  // 上次成交的价格
     price    open;
     price    close;
+    bool     obsolete;
     datetime time;
 };
 
@@ -176,8 +177,8 @@ struct order {
     exch       ex     = "";           //! 交易所，SHEX
     price      limit  = .0;           //! 期望成交价格，已成交价格
     price      stop   = .0;
-    vol        qty    = .0;  //! 期望成交数量, 已成交数量
-    vol        traded = .0;  //! 已经成交
+    vol        qty    = .0;             //! 期望成交数量, 已成交数量
+    vol        traded = .0;             //! 已经成交
     ord_dir    dir    = ord_dir::none;  //! 方向，买、卖、平
     stop_dir   sdir   = stop_dir::none;
     ord_status status = ord_status::pending;

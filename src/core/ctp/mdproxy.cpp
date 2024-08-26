@@ -247,6 +247,11 @@ void mdex::OnRtnDepthMarketData( CThostFtdcDepthMarketDataField* f ) {
     q.open     = f->OpenPrice;
     q.close    = q.last;  //->ClosePrice;  // 今收盘价格，盘中是一个错误的值，不太有意义  PreClosePrice 昨收盘
 
+    if ( q.time.t.hour > 8 && q.time.t.hour < 9 )
+        q.obsolete = true;
+    else
+        q.obsolete = false;
+
     // tick_msg_t m( q );
     PUB( q );
 
