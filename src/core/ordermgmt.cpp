@@ -206,11 +206,11 @@ nvx_st ord_mgmt::add( oid id_, const code& c_, vol qty_, price limit_, ord_dir d
 }
 
 order* ord_mgmt::find( oid id_ ) {
-    LOG_TAGGED( "om", "del order: %u", id_ );
+    LOG_INFO( "del order: %u", id_ );
     auto res = _orders.find( id_ );
 
     if ( res == _orders.end() ) {
-        LOG_TAGGED( "om", "cannot find order: %u", id_ );
+        LOG_INFO( "om", "cannot find order: %u", id_ );
         return nullptr;
     }
 

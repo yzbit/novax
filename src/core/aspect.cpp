@@ -94,7 +94,7 @@ nvx_st aspect::addi( indicator* i_ ) {
     auto itr = std::find_if( _algos.begin(), _algos.end(), [ & ]( const prii_t& pi_ ) { return pi_.i == i_; } );
 
     if ( itr != _algos.end() ) {
-        LOG_TAGGED( "asp", "%s already attached. ign", i_->name() );
+        LOG_INFO("%s already attached. ign", i_->name() );
         return NVX_OK;
     }
 

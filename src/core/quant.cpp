@@ -198,6 +198,9 @@ nvx_st quant_impl::on_clock( const pub::timer_msg& err_ ) {
 }
 
 nvx_st quant_impl::on_tick( const pub::tick_msg& tick_ ) {
+    //todo
+    //aspects->update();
+    // 是否可以不用data ,至少通过data来subcribe data是不太合理的
     _data->update( tick_ );
     return _strat->on_tick( &tick_, _ctx.get() );
 }

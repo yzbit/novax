@@ -25,60 +25,12 @@ SOFTWARE.
 * \date: 2024
 **********************************************************************************/
 
-#ifndef B51B8BF1_EFFE_4FD1_94C3_9C7FFB93D609
-#define B51B8BF1_EFFE_4FD1_94C3_9C7FFB93D609
-#include <vector>
+#ifndef E7DDFFF4_6305_4446_998B_F8B13B0C7320
+#define E7DDFFF4_6305_4446_998B_F8B13B0C7320
 
-#include "definitions.h"
-#include "models.h"
-#include "ns.h"
+#define NVX_NS_BEGIN namespace nvx {
+#define NVX_NS_END }
+#define NVX_NS nvx
+#define USE_NVX_NS using namespace nvx;
 
-NVX_NS_BEGIN
-
-struct kline;
-struct data;
-struct indicator;
-struct aspect final {
-    aspect( data* data_ );
-    ~aspect();
-
-    void        update( const tick& q_ );
-    nvx_st      addi( indicator* i_ );
-    kline&      bar( kidx index_ = 0 );
-    nvx_st      load( const code& code_, const period& p_, int count_ );
-    const code& symbol() const;
-
-private:
-    bool loaded() const;
-    void debug();
-
-    struct prii_t {
-        int        p;
-        indicator* i;
-    };
-    std::vector<prii_t> _algos;
-
-    int    _ref_prio = 1;
-    code   _symbol   = "";
-    kline* _k        = nullptr;
-
-private:
-    data* _data;
-};
-
-#if 0
-struct asp_repo {
-    static AspRepo& instance();
-    aspect*         add( const code& code_, const period& p_, int count_ );
-
-private:
-    using repo_t = std::vector<aspect>;
-    repo_t _repo;
-};
-#endif
-
-NVX_NS_END
-
-#define ASP AspRepo::instance()
-
-#endif /* B51B8BF1_EFFE_4FD1_94C3_9C7FFB93D609 */
+#endif /* E7DDFFF4_6305_4446_998B_F8B13B0C7320 */

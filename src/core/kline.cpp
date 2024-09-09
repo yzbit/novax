@@ -106,6 +106,7 @@ bool kline::is_new_bar( const tick& q_ ) {
 }
 
 #define IS_VALID_BAR( k ) ( k && k->time.is_valid() )
+
 void kline::update( const tick& q_ ) {
     if ( q_.obsolete ) {
         LOG_INFO( "market open ;obsolete data recieved: %u %u", CLOCK.now( q_.ex ), q_.time.to_unix_time() );

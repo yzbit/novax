@@ -25,60 +25,30 @@ SOFTWARE.
 * \date: 2024
 **********************************************************************************/
 
-#ifndef B51B8BF1_EFFE_4FD1_94C3_9C7FFB93D609
-#define B51B8BF1_EFFE_4FD1_94C3_9C7FFB93D609
-#include <vector>
+#ifndef E93F5C75_9223_409D_8F98_DFFDE2E179BF
+#define E93F5C75_9223_409D_8F98_DFFDE2E179BF
 
-#include "definitions.h"
+#include <config.h>
+
 #include "models.h"
 #include "ns.h"
 
 NVX_NS_BEGIN
 
-struct kline;
-struct data;
-struct indicator;
-struct aspect final {
-    aspect( data* data_ );
-    ~aspect();
+struct context;
+struct strategy {
+    virtual ~strategy() {}
 
-    void        update( const tick& q_ );
-    nvx_st      addi( indicator* i_ );
-    kline&      bar( kidx index_ = 0 );
-    nvx_st      load( const code& code_, const period& p_, int count_ );
-    const code& symbol() const;
+    virtual xstring name()                                 = 0;
+    virtual nvx_st  on_init( config* cfg_, context* c_ )   = 0;
+    virtual nvx_st  on_tick( const tick* q_, context* c_ ) = 0;
 
-private:
-    bool loaded() const;
-    void debug();
-
-    struct prii_t {
-        int        p;
-        indicator* i;
-    };
-    std::vector<prii_t> _algos;
-
-    int    _ref_prio = 1;
-    code   _symbol   = "";
-    kline* _k        = nullptr;
-
-private:
-    data* _data;
+    virtual nvx_st on_error( const nvxerr* err_, context* c_ ) { return NVX_OK; }
+    virtual nvx_st on_clock( const datetime* dt_, context* c_ ) { return NVX_OK; }
+    virtual nvx_st on_order( oid id_, context* c_ ) { return NVX_OK; }
+    virtual nvx_st on_instate( const void* par_, context* c_ ) { return NVX_OK; }
 };
-
-#if 0
-struct asp_repo {
-    static AspRepo& instance();
-    aspect*         add( const code& code_, const period& p_, int count_ );
-
-private:
-    using repo_t = std::vector<aspect>;
-    repo_t _repo;
-};
-#endif
 
 NVX_NS_END
 
-#define ASP AspRepo::instance()
-
-#endif /* B51B8BF1_EFFE_4FD1_94C3_9C7FFB93D609 */
+#endif /* E93F5C75_9223_409D_8F98_DFFDE2E179BF */

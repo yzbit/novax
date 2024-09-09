@@ -52,7 +52,7 @@ trader::trader( ipub* p_, int id_start_ref_ )
 
 nvx_st trader::start() {
     if ( _settings.load( CTP_TRADE_SETTING_FILE ) < 0 ) {
-        LOG_TAGGED( "ctp", "load config failed: %s", CTP_TRADE_SETTING_FILE );
+        LOG_INFO( "ctp", "load config failed: %s", CTP_TRADE_SETTING_FILE );
         return NVX_FAIL;
     }
 

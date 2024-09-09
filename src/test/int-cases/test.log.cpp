@@ -9,7 +9,7 @@ int main() {
     c.rot_size   = 1024;
     c.time_fmt   = 0;
     c.use_stdout = 1;
-    c.keep       = 1;
+    c.in_place   = 1;
 
     LOGZ_INIT( c );
 

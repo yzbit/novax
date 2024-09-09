@@ -54,7 +54,7 @@ mdex::mdex( ipub* p_ )
 nvx_st mdex::subscribe( const code& code_ ) {
     std::unique_lock<std::mutex> lock{ _sub_mtx };
 
-    LOG_TAGGED( "ctp",
+    LOG_INFO( "ctp",
                 "subscribe svc=%d, code=%s, pending sub=%d pending_unsub=%d",
                 _is_svc_online,
                 code_.c_str(),
@@ -74,7 +74,7 @@ nvx_st mdex::subscribe( const code& code_ ) {
 nvx_st mdex::unsubscribe( const code& code_ ) {
     std::unique_lock<std::mutex> lock{ _sub_mtx };
 
-    LOG_TAGGED( "ctp",
+    LOG_INFO( "ctp",
                 "UNsubscribe svc=%d, code=%s, pending sub=%d pending_unsub=%d",
                 _is_svc_online,
                 code_.c_str(),
@@ -167,7 +167,7 @@ nvx_st mdex::login() {
 }
 
 nvx_st mdex::start() {
-    LOG_TAGGED( "ctp", "start to run ,state=%d", _running );
+    LOG_INFO( "ctp", "start to run ,state=%d", _running );
     if ( _running ) return NVX_OK;
     _running = true;
 
@@ -175,12 +175,12 @@ nvx_st mdex::start() {
 }
 
 nvx_st mdex::stop() {
-    LOG_TAGGED( "ctp", "stop running ,[do NOTHING] state=%d", _running );
+    LOG_INFO( "ctp", "stop running ,[do NOTHING] state=%d", _running );
     return NVX_OK;
 }
 
 nvx_st mdex::init() {
-    LOG_TAGGED( "ctp", "init begin" );
+    LOG_INFO( "ctp", "init begin" );
 
     if ( _settings.load( CTP_MD_SETTING_FILE ) < 0 ) {
         LOG_INFO( "#ERR,read ctp setings failed" );
@@ -200,7 +200,7 @@ nvx_st mdex::init() {
 
         LOG_INFO( "spawn md user" );
         auto rc = _api->Join();
-        LOG_TAGGED( "ctp", "md api exit with code=%d", rc );
+        LOG_INFO( "ctp", "md api exit with code=%d", rc );
     } ).detach();
 
     return NVX_OK;
@@ -239,11 +239,11 @@ void mdex::OnRspUserLogin( CThostFtdcRspUserLoginField* pRspUserLogin, CThostFtd
 
     datetime dt = { 0 };
 
-    LOG_TAGGED( "ctp", "tune clock of exchanges" );
+    LOG_INFO( "ctp", "tune clock of exchanges" );
     CTP_CLOCK.reset( pRspUserLogin );
 
     {
-        LOG_TAGGED( "ctp", "login ok , process subcribtion" );
+        LOG_INFO( "ctp", "login ok , process subcribtion" );
         for ( auto& c : _sub_symbols ) {
             LOG_INFO( "=> %s", c.c_str() );
         }

@@ -25,60 +25,52 @@ SOFTWARE.
 * \date: 2024
 **********************************************************************************/
 
-#ifndef B51B8BF1_EFFE_4FD1_94C3_9C7FFB93D609
-#define B51B8BF1_EFFE_4FD1_94C3_9C7FFB93D609
-#include <vector>
+#ifndef B0FD204B_DBB0_4DB4_BA81_807E439AA053
+#define B0FD204B_DBB0_4DB4_BA81_807E439AA053
 
 #include "definitions.h"
 #include "models.h"
 #include "ns.h"
+#include "series.h"
 
 NVX_NS_BEGIN
 
-struct kline;
-struct data;
-struct indicator;
-struct aspect final {
-    aspect( data* data_ );
-    ~aspect();
+struct kline {
+    kline( const code& code_, const period& p_, size_t series_count_ );
+    void update( const tick& q_ );
 
-    void        update( const tick& q_ );
-    nvx_st      addi( indicator* i_ );
-    kline&      bar( kidx index_ = 0 );
-    nvx_st      load( const code& code_, const period& p_, int count_ );
+    candle&     bar( int index_ = 0 );
+    const tick& qut() const;
+    period      cycle() const;
     const code& symbol() const;
+    size_t      count() const;
 
 private:
-    bool loaded() const;
-    void debug();
+    bool is_new_bar( const tick& q_ );
+    void normalize();
 
-    struct prii_t {
-        int        p;
-        indicator* i;
+private:
+    struct stamp {
+        unsigned day;
+        unsigned time;
     };
-    std::vector<prii_t> _algos;
 
-    int    _ref_prio = 1;
-    code   _symbol   = "";
-    kline* _k        = nullptr;
+    stamp qut_stamp( const tick& q_ );
 
 private:
-    data* _data;
-};
-
-#if 0
-struct asp_repo {
-    static AspRepo& instance();
-    aspect*         add( const code& code_, const period& p_, int count_ );
+    code    _symbol;
+    period  _period;
+    tick    _qut       = {};
+    candle* _bar       = nullptr;
+    int     _gathered  = 0;
+    stamp   _lst_stamp = {};  //! reduce cal
 
 private:
-    using repo_t = std::vector<aspect>;
-    repo_t _repo;
+    using bar_series = series<candle>;
+
+    bar_series* _bars = nullptr;
 };
-#endif
 
 NVX_NS_END
 
-#define ASP AspRepo::instance()
-
-#endif /* B51B8BF1_EFFE_4FD1_94C3_9C7FFB93D609 */
+#endif /* B0FD204B_DBB0_4DB4_BA81_807E439AA053 */

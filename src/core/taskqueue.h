@@ -79,7 +79,7 @@ struct ThreadPool : public task_queue {
             std::unique_lock<std::mutex> lock( _mutex );
             _jobs.push_back( std::move( fn ) );
 
-            // LOG_TAGGED( "taskq", "[0x%x] add jobs ,current=%d", ( intptr_t )this, ( int )_jobs.size() );
+            // LOG_INFO( "taskq", "[0x%x] add jobs ,current=%d", ( intptr_t )this, ( int )_jobs.size() );
         }
 
         _cond.notify_one();
@@ -94,7 +94,7 @@ struct ThreadPool : public task_queue {
 
     void shutdown() override {
         {
-            LOG_TAGGED( "taskq", "[0x%x] shutdown", ( intptr_t )this );
+            LOG_INFO( "[0x%x] shutdown", ( intptr_t )this );
             std::unique_lock<std::mutex> lock( _mutex );
             _shutdown = true;
         }
@@ -134,7 +134,7 @@ private:
 
                     --_pool._idles;
 
-                    // LOG_TAGGED( "taskq", "[0x%x] pick one task to run, backlogs=%d", ( intptr_t )this, ( int )_pool._jobs.size() );
+                    // LOG_INFO( "taskq", "[0x%x] pick one task to run, backlogs=%d", ( intptr_t )this, ( int )_pool._jobs.size() );
                     fn = std::move( _pool._jobs.front() );
                     _pool._jobs.pop_front();
                 }

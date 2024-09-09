@@ -67,7 +67,7 @@ nvx_st context_intf::calloff( const oid& id_ ) {
          || ( ord->status != ord_status::pending
               && ord->status != ord_status::partial_dealed
               && ord->status != ord_status::patial_canelled ) ) {
-        LOG_TAGGED( "om", "can not cancel order, id=%u status=%d", id_, ord->status );
+        LOG_INFO("can not cancel order, id=%u status=%d", id_, ord->status );
         return NVX_FAIL;
     }
 

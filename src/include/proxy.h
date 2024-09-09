@@ -25,60 +25,65 @@ SOFTWARE.
 * \date: 2024
 **********************************************************************************/
 
-#ifndef B51B8BF1_EFFE_4FD1_94C3_9C7FFB93D609
-#define B51B8BF1_EFFE_4FD1_94C3_9C7FFB93D609
-#include <vector>
+#ifndef B6D90468_E9C6_4FE4_A0C4_197D3CC5F83F
+#define B6D90468_E9C6_4FE4_A0C4_197D3CC5F83F
+
+#include <memory>
 
 #include "definitions.h"
 #include "models.h"
 #include "ns.h"
+#include "pub.h"
 
 NVX_NS_BEGIN
 
-struct kline;
-struct data;
-struct indicator;
-struct aspect final {
-    aspect( data* data_ );
-    ~aspect();
+struct subject {
+    subject( ipub* pub_ )
+        : _pub( pub_ ) {}
 
-    void        update( const tick& q_ );
-    nvx_st      addi( indicator* i_ );
-    kline&      bar( kidx index_ = 0 );
-    nvx_st      load( const code& code_, const period& p_, int count_ );
-    const code& symbol() const;
+    virtual ~subject() {}
+
+protected:
+    int post( const pub::msg& m_ );
 
 private:
-    bool loaded() const;
-    void debug();
+    ipub* _pub = nullptr;
+};
 
-    struct prii_t {
-        int        p;
-        indicator* i;
+struct broker : subject {
+    enum class type {
+        ctp
     };
-    std::vector<prii_t> _algos;
 
-    int    _ref_prio = 1;
-    code   _symbol   = "";
-    kline* _k        = nullptr;
+    broker( ipub* pub_ );
 
-private:
-    data* _data;
+    static std::unique_ptr<broker> create( type t_, ipub* pub_ );
+
+    virtual nvx_st start() = 0;
+    virtual nvx_st stop()  = 0;
+
+    virtual oid put( const code& sym_, vol qty_, price limit_, ord_dir odir_, price stop_, stop_dir sdir_, ord_type type_ ) = 0;
+
+    virtual nvx_st cancel( const oid& id_ ) = 0;
 };
 
-#if 0
-struct asp_repo {
-    static AspRepo& instance();
-    aspect*         add( const code& code_, const period& p_, int count_ );
+struct market : subject {
+    enum class type {
+        ctp,
+        dc,
+        file
+    };
 
-private:
-    using repo_t = std::vector<aspect>;
-    repo_t _repo;
+    market( ipub* pub_ );
+
+    static std::unique_ptr<market> create( type t_, ipub* pub_ );
+
+    virtual nvx_st start()                          = 0;
+    virtual nvx_st stop()                           = 0;
+    virtual nvx_st subscribe( const code& code_ )   = 0;
+    virtual nvx_st unsubscribe( const code& code_ ) = 0;
 };
-#endif
 
 NVX_NS_END
 
-#define ASP AspRepo::instance()
-
-#endif /* B51B8BF1_EFFE_4FD1_94C3_9C7FFB93D609 */
+#endif /* B6D90468_E9C6_4FE4_A0C4_197D3CC5F83F */

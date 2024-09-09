@@ -130,7 +130,7 @@ nvx_st mdex::stop() {
 }
 
 void mdex::on_init() {
-    LOG_TAGGED( "md", "reinit md api" );
+    LOG_INFO( "reinit md api" );
     _api = CThostFtdcMdApi::CreateFtdcMdApi( _settings.flow_path.c_str(), false );  // true: udp mode
     _api->RegisterSpi( this );
 
@@ -144,11 +144,11 @@ void mdex::on_init() {
 void mdex::on_release() {
     _api->Release();
     LOG_INFO( "spawn md user" );
-    LOG_TAGGED( "ctp", "md api exit with code=%d", _api->Join() );
+    LOG_INFO( "md api exit with code=%d", _api->Join() );
 }
 
 nvx_st mdex::init() {
-    LOG_TAGGED( "ctp", "init begin" );
+    LOG_INFO( "init begin" );
 
     if ( _settings.load( CTP_MD_SETTING_FILE ) < 0 ) {
         LOG_INFO( "#ERR,read ctp setings failed" );
@@ -190,8 +190,9 @@ void mdex::OnRspUserLogin( CThostFtdcRspUserLoginField* pRspUserLogin, CThostFtd
               pRspUserLogin->SessionID,
               pRspUserLogin->MaxOrderRef );
 
-    LOG_TAGGED( "ctp", "tune clock of exchanges" );
-    CTP_CLOCK.reset( pRspUserLogin );
+    LOG_INFO( "tune clock of exchanges" );
+    // todo
+    // CLOCK.reset( pRspUserLogin );
     _is_svc_online = true;
 
     resub();

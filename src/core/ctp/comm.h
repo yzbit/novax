@@ -183,19 +183,18 @@ inline int setting::load( const char* file_ ) {
     }
 
     // dump
-    LOG_TAGGED( "ctp",
-                "settings:flow_path=%s,broker=%s, user=%s, pwd=%s, front=%s",
-                flow_path.c_str(),
-                i.broker.c_str(),
-                i.name.c_str(),
-                i.password.c_str(),
-                frontend[ 0 ].c_str() );
+    LOG_INFO( "settings:flow_path=%s,broker=%s, user=%s, pwd=%s, front=%s",
+              flow_path.c_str(),
+              i.broker.c_str(),
+              i.name.c_str(),
+              i.password.c_str(),
+              frontend[ 0 ].c_str() );
 
-    LOG_TAGGED( "ctp",
-                "auth: appid=%s,authcode=%s, token=%s",
-                c.appid.c_str(),
-                c.auth.c_str(),
-                c.token.c_str() );
+    LOG_INFO( "ctp",
+              "auth: appid=%s,authcode=%s, token=%s",
+              c.appid.c_str(),
+              c.auth.c_str(),
+              c.token.c_str() );
 
     return 0;
 }

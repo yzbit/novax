@@ -89,12 +89,12 @@ bool calendar::is_trade_time( const code& c_, const timespec& time_ ) {
 
 void calendar::parse_year( const cal_sheet& sh_ ) {
     _year = sh_.HasMember( "year" ) ? sh_[ "year" ].GetInt() : _year;
-    LOG_TAGGED( "cal", "get year from calendar: %d", _year );
+    LOG_INFO( "get year from calendar: %d", _year );
 }
 
 void calendar::parse_hol( const cal_sheet& sh_ ) {
     if ( !sh_.HasMember( "holidays" ) ) {
-        LOG_TAGGED( "cal", "no holiday defined" );
+        LOG_INFO( "no holiday defined" );
         return;
     }
 
@@ -114,7 +114,7 @@ void calendar::parse_hol( const cal_sheet& sh_ ) {
 
 void calendar::parse_sess( const cal_sheet& sh_ ) {
     if ( !sh_.HasMember( "sessions" ) ) {
-        LOG_TAGGED( "cal", "no sessions defined" );
+        LOG_INFO( "no sessions defined" );
         return;
     }
 
@@ -128,7 +128,7 @@ void calendar::parse_sess( const cal_sheet& sh_ ) {
             std::string session = sess->GetString();
             auto        pos     = session.find( "-" );
             if ( !session.empty() && std::string::npos == pos ) {
-                LOG_TAGGED( "cal", "!!bad session time defined, %s", session.c_str() );
+                LOG_INFO( "!!bad session time defined, %s", session.c_str() );
                 continue;
             }
 
@@ -136,7 +136,7 @@ void calendar::parse_sess( const cal_sheet& sh_ ) {
             std::string end   = session.substr( pos + 1 );
 
             if ( start.empty() || end.empty() || std::string::npos == start.find( ":" ) || std::string::npos == end.find( ":" ) ) {
-                LOG_TAGGED( "cal", "!!bad session time defined, start=%s,end=%s", start.c_str(), end.c_str() );
+                LOG_INFO( "!!bad session time defined, start=%s,end=%s", start.c_str(), end.c_str() );
                 continue;
             }
 
@@ -150,7 +150,7 @@ void calendar::parse_sess( const cal_sheet& sh_ ) {
             unsigned temp_end   = std::stoi( end_hour_str ) * 100 + std::stoi( end_minute_str );
 
             if ( temp_start / 100 > 23 || temp_start % 100 > 59 || temp_end / 100 > 23 || temp_end % 100 > 59 ) {
-                LOG_TAGGED( "cal", "!!bad session time defined, start=%u,end=%u", temp_start, temp_end );
+                LOG_INFO( "!!bad session time defined, start=%u,end=%u", temp_start, temp_end );
                 continue;
             }
 
@@ -175,7 +175,7 @@ nvx_st calendar::load_schedule( const char* cal_file_ ) {
 
     std::ifstream ifs( cal_file_ );
     if ( !ifs.is_open() ) {
-        LOG_TAGGED( "cal", "open json file failed" );
+        LOG_INFO( "open json file failed" );
         return -1;
     }
 
@@ -184,7 +184,7 @@ nvx_st calendar::load_schedule( const char* cal_file_ ) {
     doc.ParseStream( isw );
 
     if ( doc.HasParseError() ) {
-        LOG_TAGGED( "cal", "parse json file failed" );
+        LOG_INFO( "parse json file failed" );
         return -1;
     }
 

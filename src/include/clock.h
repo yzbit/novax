@@ -25,60 +25,25 @@ SOFTWARE.
 * \date: 2024
 **********************************************************************************/
 
-#ifndef B51B8BF1_EFFE_4FD1_94C3_9C7FFB93D609
-#define B51B8BF1_EFFE_4FD1_94C3_9C7FFB93D609
-#include <vector>
+#ifndef B87362DF_37FD_4B6A_9F1E_768AAFEA5563
+#define B87362DF_37FD_4B6A_9F1E_768AAFEA5563
+#include <memory>
+#include <time.h>
 
 #include "definitions.h"
-#include "models.h"
 #include "ns.h"
 
 NVX_NS_BEGIN
 
-struct kline;
-struct data;
-struct indicator;
-struct aspect final {
-    aspect( data* data_ );
-    ~aspect();
-
-    void        update( const tick& q_ );
-    nvx_st      addi( indicator* i_ );
-    kline&      bar( kidx index_ = 0 );
-    nvx_st      load( const code& code_, const period& p_, int count_ );
-    const code& symbol() const;
-
-private:
-    bool loaded() const;
-    void debug();
-
-    struct prii_t {
-        int        p;
-        indicator* i;
-    };
-    std::vector<prii_t> _algos;
-
-    int    _ref_prio = 1;
-    code   _symbol   = "";
-    kline* _k        = nullptr;
-
-private:
-    data* _data;
+struct clock {
+    virtual time_t now( const exid& ex_ ) = 0;
+    virtual ~clock() {}
 };
 
-#if 0
-struct asp_repo {
-    static AspRepo& instance();
-    aspect*         add( const code& code_, const period& p_, int count_ );
-
-private:
-    using repo_t = std::vector<aspect>;
-    repo_t _repo;
-};
-#endif
+clock& get_clock();
 
 NVX_NS_END
 
-#define ASP AspRepo::instance()
+#define CLOCK NVX_NS::get_clock()
 
-#endif /* B51B8BF1_EFFE_4FD1_94C3_9C7FFB93D609 */
+#endif /* B87362DF_37FD_4B6A_9F1E_768AAFEA5563 */

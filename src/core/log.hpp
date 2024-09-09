@@ -1,43 +1,38 @@
-/************************************************************************************
-The MIT License
+/*
+BSD 3-Clause License
 
-Copyright (c) 2024 YaoZinan  [zinan@outlook.com, nvx-quant.com]
+Copyright (c) 2024, YaoZinan
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+1. Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
 
-* \author: yaozn(zinan@outlook.com)
-* \date: 2024
-**********************************************************************************/
+3. Neither the name of the copyright holder nor the names of its
+   contributors may be used to endorse or promote products derived from
+   this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+wechat:371536435 email:yzbit@outlook.com
+*/
 
 #ifndef EB26CA36_71A3_4274_998C_7AA18A5F113A
 #define EB26CA36_71A3_4274_998C_7AA18A5F113A
-
-/** note!! 使用前仔细阅读brief
- * @file logz.h
- * @author y
- * @brief 开发阶段在sr日志没工作之前临时做的一个轻量级日志。
- * !! [ 线程安全 ]
- * !! [ 没有cache ] 如果模块对性能有很高要求要评估一下是否可以用！！
- * @version 0.1
- * @date 2023-04-20
- *
- */
 
 #include <chrono>
 #include <fcntl.h>
@@ -48,18 +43,17 @@ SOFTWARE.
 #include <stdlib.h>
 #include <string.h>
 #include <string>
+#include <sys/file.h>
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "ns.h"
-
-NVX_NS_BEGIN
+namespace yy {
 struct logz {
     static constexpr size_t ROTATE_DEFAULT = 5 * 1024 * 1024;
 
     struct conf {
         size_t      rot_size;    //! 单个日志文件大小
-        bool        keep;        //! 是否保留旧日志
+        bool        in_place;    //! 原地轮换
         bool        use_stdout;  //! 是否输出到标准输出
         std::string dir;         //! 日志目录
         std::string prefix;      //! 日志文件名前缀
@@ -76,18 +70,6 @@ struct logz {
         return 0;
     }
 
-    const char* real() {
-        static std::string name = "";
-        if ( _c.keep ) {
-            name = _c.dir + _c.prefix + ".log";
-        }
-        else {
-            name = _c.dir + _c.prefix + "." + time_str_file() + ".log";
-        }
-
-        return name.c_str();
-    }
-
     int init( const conf& c_ ) {
         if ( _log_fd > 0 )
             return 0;
@@ -102,7 +84,7 @@ struct logz {
                 _c.dir.c_str(),
                 _c.prefix.c_str(),
                 _c.rot_size,
-                _c.keep,
+                _c.in_place,
                 _c.use_stdout,
                 _c.time_fmt );
 
@@ -119,8 +101,12 @@ struct logz {
 
         _log_fd = open( real(), O_CREAT | O_RDWR, 0666 );
         lseek( _log_fd, 0, SEEK_END );
-        [[maybe_unused]] static auto fut = std::async( std::launch::async, [ & ]() { for ( ;; ) { this->flush(); sleep( 5 ); } } );
-        // fut.detach();
+
+        _log_size = lseek( _log_fd, 0, SEEK_CUR );
+
+        //[[maybe_unused]] static auto fut =
+        //    std::async( std::launch::async, [ & ]() { for ( ;; ) { this->flush(); sleep( 5 ); } } );
+
         puts( "logz init done" );
 
         return 0;
@@ -128,31 +114,30 @@ struct logz {
 
     void lite( const char* msg_ ) {
         if ( _c.use_stdout ) {
-            fprintf( stderr, "%s", msg_ );
+            printf( "%s", msg_ );
         }
 
         if ( _log_fd < 0 ) {
             fprintf( stderr, "log init failed\n" );
-            return;
+            exit( -1 );
         }
 
         if ( _log_size > _c.rot_size ) {
             printf( "logger rotating: %lu\n", _log_size );
+
             _log_size = 0;
 
             const char* f = real();
             printf( "logger name: %s\n", f );
 
-            if ( _c.keep ) {
-                std::string bak = std::string( real() ) + ".bak";
+            if ( _c.in_place ) {
+                std::string bak = std::string( real() ) + ".1";
                 const char* rf  = bak.c_str();
 
                 rename( f, rf );
                 auto fd = open( f, O_CREAT | O_RDWR, 0666 );
                 dup2( fd, _log_fd );
                 close( fd );
-
-                remove( rf );
             }
             else {
                 auto fd = open( f, O_CREAT | O_RDWR, 0666 );
@@ -194,6 +179,18 @@ struct logz {
     void set_stdout( bool enable_ = true ) { _c.use_stdout = enable_; }
 
 private:
+    const char* real() {
+        static std::string name = "";
+        if ( _c.in_place ) {
+            name = _c.dir + _c.prefix + ".log";
+        }
+        else {
+            name = _c.dir + _c.prefix + "." + time_str_file() + ".log";
+        }
+
+        return name.c_str();
+    }
+
     char* time_str( bool simple_ = false ) {
         static char str_time[ 64 ] = { 0 };
 
@@ -238,22 +235,21 @@ private:
     size_t      _log_size = 0;
 };
 
-NVX_NS_END
+}  // namespace yy
 
-#ifdef MS_VC
-#define FILE_NAME( x ) strrchr( x, '\\' ) ? strrchr( x, '\\' ) + 1 : x
-#else
-#define FILE_NAME( _x_ ) strrchr( _x_, '/' ) ? strrchr( _x_, '/' ) + 1 : _x_
-#endif
+#define FILE_NAME( full_path ) strrchr( full_path, '/' ) ? strrchr( full_path, '/' ) + 1 : full_path
 
-#define LOGZ NVX_NS::logz::instance()
+#define LOGZ yy::logz::instance()
 #define LOGZ_INIT( c ) LOGZ.init( c )
 #define LOGZ_CLOSE() LOGZ.shut()
 
-#define LOGZ_RAW( msg ) LOGZ.lite( msg )
-#define LOGZ_FMT( fmt, ... ) LOGZ.detail( "%s@%s:%d" fmt, FILE_NAME( __FILE__ ), __FUNCTION__, __LINE__, ##__VA_ARGS__ )
+#define LOGZ_MSG( msg ) LOGZ.lite( msg )
+#define LOGZ_FMT( fmt, ... ) LOGZ.detail( "%s@%s:%d> " fmt, FILE_NAME( __FILE__ ), __FUNCTION__, __LINE__, ##__VA_ARGS__ )
 #define LOGZ_FLUSH() LOGZ.flush()
 
 #define LOGZ_DISABLE_STDOUT() LOGZ.set_stdout( false )
 #define LOGZ_ENABLE_STDOUT() LOGZ.set_stdout( true )
-#endif
+
+#define LOG_INFO LOGZ_FMT
+
+#endif /* C4D939F4_A0F4_45D4_ACE6_CC6779AF8D29 */
