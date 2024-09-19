@@ -33,6 +33,7 @@ target_include_directories(${PROJECT_NAME}
     PRIVATE
     ${REPO_ROOT}/include
     ${REPO_ROOT}/lib
+    ${REPO_ROOT}/3rd
 )
 
 SET(CFGS
